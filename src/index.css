@@ -1,0 +1,356 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* ==========================================================================
+   DARK MODE STRATEGY
+   The `.dark` class is toggled on <html> by ThemeProvider. This custom variant
+   lets us write `dark:` utilities that respond to that class.
+   ========================================================================== */
+@custom-variant dark (&:is(.dark *));
+
+/* ==========================================================================
+   1. CONFIGURABLE TOKENS  (the single source of truth)
+   Every value a theme can override lives here. ThemeProvider writes overrides
+   as inline custom properties on <html>, which cascade over these defaults.
+   Colors use the OKLCH color space: oklch(Lightness Chroma Hue).
+   ========================================================================== */
+:root {
+  /* --- Typography ------------------------------------------------------- */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: var(--font-sans);
+  --font-mono: ui-monospace, 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+
+  /* Root font size. All rem-based sizing scales from this. */
+  --font-size-base: 16px;
+  /* Global multiplier applied on top of the type ramp (density / "zoom"). */
+  --scale: 1;
+
+  /* Type ramp (multiplied by --scale via @theme inline below) */
+  --text-2xs: 0.6875rem; /* 11px */
+  --text-xs: 0.75rem; /*    12px */
+  --text-sm: 0.875rem; /*   14px */
+  --text-base: 1rem; /*     16px */
+  --text-lg: 1.125rem; /*   18px */
+  --text-xl: 1.25rem; /*    20px */
+  --text-2xl: 1.5rem; /*    24px */
+  --text-3xl: 1.875rem; /*  30px */
+  --text-4xl: 2.25rem; /*   36px */
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.02em;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* --- Spacing ---------------------------------------------------------- */
+  /* Tailwind v4 multiplies every spacing utility by this base unit.
+     Lower it for a denser UI, raise it for a roomier one. */
+  --spacing: 0.25rem; /* 4px grid */
+
+  /* --- Radius ----------------------------------------------------------- */
+  --radius: 0.625rem; /* 10px — base; component radii derive from this */
+
+  /* --- Shadows (elevation ramp) ---------------------------------------- */
+  --shadow-color: 240 5% 12%;
+  --shadow-xs: 0 1px 2px 0 hsl(var(--shadow-color) / 0.05);
+  --shadow-sm: 0 1px 3px 0 hsl(var(--shadow-color) / 0.08), 0 1px 2px -1px hsl(var(--shadow-color) / 0.08);
+  --shadow-md: 0 4px 6px -1px hsl(var(--shadow-color) / 0.08), 0 2px 4px -2px hsl(var(--shadow-color) / 0.08);
+  --shadow-lg: 0 10px 15px -3px hsl(var(--shadow-color) / 0.10), 0 4px 6px -4px hsl(var(--shadow-color) / 0.10);
+  --shadow-xl: 0 20px 25px -5px hsl(var(--shadow-color) / 0.12), 0 8px 10px -6px hsl(var(--shadow-color) / 0.12);
+  --shadow-2xl: 0 25px 50px -12px hsl(var(--shadow-color) / 0.25);
+
+  /* --- Layout (app shell geometry) ------------------------------------- */
+  --app-sidebar-width: 17rem;
+  --app-sidebar-width-collapsed: 3.5rem;
+  --app-appbar-height: 3.5rem;
+  /* Footer height — shared by the page footer AND the sidebar footer so the two
+     bottom bars align. Raise this for a taller footer (e.g. stats strips). */
+  --app-footer-height: 2.5rem;
+  --app-page-padding-x: 1rem;
+  --app-page-padding-y: 0.875rem;
+  --app-content-max-width: 96rem;
+  --app-z-sidebar: 30;
+  --app-z-appbar: 20;
+  --app-z-overlay: 50;
+  --app-z-fab: 40;
+
+  /* --- Motion ----------------------------------------------------------- */
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+  --duration-slow: 320ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
+
+  /* --- Semantic colors: LIGHT theme ------------------------------------ */
+  --background: oklch(0.99 0.002 270);
+  --foreground: oklch(0.21 0.02 270);
+
+  --card: oklch(1 0 0);
+  --card-foreground: var(--foreground);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--foreground);
+
+  --primary: oklch(0.55 0.22 295);
+  --primary-foreground: oklch(0.99 0.005 295);
+
+  --secondary: oklch(0.96 0.01 270);
+  --secondary-foreground: oklch(0.28 0.02 270);
+
+  --muted: oklch(0.96 0.008 270);
+  --muted-foreground: oklch(0.52 0.02 270);
+
+  --accent: oklch(0.95 0.03 295);
+  --accent-foreground: oklch(0.3 0.12 295);
+
+  --destructive: oklch(0.58 0.22 25);
+  --destructive-foreground: oklch(0.99 0.01 25);
+  --success: oklch(0.62 0.16 150);
+  --success-foreground: oklch(0.99 0.01 150);
+  --warning: oklch(0.75 0.16 75);
+  --warning-foreground: oklch(0.24 0.05 75);
+  --info: oklch(0.6 0.16 240);
+  --info-foreground: oklch(0.99 0.01 240);
+
+  --border: oklch(0.92 0.006 270);
+  --input: oklch(0.92 0.006 270);
+  --ring: oklch(0.55 0.22 295);
+
+  /* Data-viz palette */
+  --chart-1: oklch(0.55 0.22 295);
+  --chart-2: oklch(0.6 0.16 240);
+  --chart-3: oklch(0.62 0.16 150);
+  --chart-4: oklch(0.75 0.16 75);
+  --chart-5: oklch(0.58 0.22 25);
+
+  /* Sidebar surface (intentionally distinct from page background) */
+  --sidebar: oklch(0.975 0.004 270);
+  --sidebar-foreground: oklch(0.32 0.02 270);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: oklch(0.94 0.01 270);
+  --sidebar-accent-foreground: oklch(0.28 0.02 270);
+  --sidebar-border: oklch(0.91 0.006 270);
+  --sidebar-ring: var(--ring);
+}
+
+/* --- Semantic colors: DARK theme -------------------------------------- */
+.dark {
+  --background: oklch(0.17 0.012 270);
+  --foreground: oklch(0.94 0.006 270);
+
+  --card: oklch(0.21 0.014 270);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.21 0.014 270);
+  --popover-foreground: var(--foreground);
+
+  --primary: oklch(0.7 0.17 295);
+  --primary-foreground: oklch(0.18 0.04 295);
+
+  --secondary: oklch(0.27 0.015 270);
+  --secondary-foreground: oklch(0.92 0.006 270);
+
+  --muted: oklch(0.27 0.015 270);
+  --muted-foreground: oklch(0.68 0.015 270);
+
+  --accent: oklch(0.3 0.04 295);
+  --accent-foreground: oklch(0.9 0.04 295);
+
+  --destructive: oklch(0.68 0.19 25);
+  --destructive-foreground: oklch(0.16 0.03 25);
+  --success: oklch(0.7 0.15 150);
+  --success-foreground: oklch(0.16 0.03 150);
+  --warning: oklch(0.8 0.15 75);
+  --warning-foreground: oklch(0.2 0.04 75);
+  --info: oklch(0.68 0.15 240);
+  --info-foreground: oklch(0.16 0.03 240);
+
+  --border: oklch(1 0 0 / 0.1);
+  --input: oklch(1 0 0 / 0.14);
+  --ring: oklch(0.7 0.17 295);
+
+  --chart-1: oklch(0.7 0.17 295);
+  --chart-2: oklch(0.68 0.15 240);
+  --chart-3: oklch(0.7 0.15 150);
+  --chart-4: oklch(0.8 0.15 75);
+  --chart-5: oklch(0.68 0.19 25);
+
+  --sidebar: oklch(0.2 0.014 270);
+  --sidebar-foreground: oklch(0.88 0.006 270);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: oklch(0.27 0.018 270);
+  --sidebar-accent-foreground: oklch(0.92 0.006 270);
+  --sidebar-border: oklch(1 0 0 / 0.08);
+  --sidebar-ring: var(--ring);
+
+  --shadow-color: 0 0% 0%;
+}
+
+/* ==========================================================================
+   2. THEME MAPPING  (@theme inline)
+   Maps the tokens above onto Tailwind's design-token namespaces so utilities
+   like `bg-background`, `text-muted-foreground`, `rounded-lg`, `shadow-md`,
+   `text-sm`, `font-heading` all resolve to our variables.
+   ========================================================================== */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Fonts */
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-heading);
+  --font-mono: var(--font-mono);
+
+  /* Type ramp, scaled by --scale */
+  --text-2xs: calc(var(--text-2xs) * var(--scale));
+  --text-xs: calc(var(--text-xs) * var(--scale));
+  --text-sm: calc(var(--text-sm) * var(--scale));
+  --text-base: calc(var(--text-base) * var(--scale));
+  --text-lg: calc(var(--text-lg) * var(--scale));
+  --text-xl: calc(var(--text-xl) * var(--scale));
+  --text-2xl: calc(var(--text-2xl) * var(--scale));
+  --text-3xl: calc(var(--text-3xl) * var(--scale));
+  --text-4xl: calc(var(--text-4xl) * var(--scale));
+
+  /* Radius ramp derived from --radius */
+  --radius-xs: calc(var(--radius) - 6px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  /* Shadows */
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+
+  /* Layout tokens (also exposed as utilities, e.g. w-sidebar) */
+  --spacing-sidebar: var(--app-sidebar-width);
+  --spacing-sidebar-collapsed: var(--app-sidebar-width-collapsed);
+  --spacing-appbar: var(--app-appbar-height);
+  --spacing-footer: var(--app-footer-height);
+}
+
+/* ==========================================================================
+   3. BASE LAYER
+   ========================================================================== */
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    font-size: var(--font-size-base);
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    margin: 0;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    line-height: var(--leading-normal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+    font-weight: var(--font-weight-semibold);
+  }
+  :focus-visible {
+    outline: none;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--color-primary) 28%, transparent);
+  }
+  /* Themed scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--color-border);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-muted-foreground);
+  }
+}
+
+/* ==========================================================================
+   4. UTILITIES
+   ========================================================================== */
+@layer utilities {
+  /* Smoothly cross-fade colors when theme tokens change at runtime. */
+  .theme-transition,
+  .theme-transition * {
+    transition:
+      background-color var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard),
+      color var(--duration-normal) var(--ease-standard),
+      fill var(--duration-normal) var(--ease-standard),
+      stroke var(--duration-normal) var(--ease-standard);
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

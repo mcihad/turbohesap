@@ -215,10 +215,10 @@ function ContextMenuDemo() {
       </ContextMenuTrigger>
       <ContextMenuContent className="w-56">
         <ContextMenuLabel>Eylemler</ContextMenuLabel>
-        <ContextMenuItem>
+        <ContextMenuItem onSelect={() => toast('Kopyala')}>
           <Copy /> Kopyala <ContextMenuShortcut>⌘C</ContextMenuShortcut>
         </ContextMenuItem>
-        <ContextMenuItem>
+        <ContextMenuItem onSelect={() => toast('Yeniden Adlandır')}>
           <Pencil /> Yeniden Adlandır
         </ContextMenuItem>
         <ContextMenuSub>
@@ -226,25 +226,26 @@ function ContextMenuDemo() {
             <Share2 /> Paylaş
           </ContextMenuSubTrigger>
           <ContextMenuSubContent>
-            <ContextMenuItem>Bağlantıyı kopyala</ContextMenuItem>
-            <ContextMenuItem>E-posta</ContextMenuItem>
+            <ContextMenuItem onSelect={() => toast('Bağlantıyı kopyala')}>Bağlantıyı kopyala</ContextMenuItem>
+            <ContextMenuItem onSelect={() => toast('E-posta')}>E-posta</ContextMenuItem>
           </ContextMenuSubContent>
         </ContextMenuSub>
         <ContextMenuSeparator />
         <ContextMenuCheckboxItem
           checked={bookmarked}
           onCheckedChange={(v) => setBookmarked(Boolean(v))}
+          onSelect={() => toast('Yer işareti eklendi')}
         >
           Yer işareti eklendi
         </ContextMenuCheckboxItem>
         <ContextMenuSeparator />
         <ContextMenuRadioGroup value={view} onValueChange={setView}>
           <ContextMenuLabel inset>Görünüm</ContextMenuLabel>
-          <ContextMenuRadioItem value="grid">Izgara</ContextMenuRadioItem>
-          <ContextMenuRadioItem value="list">Liste</ContextMenuRadioItem>
+          <ContextMenuRadioItem value="grid" onSelect={() => toast('Izgara')}>Izgara</ContextMenuRadioItem>
+          <ContextMenuRadioItem value="list" onSelect={() => toast('Liste')}>Liste</ContextMenuRadioItem>
         </ContextMenuRadioGroup>
         <ContextMenuSeparator />
-        <ContextMenuItem variant="destructive">
+        <ContextMenuItem variant="destructive" onSelect={() => toast('Sil')}>
           <Trash2 /> Sil <ContextMenuShortcut>⌫</ContextMenuShortcut>
         </ContextMenuItem>
       </ContextMenuContent>
@@ -326,14 +327,14 @@ function ListViewDemo() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => toast('Düzenle')}>
                 <Pencil /> Düzenle
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => toast('Paylaş')}>
                 <Share2 /> Paylaş
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive">
+              <DropdownMenuItem variant="destructive" onSelect={() => toast('Kaldır')}>
                 <Trash2 /> Kaldır
               </DropdownMenuItem>
             </DropdownMenuContent>

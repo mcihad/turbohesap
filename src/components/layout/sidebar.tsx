@@ -41,7 +41,7 @@ function AppIconButton({ collapsed }: { collapsed: boolean }) {
         </button>
       </TooltipTrigger>
       <TooltipContent side={collapsed ? 'right' : 'bottom'}>
-        Applications
+        Uygulamalar
       </TooltipContent>
     </Tooltip>
   )
@@ -73,17 +73,17 @@ export function SidebarInner({
           <>
             <div className="flex min-w-0 flex-1 flex-col">
               <span className="truncate text-sm font-semibold leading-tight">
-                Acme Console
+                KentOS Console
               </span>
               <span className="truncate text-xs text-muted-foreground leading-tight">
-                Production
+                Canlı
               </span>
             </div>
             <Button
               variant="ghost"
               size="icon-sm"
               onClick={toggleSidebar}
-              aria-label="Collapse sidebar"
+              aria-label="Kenar çubuğunu daralt"
               className="hidden lg:inline-flex"
             >
               <PanelLeftClose className="size-4" />
@@ -100,7 +100,7 @@ export function SidebarInner({
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search menu..."
+              placeholder="Menüde ara..."
               className="h-8 bg-background/60 pl-8 text-sm"
             />
           </div>

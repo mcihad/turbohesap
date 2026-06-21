@@ -36,9 +36,9 @@ export function AppLauncher({
         <DialogHeader className="space-y-3 border-b p-4 text-left">
           <div className="flex items-center justify-between gap-3 pr-9">
             <div>
-              <DialogTitle>Applications</DialogTitle>
+              <DialogTitle>Uygulamalar</DialogTitle>
               <DialogDescription>
-                Switch between workspace apps.
+                Çalışma alanı uygulamaları arasında geçiş yapın.
               </DialogDescription>
             </div>
             <ToggleGroup
@@ -48,10 +48,10 @@ export function AppLauncher({
               variant="outline"
               size="sm"
             >
-              <ToggleGroupItem value="grid" aria-label="Grid view">
+              <ToggleGroupItem value="grid" aria-label="Izgara görünümü">
                 <LayoutGrid />
               </ToggleGroupItem>
-              <ToggleGroupItem value="list" aria-label="List view">
+              <ToggleGroupItem value="list" aria-label="Liste görünümü">
                 <List />
               </ToggleGroupItem>
             </ToggleGroup>
@@ -62,7 +62,7 @@ export function AppLauncher({
               autoFocus
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search apps..."
+              placeholder="Uygulamalarda ara..."
               className="pl-8"
             />
           </div>
@@ -115,7 +115,7 @@ export function AppLauncher({
           )}
           {apps.length === 0 && (
             <p className={cn('py-10 text-center text-sm text-muted-foreground')}>
-              No apps match “{q}”.
+              “{q}” ile eşleşen uygulama bulunamadı.
             </p>
           )}
         </div>

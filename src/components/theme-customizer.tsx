@@ -22,16 +22,16 @@ import {
 } from '@/components/ui/select'
 
 const MODES: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
-  { value: 'light', label: 'Light', icon: Sun },
-  { value: 'dark', label: 'Dark', icon: Moon },
-  { value: 'system', label: 'System', icon: Monitor },
+  { value: 'light', label: 'Açık', icon: Sun },
+  { value: 'dark', label: 'Koyu', icon: Moon },
+  { value: 'system', label: 'Sistem', icon: Monitor },
 ]
 
 const SHADOWS: { value: ShadowStrength; label: string }[] = [
-  { value: 'none', label: 'None' },
-  { value: 'soft', label: 'Soft' },
-  { value: 'default', label: 'Default' },
-  { value: 'strong', label: 'Strong' },
+  { value: 'none', label: 'Yok' },
+  { value: 'soft', label: 'Yumuşak' },
+  { value: 'default', label: 'Varsayılan' },
+  { value: 'strong', label: 'Güçlü' },
 ]
 
 /** Small labeled section wrapper. */
@@ -64,7 +64,7 @@ export function ThemeCustomizer() {
     <ScrollArea className="h-full">
       <div className="space-y-6 p-5">
         {/* Mode --------------------------------------------------------- */}
-        <Field label="Appearance">
+        <Field label="Görünüm">
           <div className="grid grid-cols-3 gap-2">
             {MODES.map(({ value, label, icon: Icon }) => (
               <button
@@ -88,7 +88,7 @@ export function ThemeCustomizer() {
         <Separator />
 
         {/* Color preset ------------------------------------------------- */}
-        <Field label="Accent color">
+        <Field label="Vurgu rengi">
           <div className="grid grid-cols-7 gap-2">
             {COLOR_PRESETS.map((preset) => (
               <button
@@ -115,7 +115,7 @@ export function ThemeCustomizer() {
         <Separator />
 
         {/* Radius ------------------------------------------------------- */}
-        <Field label="Radius" hint={`${config.radius.toFixed(3)}rem`}>
+        <Field label="Köşe yuvarlığı" hint={`${config.radius.toFixed(3)}rem`}>
           <Slider
             value={[config.radius]}
             min={0}
@@ -126,7 +126,7 @@ export function ThemeCustomizer() {
         </Field>
 
         {/* Scale -------------------------------------------------------- */}
-        <Field label="Scale (density)" hint={`${config.scale.toFixed(2)}×`}>
+        <Field label="Ölçek (yoğunluk)" hint={`${config.scale.toFixed(2)}×`}>
           <Slider
             value={[config.scale]}
             min={0.85}
@@ -137,7 +137,7 @@ export function ThemeCustomizer() {
         </Field>
 
         {/* Base font size ---------------------------------------------- */}
-        <Field label="Base font size" hint={`${config.fontSize}px`}>
+        <Field label="Temel yazı boyutu" hint={`${config.fontSize}px`}>
           <Slider
             value={[config.fontSize]}
             min={13}
@@ -149,7 +149,7 @@ export function ThemeCustomizer() {
 
         {/* Spacing grid ------------------------------------------------ */}
         <Field
-          label="Spacing grid"
+          label="Boşluk ızgarası"
           hint={`${Math.round(config.spacing * 16)}px`}
         >
           <Slider
@@ -164,7 +164,7 @@ export function ThemeCustomizer() {
         <Separator />
 
         {/* Fonts -------------------------------------------------------- */}
-        <Field label="Sans font">
+        <Field label="Sans-serif yazı tipi">
           <Select
             value={config.fontSans}
             onValueChange={(v) => setConfig({ fontSans: v })}
@@ -182,7 +182,7 @@ export function ThemeCustomizer() {
           </Select>
         </Field>
 
-        <Field label="Heading font">
+        <Field label="Başlık yazı tipi">
           <Select
             value={config.fontHeading}
             onValueChange={(v) => setConfig({ fontHeading: v })}
@@ -200,7 +200,7 @@ export function ThemeCustomizer() {
           </Select>
         </Field>
 
-        <Field label="Mono font">
+        <Field label="Monospace yazı tipi">
           <Select
             value={config.fontMono}
             onValueChange={(v) => setConfig({ fontMono: v })}
@@ -221,7 +221,7 @@ export function ThemeCustomizer() {
         <Separator />
 
         {/* Shadow ------------------------------------------------------- */}
-        <Field label="Elevation">
+        <Field label="Yükseklik (Gölge)">
           <div className="grid grid-cols-4 gap-2">
             {SHADOWS.map((s) => (
               <button
@@ -245,7 +245,7 @@ export function ThemeCustomizer() {
 
         <Button variant="outline" className="w-full" onClick={reset}>
           <RotateCcw />
-          Reset to defaults
+          Varsayılana sıfırla
         </Button>
       </div>
     </ScrollArea>

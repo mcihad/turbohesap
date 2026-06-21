@@ -23,26 +23,26 @@ export const Route = createFileRoute('/analytics')({
 })
 
 const CHANNELS = [
-  { name: 'Organic search', value: 82 },
-  { name: 'Direct', value: 64 },
-  { name: 'Referral', value: 47 },
-  { name: 'Social', value: 31 },
-  { name: 'Email', value: 22 },
+  { name: 'Organik arama', value: 82 },
+  { name: 'Doğrudan', value: 64 },
+  { name: 'Yönlendirme', value: 47 },
+  { name: 'Sosyal', value: 31 },
+  { name: 'E-posta', value: 22 },
 ]
 
 function AnalyticsPage() {
   return (
     <PageWrapper>
       <PageHeader
-        title="Analytics"
-        description="Traffic, engagement, and conversion across all channels."
+        title="Analiz"
+        description="Tüm kanallardaki trafik, etkileşim ve dönüşüm."
         actions={
           <>
             <Button variant="outline">
               <Calendar />
-              Last 30 days
+              Son 30 gün
             </Button>
-            <Button variant="outline" size="icon" aria-label="Filter">
+            <Button variant="outline" size="icon" aria-label="Filtrele">
               <Filter />
             </Button>
           </>
@@ -51,16 +51,16 @@ function AnalyticsPage() {
 
       <Tabs defaultValue="traffic">
         <TabsList>
-          <TabsTrigger value="traffic">Traffic</TabsTrigger>
-          <TabsTrigger value="engagement">Engagement</TabsTrigger>
-          <TabsTrigger value="conversion">Conversion</TabsTrigger>
+          <TabsTrigger value="traffic">Trafik</TabsTrigger>
+          <TabsTrigger value="engagement">Etkileşim</TabsTrigger>
+          <TabsTrigger value="conversion">Dönüşüm</TabsTrigger>
         </TabsList>
         <TabsContent value="traffic" className="mt-4">
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Channels</CardTitle>
-                <CardDescription>Sessions by source</CardDescription>
+                <CardTitle>Kanallar</CardTitle>
+                <CardDescription>Kaynağa göre oturumlar</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {CHANNELS.map((c) => (
@@ -76,8 +76,8 @@ function AnalyticsPage() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Top pages</CardTitle>
-                <CardDescription>Most visited this period</CardDescription>
+                <CardTitle>En popüler sayfalar</CardTitle>
+                <CardDescription>Bu dönemde en çok ziyaret edilenler</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="divide-y text-sm">
@@ -102,24 +102,24 @@ function AnalyticsPage() {
           value="engagement"
           className="mt-4 rounded-lg border p-8 text-center text-sm text-muted-foreground"
         >
-          Engagement charts would render here.
+          Etkileşim grafikleri burada gösterilecektir.
         </TabsContent>
         <TabsContent
           value="conversion"
           className="mt-4 rounded-lg border p-8 text-center text-sm text-muted-foreground"
         >
-          Conversion funnels would render here.
+          Dönüşüm hunileri burada gösterilecektir.
         </TabsContent>
       </Tabs>
 
       {/* This page takes over the app footer with a thin stats strip. */}
       <PageFooter>
-        <PageFooterStat label="Sessions" value="248,512" />
-        <PageFooterStat label="Avg. duration" value="3m 42s" />
-        <PageFooterStat label="Bounce" value="38.2%" />
+        <PageFooterStat label="Oturumlar" value="248.512" />
+        <PageFooterStat label="Ort. süre" value="3dk 42sn" />
+        <PageFooterStat label="Hemen çıkma" value="%38,2" />
         <PageFooterStat
-          label="Updated"
-          value="just now"
+          label="Güncellendi"
+          value="şimdi"
           className="ml-auto"
         />
       </PageFooter>

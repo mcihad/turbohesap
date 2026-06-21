@@ -21,18 +21,18 @@ export const Route = createFileRoute('/help')({
 })
 
 const RESOURCES = [
-  { icon: Rocket, title: 'Getting started', desc: 'Set up your workspace in minutes.' },
-  { icon: BookOpen, title: 'Documentation', desc: 'Guides, API, and references.' },
-  { icon: MessageCircle, title: 'Community', desc: 'Ask questions and share tips.' },
-  { icon: LifeBuoy, title: 'Support', desc: 'Reach our team directly.' },
+  { icon: Rocket, title: 'Başlangıç', desc: 'Çalışma alanınızı dakikalar içinde kurun.' },
+  { icon: BookOpen, title: 'Dokümantasyon', desc: 'Kılavuzlar, API ve referanslar.' },
+  { icon: MessageCircle, title: 'Topluluk', desc: 'Sorular sorun ve ipuçları paylaşın.' },
+  { icon: LifeBuoy, title: 'Destek', desc: 'Ekibimize doğrudan ulaşın.' },
 ]
 
 function HelpPage() {
   return (
     <PageWrapper>
       <PageHeader
-        title="Help & Docs"
-        description="Find answers, guides, and ways to get in touch."
+        title="Yardım ve Dokümanlar"
+        description="Sorularınızın yanıtlarını, rehberleri ve bizimle iletişime geçme yollarını bulun."
       />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {RESOURCES.map((r) => (
@@ -50,14 +50,14 @@ function HelpPage() {
 
       <Card className="mt-4">
         <CardHeader>
-          <CardTitle>Frequently asked</CardTitle>
+          <CardTitle>Sıkça sorulan sorular</CardTitle>
         </CardHeader>
         <CardContent>
           <Accordion type="single" collapsible>
             {[
-              ['How do I customize the theme?', 'Click the palette icon in the app bar to open the customizer.'],
-              ['Can I add new apps?', 'Edit src/config/apps.ts to register new app tiles.'],
-              ['How is navigation defined?', 'The sidebar tree comes from src/config/navigation.ts.'],
+              ['Temayı nasıl özelleştirebilirim?', 'Özelleştiriciyi açmak için uygulama çubuğundaki palet simgesine tıklayın.'],
+              ['Yeni uygulamalar ekleyebilir miyim?', 'Yeni uygulama kartları kaydetmek için src/config/apps.ts dosyasını düzenleyin.'],
+              ['Gezinti (Navigasyon) nasıl tanımlanır?', 'Kenar çubuğu ağacı src/config/navigation.ts dosyasından alınır.'],
             ].map(([q, a], i) => (
               <AccordionItem key={i} value={`f${i}`}>
                 <AccordionTrigger>{q}</AccordionTrigger>

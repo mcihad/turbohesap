@@ -41,49 +41,49 @@ const STATS: {
   delta: number
   icon: LucideIcon
 }[] = [
-  { label: 'Revenue', value: '$48,210', delta: 12.4, icon: Wallet },
-  { label: 'Orders', value: '1,842', delta: 8.1, icon: ShoppingCart },
-  { label: 'Customers', value: '3,219', delta: -2.3, icon: Users },
-  { label: 'Active now', value: '312', delta: 4.7, icon: Activity },
+  { label: 'Gelir', value: '$48.210', delta: 12.4, icon: Wallet },
+  { label: 'Siparişler', value: '1.842', delta: 8.1, icon: ShoppingCart },
+  { label: 'Müşteriler', value: '3.219', delta: -2.3, icon: Users },
+  { label: 'Şu an aktif', value: '312', delta: 4.7, icon: Activity },
 ]
 
 const BARS = [42, 55, 48, 67, 73, 61, 88, 79, 94, 71, 83, 96]
-const MONTHS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
+const MONTHS = ['O', 'Ş', 'M', 'N', 'M', 'H', 'T', 'A', 'E', 'E', 'K', 'A']
 
 const ACTIVITY = [
-  { who: 'Mira Patel', what: 'closed deal “Northwind”', when: '2m ago' },
-  { who: 'System', what: 'deployed release v2.4.0', when: '18m ago' },
-  { who: 'Leo Tan', what: 'created project “Atlas”', when: '1h ago' },
-  { who: 'Ava Reed', what: 'invited 3 members', when: '3h ago' },
-  { who: 'Billing', what: 'processed 42 invoices', when: '5h ago' },
+  { who: 'Mira Patel', what: '“Northwind” anlaşmasını kapattı', when: '2 dk önce' },
+  { who: 'Sistem', what: 'v2.4.0 sürümünü yayınladı', when: '18 dk önce' },
+  { who: 'Leo Tan', what: '“Atlas” projesini oluşturdu', when: '1 sa önce' },
+  { who: 'Ava Reed', what: '3 üye davet etti', when: '3 sa önce' },
+  { who: 'Faturalandırma', what: '42 fatura işledi', when: '5 sa önce' },
 ]
 
 function DashboardPage() {
   return (
     <PageWrapper>
       <PageHeader
-        title="Dashboard"
-        description="Welcome back — here's what's happening across your workspace."
+        title="Panel"
+        description="Tekrar hoş geldiniz — çalışma alanınızda neler olup bittiğine göz atın."
         actions={
           <>
             <Button variant="outline">
               <Download />
-              Export
+              Dışa Aktar
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button>
                   <Plus />
-                  Create
+                  Oluştur
                   <ChevronDown className="opacity-70" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>New project</DropdownMenuItem>
-                <DropdownMenuItem>New invoice</DropdownMenuItem>
-                <DropdownMenuItem>Invite member</DropdownMenuItem>
+                <DropdownMenuItem>Yeni proje</DropdownMenuItem>
+                <DropdownMenuItem>Yeni fatura</DropdownMenuItem>
+                <DropdownMenuItem>Üye davet et</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Import data</DropdownMenuItem>
+                <DropdownMenuItem>Veri içe aktar</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </>
@@ -118,8 +118,8 @@ function DashboardPage() {
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Revenue overview</CardTitle>
-            <CardDescription>Monthly recurring revenue, this year</CardDescription>
+            <CardTitle>Gelir genel bakış</CardTitle>
+            <CardDescription>Aylık tekrarlayan gelir, bu yıl</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex h-56 items-end gap-2">
@@ -145,8 +145,8 @@ function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Recent activity</CardTitle>
-            <CardDescription>Latest events in your org</CardDescription>
+            <CardTitle>Son aktiviteler</CardTitle>
+            <CardDescription>Kuruluşunuzdaki son olaylar</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {ACTIVITY.map((a, i) => (
@@ -168,11 +168,11 @@ function DashboardPage() {
       </div>
 
       <p className={cn('mt-6 text-center text-xs text-muted-foreground')}>
-        Tip: press{' '}
+        İpucu: Komut paletini açmak için{' '}
         <kbd className="rounded border bg-muted px-1.5 font-mono text-2xs">
           ⌘K
         </kbd>{' '}
-        to open the command palette.
+        tuşlarına basın.
       </p>
     </PageWrapper>
   )

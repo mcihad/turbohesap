@@ -1,6 +1,6 @@
 ---
 name: create-page
-description: Create a new page/route in this design-system template (Acme Console) using TanStack Router file-based routing under src/routes, wired into the app shell (PageWrapper, PageHeader, breadcrumb, optional footer). Use when asked to add/create a new page, screen, route, view, or section. Keeps layout and navigation consistent with DESIGN.md.
+description: Create a new page/route in this design-system template (KentOS Console) using TanStack Router file-based routing under src/routes, wired into the app shell (PageWrapper, PageHeader, breadcrumb, optional footer). Use when asked to add/create a new page, screen, route, view, or section. Keeps layout and navigation consistent with DESIGN.md.
 ---
 
 # Create a page

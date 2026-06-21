@@ -39,74 +39,75 @@ export interface NavGroup {
 export const NAVIGATION: NavGroup[] = [
   {
     items: [
-      { title: 'Dashboard', icon: LayoutDashboard, to: '/' },
+      { title: 'Panel', icon: LayoutDashboard, to: '/' },
       {
-        title: 'Analytics',
+        title: 'Analiz',
         icon: BarChart3,
         to: '/analytics',
-        keywords: ['reports', 'metrics', 'insights'],
+        keywords: ['raporlar', 'metrikler', 'analizler'],
       },
     ],
   },
   {
-    label: 'Workspace',
+    label: 'Çalışma Alanı',
     items: [
       {
-        title: 'Projects',
+        title: 'Projeler',
         icon: FolderKanban,
         children: [
-          { title: 'All projects', to: '/projects' },
-          { title: 'Active', to: '/projects/active', badge: '12' },
-          { title: 'Archived', to: '/projects/archived' },
+          { title: 'Tüm projeler', to: '/projects' },
+          { title: 'Aktif', to: '/projects/active', badge: '12' },
+          { title: 'Arşivlenenler', to: '/projects/archived' },
         ],
       },
       {
-        title: 'Catalog',
+        title: 'Katalog',
         icon: Package,
         children: [
-          { title: 'Products', icon: Boxes, to: '/catalog/products' },
-          { title: 'Orders', icon: ShoppingCart, to: '/catalog/orders', badge: '3' },
-          { title: 'Invoices', icon: Receipt, to: '/catalog/invoices' },
+          { title: 'Ürünler', icon: Boxes, to: '/catalog/products' },
+          { title: 'Siparişler', icon: ShoppingCart, to: '/catalog/orders', badge: '3' },
+          { title: 'Faturalar', icon: Receipt, to: '/catalog/invoices' },
         ],
       },
-      { title: 'Customers', icon: Users, to: '/customers' },
-      { title: 'Documents', icon: FileText, to: '/documents' },
+      { title: 'Müşteriler', icon: Users, to: '/customers' },
+      { title: 'Belgeler', icon: FileText, to: '/documents' },
     ],
   },
   {
-    label: 'Operations',
+    label: 'Operasyon',
     items: [
-      { title: 'Live Map', icon: Map, to: '/map', keywords: ['fleet', 'tracking'] },
-      { title: 'Monitoring', icon: Gauge, to: '/monitoring' },
+      { title: 'Canlı Harita', icon: Map, to: '/map', keywords: ['filo', 'takip'] },
+      { title: 'İzleme', icon: Gauge, to: '/monitoring' },
       {
-        title: 'Finance',
+        title: 'Finans',
         icon: Wallet,
         children: [
-          { title: 'Billing', icon: CreditCard, to: '/finance/billing' },
-          { title: 'Payouts', icon: Wallet, to: '/finance/payouts' },
+          { title: 'Faturalandırma', icon: CreditCard, to: '/finance/billing' },
+          { title: 'Ödemeler', icon: Wallet, to: '/finance/payouts' },
         ],
       },
     ],
   },
   {
-    label: 'Admin',
+    label: 'Yönetim',
     items: [
       {
-        title: 'Settings',
+        title: 'Ayarlar',
         icon: Settings,
         children: [
-          { title: 'General', to: '/settings' },
-          { title: 'Members', to: '/settings/members' },
-          { title: 'Organization', icon: Building2, to: '/settings/organization' },
-          { title: 'Security', icon: ShieldCheck, to: '/settings/security' },
+          { title: 'Genel', to: '/settings' },
+          { title: 'Üyeler', to: '/settings/members' },
+          { title: 'Organizasyon', icon: Building2, to: '/settings/organization' },
+          { title: 'Güvenlik', icon: ShieldCheck, to: '/settings/security' },
         ],
       },
-      { title: 'Components', icon: Boxes, to: '/components', keywords: ['ui', 'kit'] },
+      { title: 'Bileşenler', icon: Boxes, to: '/components', keywords: ['ui', 'kit', 'arayüz'] },
     ],
   },
 ]
 
 /** Footer (help / feedback) actions shown pinned at the bottom of the sidebar. */
 export const SIDEBAR_FOOTER_ITEMS: NavItem[] = [
-  { title: 'Help & Docs', icon: LifeBuoy, to: '/help' },
+  { title: 'Yardım ve Dokümanlar', icon: LifeBuoy, to: '/help' },
 ]
+

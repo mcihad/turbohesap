@@ -16,9 +16,9 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
 const KINDS = [
-  { id: 'idea', label: 'Idea', icon: Lightbulb },
-  { id: 'issue', label: 'Issue', icon: Bug },
-  { id: 'other', label: 'Other', icon: MessageSquare },
+  { id: 'idea', label: 'Fikir', icon: Lightbulb },
+  { id: 'issue', label: 'Sorun', icon: Bug },
+  { id: 'other', label: 'Diğer', icon: MessageSquare },
 ] as const
 
 export function FeedbackDialog({
@@ -34,8 +34,8 @@ export function FeedbackDialog({
   const submit = () => {
     onOpenChange(false)
     setMessage('')
-    toast.success('Thanks for the feedback!', {
-      description: 'Our team will review it shortly.',
+    toast.success('Geri bildiriminiz için teşekkürler!', {
+      description: 'Ekibimiz en kısa sürede inceleyecektir.',
     })
   }
 
@@ -43,9 +43,9 @@ export function FeedbackDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Send feedback</DialogTitle>
+          <DialogTitle>Geri bildirim gönder</DialogTitle>
           <DialogDescription>
-            Tell us what’s working or what could be better.
+            Nelerin iyi çalıştığını veya nelerin daha iyi olabileceğini bize bildirin.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -68,22 +68,22 @@ export function FeedbackDialog({
             ))}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="feedback-message">Message</Label>
+            <Label htmlFor="feedback-message">Mesaj</Label>
             <Textarea
               id="feedback-message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Describe your feedback..."
+              placeholder="Geri bildiriminizi açıklayın..."
               className="min-h-28"
             />
           </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
+            İptal
           </Button>
           <Button onClick={submit} disabled={!message.trim()}>
-            Send feedback
+            Geri bildirim gönder
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,6 +1,6 @@
 ---
 name: update-page
-description: Modify an existing page/route in this design-system template (Acme Console) — change content, header/actions, layout (padded vs full-bleed), or footer for a route under src/routes. Use when asked to edit/update/change/restyle an existing page, screen, or view. Keeps the page consistent with the app shell and DESIGN.md.
+description: Modify an existing page/route in this design-system template (KentOS Console) — change content, header/actions, layout (padded vs full-bleed), or footer for a route under src/routes. Use when asked to edit/update/change/restyle an existing page, screen, or view. Keeps the page consistent with the app shell and DESIGN.md.
 ---
 
 # Update a page

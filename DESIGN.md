@@ -1,4 +1,4 @@
-# DESIGN SYSTEM — Acme Console Template
+# DESIGN SYSTEM — KentOS Console Template
 
 > This document is the **single source of truth** for the design system. It is
 > written so that the system can be rebuilt **1:1** from this file alone, by a
@@ -360,7 +360,7 @@ need the *actual* applied mode (e.g. Sonner theme).
 │              │   MAIN  (flex-1, overflow-y-auto)                          │
 │              │   ┌────────────────────────────────────────────────────┐  │
 │  ┌────────┐  │   │  PAGEWRAPPER                                        │  │
-│  │ ▣ Acme │  │   │   padded: px=--app-page-padding-x, py=…-y,          │  │
+│  │▣ KentOS│  │   │   padded: px=--app-page-padding-x, py=…-y,          │  │
 │  │ Console│  │   │           py=--app-page-padding-y (full width)      │  │
 │  └────────┘  │   │   flush : absolute inset-0, no gutters (maps)       │  │
 │  [search…]   │   │                                                     │  │
@@ -418,7 +418,7 @@ Files: `sidebar.tsx` (shell), `sidebar-nav.tsx` (tree/search/rail).
 ### 7.1 Header (height `h-appbar`, `border-b`)
 - **App icon** — a `size-9 rounded-lg bg-primary` button (brand mark, `Boxes`
   icon). Clicking it opens the **App Launcher** (Section 9). Tooltip "Applications".
-- **Title block** — "Acme Console" (`text-sm font-semibold`) + subtitle
+- **Title block** — "KentOS Console" (`text-sm font-semibold`) + subtitle
   ("Production", `text-xs text-muted-foreground`). Hidden when collapsed.
 - **Collapse button** — `PanelLeftClose`, desktop only. (The app-bar ☰ also
   toggles collapse — they share `toggleSidebar`.)

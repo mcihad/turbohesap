@@ -32,7 +32,7 @@ export function AppBar() {
       <Button
         variant="ghost"
         size="icon"
-        aria-label="Toggle sidebar"
+        aria-label="Kenar çubuğunu gizle/göster"
         className="lg:inline-flex hidden"
         onClick={toggleSidebar}
       >
@@ -41,7 +41,7 @@ export function AppBar() {
       <Button
         variant="ghost"
         size="icon"
-        aria-label="Open menu"
+        aria-label="Menüyü aç"
         className="lg:hidden"
         onClick={() => setMobileSidebarOpen(true)}
       >
@@ -61,7 +61,7 @@ export function AppBar() {
           className="group flex h-9 w-full max-w-md items-center gap-2 rounded-lg border bg-muted/50 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted sm:w-72 md:w-80"
         >
           <Search className="size-4 shrink-0" />
-          <span className="flex-1 text-left">Search or jump to...</span>
+          <span className="flex-1 text-left">Ara veya git...</span>
           <span className="hidden items-center gap-0.5 sm:flex">
             <Kbd>⌘</Kbd>
             <Kbd>K</Kbd>
@@ -76,13 +76,13 @@ export function AppBar() {
             <Button
               variant="ghost"
               size="icon"
-              aria-label="Customize theme"
+              aria-label="Temayı özelleştir"
               onClick={() => setCustomizerOpen(true)}
             >
               <Palette className="size-[1.15rem]" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Customize theme</TooltipContent>
+          <TooltipContent>Temayı özelleştir</TooltipContent>
         </Tooltip>
         <Notifications />
         <ModeToggle />

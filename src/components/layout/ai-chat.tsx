@@ -17,14 +17,14 @@ const SEED: Message[] = [
   {
     id: 1,
     role: 'assistant',
-    text: "Hi! I'm your workspace assistant. Ask me to summarize a page, draft content, or find something.",
+    text: "Merhaba! Ben çalışma alanı asistanınızım. Bir sayfayı özetlememi, içerik taslağı oluşturmamı veya bir şeyler bulmamı isteyebilirsiniz.",
   },
 ]
 
 const SUGGESTIONS = [
-  'Summarize this dashboard',
-  'Create a new project',
-  'Show overdue invoices',
+  'Bu paneli özetle',
+  'Yeni bir proje oluştur',
+  'Vadesi geçmiş faturaları göster',
 ]
 
 /** Floating AI assistant: a FAB pinned bottom-right that opens a chat dock. */
@@ -43,7 +43,7 @@ export function AiChat() {
       {
         id: Date.now() + 1,
         role: 'assistant',
-        text: 'This is a demo response. Wire me to your model endpoint to make it real.',
+        text: 'Bu bir demo yanıtıdır. Gerçek hale getirmek için beni model uç noktanıza bağlayın.',
       },
     ])
     setInput('')
@@ -58,7 +58,7 @@ export function AiChat() {
       {/* Floating action button */}
       <Button
         size="icon-lg"
-        aria-label="Open AI assistant"
+        aria-label="Yapay Zeka Asistanını Aç"
         onClick={() => setAiOpen(!aiOpen)}
         className={cn(
           'fixed right-5 bottom-[calc(var(--app-footer-height)+1.25rem)] z-[var(--app-z-fab)] size-12 rounded-full shadow-lg transition-transform hover:scale-105',
@@ -83,14 +83,14 @@ export function AiChat() {
               <Sparkles className="size-4" />
             </span>
             <div className="leading-tight">
-              <p className="text-sm font-semibold">AI Assistant</p>
-              <p className="text-2xs text-muted-foreground">Always here to help</p>
+              <p className="text-sm font-semibold">Yapay Zeka Asistanı</p>
+              <p className="text-2xs text-muted-foreground">Her zaman yardıma hazır</p>
             </div>
           </div>
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label="Close assistant"
+            aria-label="Asistanı kapat"
             onClick={() => setAiOpen(false)}
           >
             <X className="size-4" />
@@ -140,7 +140,7 @@ export function AiChat() {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask anything..."
+              placeholder="Bir şey sorun..."
               className="h-9"
             />
             <Button type="submit" size="icon" disabled={!input.trim()}>

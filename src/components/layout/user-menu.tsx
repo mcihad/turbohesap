@@ -28,7 +28,7 @@ export function UserMenu() {
           variant="ghost"
           size="icon"
           className="rounded-full"
-          aria-label="Account menu"
+          aria-label="Hesap menüsü"
         >
           <Avatar className="size-8">
             <AvatarFallback className="bg-primary/15 font-semibold text-primary">
@@ -41,39 +41,39 @@ export function UserMenu() {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col">
             <span className="text-sm font-medium text-foreground">Cihad G.</span>
-            <span className="text-xs text-muted-foreground">cihad@acme.io</span>
+            <span className="text-xs text-muted-foreground">cihad@kentos.io</span>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
             <User />
-            Profile
+            Profil
             <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to={'/finance/billing' as string}>
               <CreditCard />
-              Billing
+              Faturalandırma
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to="/settings">
               <Settings />
-              Settings
+              Ayarlar
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to={'/settings/members' as string}>
               <Users />
-              Team
+              Ekip
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive">
           <LogOut />
-          Log out
+          Çıkış yap
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

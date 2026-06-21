@@ -30,11 +30,11 @@ function SettingsPage() {
   return (
     <PageWrapper className="max-w-3xl">
       <PageHeader
-        title="Settings"
-        description="Manage your workspace preferences."
+        title="Ayarlar"
+        description="Çalışma alanı tercihlerinizi yönetin."
         actions={
-          <Button onClick={() => toast.success('Settings saved')}>
-            Save changes
+          <Button onClick={() => toast.success('Ayarlar kaydedildi')}>
+            Değişiklikleri kaydet
           </Button>
         }
       />
@@ -42,33 +42,33 @@ function SettingsPage() {
       <div className="space-y-4">
         <Card>
           <CardHeader>
-            <CardTitle>Profile</CardTitle>
-            <CardDescription>Your personal information.</CardDescription>
+            <CardTitle>Profil</CardTitle>
+            <CardDescription>Kişisel bilgileriniz.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="set-name">Full name</Label>
+              <Label htmlFor="set-name">Ad soyad</Label>
               <Input id="set-name" defaultValue="Cihad G." />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="set-email">Email</Label>
-              <Input id="set-email" type="email" defaultValue="cihad@acme.io" />
+              <Label htmlFor="set-email">E-posta</Label>
+              <Input id="set-email" type="email" defaultValue="cihad@kentos.io" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="set-tz">Timezone</Label>
+              <Label htmlFor="set-tz">Saat dilimi</Label>
               <Select defaultValue="utc">
                 <SelectTrigger id="set-tz" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="utc">UTC</SelectItem>
-                  <SelectItem value="est">Eastern</SelectItem>
-                  <SelectItem value="ist">Istanbul</SelectItem>
+                  <SelectItem value="est">Doğu Saat Dilimi</SelectItem>
+                  <SelectItem value="ist">İstanbul</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="set-lang">Language</Label>
+              <Label htmlFor="set-lang">Dil</Label>
               <Select defaultValue="en">
                 <SelectTrigger id="set-lang" className="w-full">
                   <SelectValue />
@@ -84,14 +84,14 @@ function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Notifications</CardTitle>
-            <CardDescription>How you want to be reached.</CardDescription>
+            <CardTitle>Bildirimler</CardTitle>
+            <CardDescription>Nasıl iletişime geçilmesini istersiniz.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-1">
             {[
-              ['Email digests', 'A weekly summary of activity.', true],
-              ['Product updates', 'New features and improvements.', true],
-              ['Security alerts', 'Important account warnings.', false],
+              ['E-posta özetleri', 'Haftalık aktivite özeti.', true],
+              ['Ürün güncellemeleri', 'Yeni özellikler ve iyileştirmeler.', true],
+              ['Güvenlik uyarıları', 'Önemli hesap uyarıları.', false],
             ].map(([title, desc, on], i) => (
               <div key={title as string}>
                 {i > 0 && <Separator className="my-1" />}

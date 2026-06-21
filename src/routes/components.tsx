@@ -143,45 +143,45 @@ function ToastDemo() {
       <Button
         variant="outline"
         onClick={() =>
-          toast('Event created', { description: 'Friday, June 21 · 10:00 AM' })
+          toast('Etkinlik oluşturuldu', { description: '21 Haziran Cuma · 10:00' })
         }
       >
-        Default
+        Varsayılan
       </Button>
       <Button
         variant="outline"
         onClick={() =>
-          toast.success('Changes saved', { description: 'Your edits are live.' })
+          toast.success('Değişiklikler kaydedildi', { description: 'Düzenlemeleriniz yayında.' })
         }
       >
-        Success
+        Başarılı
       </Button>
       <Button
         variant="outline"
         onClick={() =>
-          toast.error('Save failed', { description: 'Please try again.' })
+          toast.error('Kaydetme başarısız', { description: 'Lütfen tekrar deneyin.' })
         }
       >
-        Error
+        Hata
       </Button>
       <Button
         variant="outline"
         onClick={() =>
-          toast.info('Update available', { description: 'v2.5.0 is ready.' })
+          toast.info('Güncelleme mevcut', { description: 'v2.5.0 hazır.' })
         }
       >
-        Info
+        Bilgi
       </Button>
       <Button
         variant="outline"
         onClick={() =>
-          toast('Invitation sent', {
-            description: 'mira@acme.io',
-            action: { label: 'Undo', onClick: () => toast('Reverted') },
+          toast('Davetiye gönderildi', {
+            description: 'mira@kentos.io',
+            action: { label: 'Geri al', onClick: () => toast('Geri alındı') },
           })
         }
       >
-        With action
+        Eylemli
       </Button>
       <Button
         variant="outline"
@@ -189,14 +189,14 @@ function ToastDemo() {
           toast.promise(
             new Promise((resolve) => setTimeout(resolve, 1600)),
             {
-              loading: 'Uploading…',
-              success: 'File uploaded',
-              error: 'Upload failed',
+              loading: 'Yükleniyor…',
+              success: 'Dosya yüklendi',
+              error: 'Yükleme başarısız',
             },
           )
         }
       >
-        Promise
+        İşlem (Promise)
       </Button>
     </>
   )
@@ -210,24 +210,24 @@ function ContextMenuDemo() {
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div className="flex h-28 w-full items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
-          Right-click anywhere here
+          Buraya sağ tıklayın
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-56">
-        <ContextMenuLabel>Actions</ContextMenuLabel>
+        <ContextMenuLabel>Eylemler</ContextMenuLabel>
         <ContextMenuItem>
-          <Copy /> Copy <ContextMenuShortcut>⌘C</ContextMenuShortcut>
+          <Copy /> Kopyala <ContextMenuShortcut>⌘C</ContextMenuShortcut>
         </ContextMenuItem>
         <ContextMenuItem>
-          <Pencil /> Rename
+          <Pencil /> Yeniden Adlandır
         </ContextMenuItem>
         <ContextMenuSub>
           <ContextMenuSubTrigger>
-            <Share2 /> Share
+            <Share2 /> Paylaş
           </ContextMenuSubTrigger>
           <ContextMenuSubContent>
-            <ContextMenuItem>Copy link</ContextMenuItem>
-            <ContextMenuItem>Email</ContextMenuItem>
+            <ContextMenuItem>Bağlantıyı kopyala</ContextMenuItem>
+            <ContextMenuItem>E-posta</ContextMenuItem>
           </ContextMenuSubContent>
         </ContextMenuSub>
         <ContextMenuSeparator />
@@ -235,17 +235,17 @@ function ContextMenuDemo() {
           checked={bookmarked}
           onCheckedChange={(v) => setBookmarked(Boolean(v))}
         >
-          Bookmarked
+          Yer işareti eklendi
         </ContextMenuCheckboxItem>
         <ContextMenuSeparator />
         <ContextMenuRadioGroup value={view} onValueChange={setView}>
-          <ContextMenuLabel inset>View as</ContextMenuLabel>
-          <ContextMenuRadioItem value="grid">Grid</ContextMenuRadioItem>
-          <ContextMenuRadioItem value="list">List</ContextMenuRadioItem>
+          <ContextMenuLabel inset>Görünüm</ContextMenuLabel>
+          <ContextMenuRadioItem value="grid">Izgara</ContextMenuRadioItem>
+          <ContextMenuRadioItem value="list">Liste</ContextMenuRadioItem>
         </ContextMenuRadioGroup>
         <ContextMenuSeparator />
         <ContextMenuItem variant="destructive">
-          <Trash2 /> Delete <ContextMenuShortcut>⌫</ContextMenuShortcut>
+          <Trash2 /> Sil <ContextMenuShortcut>⌫</ContextMenuShortcut>
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
@@ -253,20 +253,20 @@ function ContextMenuDemo() {
 }
 
 /* ------------------------------ Drawer demo ---------------------------- */
-const DRAWER_FILTERS = ['Active', 'Archived', 'Starred', 'Shared with me']
+const DRAWER_FILTERS = ['Aktif', 'Arşivlenmiş', 'Yıldızlı', 'Benimle paylaşılanlar']
 
 function DrawerDemo() {
   return (
     <Drawer>
       <DrawerTrigger asChild>
-        <Button variant="outline">Open drawer</Button>
+        <Button variant="outline">Çekmeceyi aç</Button>
       </DrawerTrigger>
       <DrawerContent>
         <div className="mx-auto w-full max-w-md">
           <DrawerHeader>
-            <DrawerTitle>Filter results</DrawerTitle>
+            <DrawerTitle>Sonuçları filtrele</DrawerTitle>
             <DrawerDescription>
-              Drag the handle or swipe down to dismiss.
+              Kapatmak için kulpu sürükleyin veya aşağı kaydırın.
             </DrawerDescription>
           </DrawerHeader>
           <div className="space-y-3 px-5 pb-2">
@@ -280,9 +280,9 @@ function DrawerDemo() {
             ))}
           </div>
           <DrawerFooter>
-            <Button>Apply filters</Button>
+            <Button>Filtreleri uygula</Button>
             <DrawerClose asChild>
-              <Button variant="ghost">Cancel</Button>
+              <Button variant="ghost">İptal</Button>
             </DrawerClose>
           </DrawerFooter>
         </div>
@@ -293,10 +293,10 @@ function DrawerDemo() {
 
 /* ----------------------------- List view ------------------------------ */
 const PEOPLE = [
-  { name: 'Mira Patel', role: 'Product Designer', initials: 'MP', online: true },
-  { name: 'Leo Tan', role: 'Frontend Engineer', initials: 'LT', online: true },
-  { name: 'Ava Reed', role: 'Operations Lead', initials: 'AR', online: false },
-  { name: 'Noah Kim', role: 'Data Analyst', initials: 'NK', online: false },
+  { name: 'Mira Patel', role: 'Ürün Tasarımcısı', initials: 'MP', online: true },
+  { name: 'Leo Tan', role: 'Önyüz Geliştiricisi', initials: 'LT', online: true },
+  { name: 'Ava Reed', role: 'Operasyon Yöneticisi', initials: 'AR', online: false },
+  { name: 'Noah Kim', role: 'Veri Analisti', initials: 'NK', online: false },
 ]
 
 function ListViewDemo() {
@@ -317,24 +317,24 @@ function ListViewDemo() {
             <p className="truncate text-xs text-muted-foreground">{p.role}</p>
           </div>
           <Badge variant={p.online ? 'success' : 'secondary'}>
-            {p.online ? 'Online' : 'Away'}
+            {p.online ? 'Aktif' : 'Dışarıda'}
           </Badge>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" aria-label="Row actions">
+              <Button variant="ghost" size="icon-sm" aria-label="Satır eylemleri">
                 <MoreHorizontal />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem>
-                <Pencil /> Edit
+                <Pencil /> Düzenle
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <Share2 /> Share
+                <Share2 /> Paylaş
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive">
-                <Trash2 /> Remove
+                <Trash2 /> Kaldır
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -385,7 +385,7 @@ function TreeDemo() {
       data={TREE_DATA}
       defaultExpanded={['src', 'components', 'ui']}
       defaultSelected="button"
-      onSelect={(n) => toast(`Opened ${n.label}`)}
+      onSelect={(n) => toast(`${n.label} açıldı`)}
       className="w-full"
     />
   )
@@ -393,15 +393,15 @@ function TreeDemo() {
 
 /* -------------------------------- Table ------------------------------- */
 const INVOICES = [
-  { id: 'INV-001', customer: 'Northwind', status: 'Paid', amount: '$1,200' },
-  { id: 'INV-002', customer: 'Globex', status: 'Pending', amount: '$2,400' },
-  { id: 'INV-003', customer: 'Initech', status: 'Overdue', amount: '$640' },
-  { id: 'INV-004', customer: 'Umbrella', status: 'Paid', amount: '$580' },
+  { id: 'INV-001', customer: 'Northwind', status: 'Ödendi', amount: '$1.200' },
+  { id: 'INV-002', customer: 'Globex', status: 'Beklemede', amount: '$2.400' },
+  { id: 'INV-003', customer: 'Initech', status: 'Vadesi Geçmiş', amount: '$640' },
+  { id: 'INV-004', customer: 'Umbrella', status: 'Ödendi', amount: '$580' },
 ]
 
 function statusVariant(status: string) {
-  if (status === 'Paid') return 'success' as const
-  if (status === 'Pending') return 'warning' as const
+  if (status === 'Ödendi') return 'success' as const
+  if (status === 'Beklemede') return 'warning' as const
   return 'destructive' as const
 }
 
@@ -423,13 +423,13 @@ function TableDemo() {
             <Checkbox
               checked={allSelected}
               onCheckedChange={toggleAll}
-              aria-label="Select all"
+              aria-label="Tümünü seç"
             />
           </TableHead>
-          <TableHead>Invoice</TableHead>
-          <TableHead>Customer</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead className="text-right">Amount</TableHead>
+          <TableHead>Fatura</TableHead>
+          <TableHead>Müşteri</TableHead>
+          <TableHead>Durum</TableHead>
+          <TableHead className="text-right">Tutar</TableHead>
           <TableHead className="w-10" />
         </TableRow>
       </TableHeader>
@@ -443,7 +443,7 @@ function TableDemo() {
               <Checkbox
                 checked={selected.includes(inv.id)}
                 onCheckedChange={() => toggle(inv.id)}
-                aria-label={`Select ${inv.id}`}
+                aria-label={`${inv.id} seç`}
               />
             </TableCell>
             <TableCell className="font-medium">{inv.id}</TableCell>
@@ -455,7 +455,7 @@ function TableDemo() {
               {inv.amount}
             </TableCell>
             <TableCell>
-              <Button variant="ghost" size="icon-sm" aria-label="Row menu">
+              <Button variant="ghost" size="icon-sm" aria-label="Satır menüsü">
                 <MoreHorizontal />
               </Button>
             </TableCell>
@@ -464,8 +464,8 @@ function TableDemo() {
       </TableBody>
       <TableFooter>
         <TableRow>
-          <TableCell colSpan={4}>Total</TableCell>
-          <TableCell className="text-right">$4,820</TableCell>
+          <TableCell colSpan={4}>Toplam</TableCell>
+          <TableCell className="text-right">$4.820</TableCell>
           <TableCell />
         </TableRow>
       </TableFooter>
@@ -477,56 +477,56 @@ function ComponentsPage() {
   return (
     <PageWrapper>
       <PageHeader
-        title="Components"
-        description="Living reference of the design-system primitives. Everything here reacts to the active theme."
+        title="Bileşenler"
+        description="Tasarım sistemi öğelerinin canlı referansı. Buradaki her şey aktif temaya göre tepki verir."
       />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Section title="Buttons" description="Variants & sizes">
-          <Button>Primary</Button>
-          <Button variant="secondary">Secondary</Button>
-          <Button variant="outline">Outline</Button>
-          <Button variant="ghost">Ghost</Button>
-          <Button variant="destructive">Destructive</Button>
-          <Button variant="link">Link</Button>
-          <Button size="sm">Small</Button>
-          <Button size="icon" aria-label="Settings">
+        <Section title="Butonlar" description="Varyasyonlar ve boyutlar">
+          <Button>Birincil</Button>
+          <Button variant="secondary">İkincil</Button>
+          <Button variant="outline">Dış Hatlı</Button>
+          <Button variant="ghost">Şeffaf</Button>
+          <Button variant="destructive">Yıkıcı</Button>
+          <Button variant="link">Bağlantı</Button>
+          <Button size="sm">Küçük</Button>
+          <Button size="icon" aria-label="Ayarlar">
             <Settings2 />
           </Button>
         </Section>
 
-        <Section title="Badges" description="Status & semantic tones">
-          <Badge>Default</Badge>
-          <Badge variant="secondary">Secondary</Badge>
-          <Badge variant="success">Success</Badge>
-          <Badge variant="warning">Warning</Badge>
-          <Badge variant="info">Info</Badge>
-          <Badge variant="destructive">Error</Badge>
-          <Badge variant="outline">Outline</Badge>
+        <Section title="Rozetler" description="Durum ve anlamsal tonlar">
+          <Badge>Varsayılan</Badge>
+          <Badge variant="secondary">İkincil</Badge>
+          <Badge variant="success">Başarı</Badge>
+          <Badge variant="warning">Uyarı</Badge>
+          <Badge variant="info">Bilgi</Badge>
+          <Badge variant="destructive">Hata</Badge>
+          <Badge variant="outline">Dış Hatlı</Badge>
         </Section>
 
-        <Section title="Form controls">
+        <Section title="Form kontrolleri">
           <div className="w-full space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="demo-email">Email</Label>
-              <Input id="demo-email" type="email" placeholder="you@acme.io" />
+              <Label htmlFor="demo-email">E-posta</Label>
+              <Input id="demo-email" type="email" placeholder="you@kentos.io" />
             </div>
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
                 <Switch id="demo-switch" defaultChecked />
-                <Label htmlFor="demo-switch">Notifications</Label>
+                <Label htmlFor="demo-switch">Bildirimler</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Checkbox id="demo-check" defaultChecked />
-                <Label htmlFor="demo-check">Subscribe</Label>
+                <Label htmlFor="demo-check">Abone Ol</Label>
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Volume</Label>
+              <Label>Ses</Label>
               <Slider defaultValue={[60]} max={100} step={1} />
             </div>
             <div className="space-y-2">
-              <Label>Storage used</Label>
+              <Label>Kullanılan depolama</Label>
               <Progress value={72} />
             </div>
             <Select defaultValue="m">
@@ -534,39 +534,38 @@ function ComponentsPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="s">Small</SelectItem>
-                <SelectItem value="m">Medium</SelectItem>
-                <SelectItem value="l">Large</SelectItem>
+                <SelectItem value="s">Küçük</SelectItem>
+                <SelectItem value="m">Orta</SelectItem>
+                <SelectItem value="l">Büyük</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </Section>
 
-        <Section title="Overlays & disclosure">
+        <Section title="Katmanlar ve açılır pencereler">
           <div className="w-full space-y-4">
             <div className="flex flex-wrap gap-3">
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="outline">Open dialog</Button>
+                  <Button variant="outline">İletişim kutusunu aç</Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Edit profile</DialogTitle>
+                    <DialogTitle>Profili düzenle</DialogTitle>
                     <DialogDescription>
-                      Make changes to your profile here. Click save when you're
-                      done.
+                      Profilinizde değişiklikleri buradan yapın. İşiniz bittiğinde kaydete tıklayın.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-2">
-                    <Label htmlFor="dlg-name">Name</Label>
+                    <Label htmlFor="dlg-name">İsim</Label>
                     <Input id="dlg-name" defaultValue="Cihad G." />
                   </div>
                   <DialogFooter>
                     <DialogClose asChild>
-                      <Button variant="ghost">Cancel</Button>
+                      <Button variant="ghost">İptal</Button>
                     </DialogClose>
                     <DialogClose asChild>
-                      <Button>Save changes</Button>
+                      <Button>Değişiklikleri kaydet</Button>
                     </DialogClose>
                   </DialogFooter>
                 </DialogContent>
@@ -574,11 +573,11 @@ function ComponentsPage() {
 
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" aria-label="Favorite">
+                  <Button variant="outline" size="icon" aria-label="Favori">
                     <Heart />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Add to favorites</TooltipContent>
+                <TooltipContent>Favorilere ekle</TooltipContent>
               </Tooltip>
 
               <div className="flex -space-x-2">
@@ -596,69 +595,67 @@ function ComponentsPage() {
 
             <Accordion type="single" collapsible defaultValue="a">
               <AccordionItem value="a">
-                <AccordionTrigger>What is this template?</AccordionTrigger>
+                <AccordionTrigger>Bu şablon nedir?</AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  A token-driven app shell you can clone to build any internal
-                  tool with a consistent look and feel.
+                  Tutarlı bir görünüm ve hisse sahip herhangi bir dahili araç oluşturmak için klonlayabileceğiniz belirteç (token) odaklı bir uygulama kabuğudur.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="b">
-                <AccordionTrigger>Is it themeable?</AccordionTrigger>
+                <AccordionTrigger>Tema desteği var mı?</AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Fully — open the palette icon in the app bar to change colors,
-                  radius, typography, spacing, and elevation live.
+                  Tamamen — renkleri, köşe yuvarlığını, yazı tipini, boşlukları ve gölgeleri canlı olarak değiştirmek için uygulama çubuğundaki palet simgesine tıklayın.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
           </div>
         </Section>
 
-        <Section title="Tabs" description="Segmented navigation">
+        <Section title="Sekmeler" description="Segmentli gezinti">
           <Tabs defaultValue="overview" className="w-full">
             <TabsList className="w-full">
               <TabsTrigger value="overview">
-                <Star /> Overview
+                <Star /> Genel Bakış
               </TabsTrigger>
               <TabsTrigger value="saved">
-                <Bookmark /> Saved
+                <Bookmark /> Kaydedilenler
               </TabsTrigger>
               <TabsTrigger value="settings">
-                <Settings2 /> Settings
+                <Settings2 /> Ayarlar
               </TabsTrigger>
             </TabsList>
             <TabsContent
               value="overview"
               className="rounded-lg border p-4 text-sm text-muted-foreground"
             >
-              Overview content — metrics and summaries live here.
+              Genel bakış içeriği — metrikler ve özetler burada bulunur.
             </TabsContent>
             <TabsContent
               value="saved"
               className="rounded-lg border p-4 text-sm text-muted-foreground"
             >
-              Saved items appear in this tab.
+              Kaydedilen öğeler bu sekmede görünür.
             </TabsContent>
             <TabsContent
               value="settings"
               className="rounded-lg border p-4 text-sm text-muted-foreground"
             >
-              Per-section settings go here.
+              Bölüme özel ayarlar buraya gelir.
             </TabsContent>
           </Tabs>
         </Section>
 
-        <Section title="Color tokens" description="Semantic surfaces">
+        <Section title="Renk belirteçleri" description="Anlamsal yüzeyler">
           <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3">
             {[
-              ['Background', 'bg-background border'],
-              ['Card', 'bg-card border'],
-              ['Muted', 'bg-muted'],
-              ['Primary', 'bg-primary'],
-              ['Secondary', 'bg-secondary'],
-              ['Accent', 'bg-accent'],
-              ['Destructive', 'bg-destructive'],
-              ['Success', 'bg-success'],
-              ['Warning', 'bg-warning'],
+              ['Arka Plan', 'bg-background border'],
+              ['Kart', 'bg-card border'],
+              ['Sönük', 'bg-muted'],
+              ['Birincil', 'bg-primary'],
+              ['İkincil', 'bg-secondary'],
+              ['Vurgu', 'bg-accent'],
+              ['Yıkıcı', 'bg-destructive'],
+              ['Başarı', 'bg-success'],
+              ['Uyarı', 'bg-warning'],
             ].map(([name, cls]) => (
               <div key={name} className="space-y-1">
                 <div className={`h-10 rounded-lg ${cls}`} />
@@ -668,32 +665,32 @@ function ComponentsPage() {
           </div>
         </Section>
 
-        <Section title="Toast" description="Transient notifications (sonner)">
+        <Section title="Toast" description="Geçici bildirimler (sonner)">
           <ToastDemo />
         </Section>
 
-        <Section title="Context menu" description="Right-click actions">
+        <Section title="Bağlam menüsü" description="Sağ tık eylemleri">
           <ContextMenuDemo />
         </Section>
 
-        <Section title="Drawer" description="Swipeable sheet with drag handle (vaul)">
+        <Section title="Çekmece" description="Sürükleme kulplu, kaydırılabilir panel (vaul)">
           <DrawerDemo />
         </Section>
 
         <Section
-          title="List view"
-          description="Rows with avatar, meta & row actions"
+          title="Liste görünümü"
+          description="Profil resmi, meta bilgiler ve satır eylemleri içeren satırlar"
         >
           <ListViewDemo />
         </Section>
 
-        <Section title="Tree" description="File-explorer navigation">
+        <Section title="Ağaç Görünümü" description="Dosya gezgini tarzında gezinti">
           <TreeDemo />
         </Section>
 
         <Section
-          title="Table"
-          description="Selectable data table with footer totals"
+          title="Tablo"
+          description="Alt bilgi toplamları içeren seçilebilir veri tablosu"
           className="lg:col-span-2"
         >
           <TableDemo />

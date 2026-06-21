@@ -42,7 +42,7 @@ export function AppBreadcrumb() {
   const crumbs = React.useMemo(() => {
     const segments = pathname.split('/').filter(Boolean)
     const acc: { path: string; label: string }[] = [
-      { path: '/', label: TITLE_MAP.get('/') ?? 'Home' },
+      { path: '/', label: TITLE_MAP.get('/') ?? 'Ana Sayfa' },
     ]
     let current = ''
     for (const seg of segments) {

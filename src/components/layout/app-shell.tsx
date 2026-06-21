@@ -89,8 +89,8 @@ export function AppShell() {
             className="w-sidebar max-w-none gap-0 p-0"
           >
             <SheetHeader className="sr-only">
-              <SheetTitle>Navigation</SheetTitle>
-              <SheetDescription>Application menu</SheetDescription>
+              <SheetTitle>Gezinti</SheetTitle>
+              <SheetDescription>Uygulama menüsü</SheetDescription>
             </SheetHeader>
             <SidebarInner onNavigate={() => setMobileSidebarOpen(false)} />
           </SheetContent>
@@ -115,10 +115,10 @@ export function AppShell() {
       <Sheet open={customizerOpen} onOpenChange={setCustomizerOpen}>
         <SheetContent side="right" className="w-[22rem] max-w-none gap-0 p-0">
           <SheetHeader className="border-b">
-            <SheetTitle>Customize theme</SheetTitle>
+            <SheetTitle>Temayı özelleştir</SheetTitle>
             <SheetDescription>
-              Tune colors, typography, spacing, and elevation. Changes persist
-              locally.
+              Renkleri, tipografiyi, boşlukları ve gölgeleri ayarlayın. Değişiklikler
+              yerel olarak kaydedilir.
             </SheetDescription>
           </SheetHeader>
           <div className="min-h-0 flex-1">

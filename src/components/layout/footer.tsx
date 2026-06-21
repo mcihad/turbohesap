@@ -35,19 +35,19 @@ function DefaultFooter() {
       <div className="flex items-center gap-3">
         <span className="flex items-center gap-1.5">
           <span className="size-1.5 rounded-full bg-success" />
-          All systems operational
+          Tüm sistemler aktif
         </span>
         <span className="hidden sm:inline">·</span>
         <span className="hidden sm:inline">v2.4.0</span>
       </div>
       <div className="flex items-center gap-3">
         <a href="#" className="transition-colors hover:text-foreground">
-          Privacy
+          Gizlilik
         </a>
         <a href="#" className="transition-colors hover:text-foreground">
-          Terms
+          Koşullar
         </a>
-        <span>© {new Date().getFullYear()} Acme Inc.</span>
+        <span>© {new Date().getFullYear()} KentOS Inc.</span>
       </div>
     </div>
   )

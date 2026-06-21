@@ -1,6 +1,6 @@
 ---
 name: create-component
-description: Create a new React component for this design-system template (Acme Console) — a shadcn/ui-style primitive in src/components/ui or a composed feature component. Use when asked to add/build/create a component, button variant, card, dialog, widget, or any new reusable UI. Enforces the token system and conventions in DESIGN.md so the result is visually consistent.
+description: Create a new React component for this design-system template (KentOS Console) — a shadcn/ui-style primitive in src/components/ui or a composed feature component. Use when asked to add/build/create a component, button variant, card, dialog, widget, or any new reusable UI. Enforces the token system and conventions in DESIGN.md so the result is visually consistent.
 ---
 
 # Create a component

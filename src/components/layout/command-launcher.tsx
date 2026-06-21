@@ -57,7 +57,7 @@ export function CommandLauncher() {
 
   const links = React.useMemo(() => {
     const acc: FlatLink[] = []
-    NAVIGATION.forEach((g) => flatten(g.items, g.label ?? 'Navigation', acc))
+    NAVIGATION.forEach((g) => flatten(g.items, g.label ?? 'Gezinti', acc))
     return acc
   }, [])
 
@@ -68,32 +68,32 @@ export function CommandLauncher() {
 
   return (
     <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
-      <CommandInput placeholder="Type a command or search..." />
+      <CommandInput placeholder="Bir komut yazın veya arama yapın..." />
       <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
+        <CommandEmpty>Sonuç bulunamadı.</CommandEmpty>
 
-        <CommandGroup heading="Actions">
+        <CommandGroup heading="Eylemler">
           <CommandItem onSelect={() => run(() => setAppLauncherOpen(true))}>
             <LayoutGrid />
-            <span>Open applications</span>
+            <span>Uygulamaları aç</span>
           </CommandItem>
           <CommandItem onSelect={() => run(() => setAiOpen(true))}>
             <Sparkles />
-            <span>Ask AI assistant</span>
+            <span>Yapay zeka asistanına sor</span>
           </CommandItem>
           <CommandItem onSelect={() => run(() => setCustomizerOpen(true))}>
             <Palette />
-            <span>Customize theme</span>
+            <span>Temayı özelleştir</span>
           </CommandItem>
           <CommandItem onSelect={() => run(toggleMode)}>
             {resolvedMode === 'dark' ? <Sun /> : <Moon />}
-            <span>Toggle {resolvedMode === 'dark' ? 'light' : 'dark'} mode</span>
+            <span>{resolvedMode === 'dark' ? 'Açık' : 'Koyu'} moda geç</span>
           </CommandItem>
         </CommandGroup>
 
         <CommandSeparator />
 
-        <CommandGroup heading="Navigation">
+        <CommandGroup heading="Gezinti">
           {links.map((link) => (
             <CommandItem
               key={link.to}

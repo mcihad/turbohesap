@@ -1,4 +1,4 @@
-# Acme Console — Design System Template
+# KentOS Console — Design System Template
 
 A token-driven application shell to build **all our apps** with one consistent,
 fully themeable look and feel.

@@ -10,7 +10,7 @@ import type { ColorPreset, ThemeConfig } from './types'
 export const COLOR_PRESETS: ColorPreset[] = [
   {
     id: 'violet',
-    label: 'Violet',
+    label: 'Mor',
     swatch: 'oklch(0.55 0.22 295)',
     light: {
       primary: 'oklch(0.55 0.22 295)',
@@ -29,7 +29,7 @@ export const COLOR_PRESETS: ColorPreset[] = [
   },
   {
     id: 'blue',
-    label: 'Blue',
+    label: 'Mavi',
     swatch: 'oklch(0.55 0.2 255)',
     light: {
       primary: 'oklch(0.55 0.2 255)',
@@ -48,7 +48,7 @@ export const COLOR_PRESETS: ColorPreset[] = [
   },
   {
     id: 'teal',
-    label: 'Teal',
+    label: 'Turkuaz',
     swatch: 'oklch(0.6 0.13 195)',
     light: {
       primary: 'oklch(0.6 0.13 195)',
@@ -67,7 +67,7 @@ export const COLOR_PRESETS: ColorPreset[] = [
   },
   {
     id: 'emerald',
-    label: 'Emerald',
+    label: 'Zümrüt',
     swatch: 'oklch(0.6 0.15 155)',
     light: {
       primary: 'oklch(0.6 0.15 155)',
@@ -86,7 +86,7 @@ export const COLOR_PRESETS: ColorPreset[] = [
   },
   {
     id: 'amber',
-    label: 'Amber',
+    label: 'Kehribar',
     swatch: 'oklch(0.72 0.16 65)',
     light: {
       primary: 'oklch(0.72 0.16 65)',
@@ -105,7 +105,7 @@ export const COLOR_PRESETS: ColorPreset[] = [
   },
   {
     id: 'rose',
-    label: 'Rose',
+    label: 'Gül',
     swatch: 'oklch(0.6 0.21 15)',
     light: {
       primary: 'oklch(0.6 0.21 15)',
@@ -124,7 +124,7 @@ export const COLOR_PRESETS: ColorPreset[] = [
   },
   {
     id: 'neutral',
-    label: 'Neutral',
+    label: 'Nötr',
     swatch: 'oklch(0.45 0.01 270)',
     light: {
       primary: 'oklch(0.32 0.01 270)',
@@ -162,11 +162,11 @@ export const DEFAULT_THEME: ThemeConfig = {
 /** Curated font stacks offered in the customizer. */
 export const FONT_OPTIONS: { label: string; value: string }[] = [
   {
-    label: 'Inter (default)',
+    label: 'Inter (varsayılan)',
     value: "'Inter', ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif",
   },
   {
-    label: 'System UI',
+    label: 'Sistem Arayüzü',
     value: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
   },
   {
@@ -186,7 +186,7 @@ export const MONO_FONT_OPTIONS: { label: string; value: string }[] = [
       "ui-monospace, 'JetBrains Mono', 'Cascadia Code', Consolas, monospace",
   },
   {
-    label: 'System Mono',
+    label: 'Sistem Monospace',
     value: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
   },
 ]

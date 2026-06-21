@@ -1,6 +1,6 @@
 ---
 name: update-component
-description: Safely modify an existing component in this design-system template (Acme Console) — change styles, add a variant/prop, fix behavior, or refactor a component in src/components. Use when asked to edit/update/tweak/fix/restyle an existing component. Preserves the token system, the component API, and DESIGN.md consistency.
+description: Safely modify an existing component in this design-system template (KentOS Console) — change styles, add a variant/prop, fix behavior, or refactor a component in src/components. Use when asked to edit/update/tweak/fix/restyle an existing component. Preserves the token system, the component API, and DESIGN.md consistency.
 ---
 
 # Update a component

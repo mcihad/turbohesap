@@ -24,20 +24,20 @@ function PlaceholderPage() {
 
   return (
     <PageWrapper>
-      <PageHeader title={title ?? 'Page'} description={pathname} />
+      <PageHeader title={title ?? 'Sayfa'} description={pathname} />
       <Card>
         <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
           <span className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
             <Construction className="size-6" />
           </span>
           <div>
-            <p className="font-medium">This page is a placeholder</p>
+            <p className="font-medium">Bu sayfa bir yer tutucudur</p>
             <p className="text-sm text-muted-foreground">
-              Add{' '}
+              Sayfayı oluşturmak için{' '}
               <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
                 src/routes{pathname}.tsx
               </code>{' '}
-              to build it out.
+              dosyasını ekleyin.
             </p>
           </div>
         </CardContent>

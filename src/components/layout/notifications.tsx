@@ -24,27 +24,27 @@ const SEED: Notification[] = [
   {
     id: '1',
     icon: GitPullRequest,
-    title: 'Deployment finished',
-    body: 'Release v2.4.0 is live in production.',
-    time: '2m',
+    title: 'Dağıtım tamamlandı',
+    body: 'v2.4.0 sürümü canlı ortamda yayında.',
+    time: '2dk',
     unread: true,
     tone: 'default',
   },
   {
     id: '2',
     icon: UserPlus,
-    title: 'New member',
-    body: 'Mira joined the Operations team.',
-    time: '1h',
+    title: 'Yeni üye',
+    body: 'Mira Operasyon ekibine katıldı.',
+    time: '1sa',
     unread: true,
     tone: 'default',
   },
   {
     id: '3',
     icon: CircleAlert,
-    title: 'Quota warning',
-    body: 'API usage reached 85% of the monthly limit.',
-    time: '3h',
+    title: 'Kota uyarısı',
+    body: 'API kullanımı aylık sınırın %85\'ine ulaştı.',
+    time: '3sa',
     unread: false,
     tone: 'warning',
   },
@@ -77,7 +77,7 @@ export function Notifications() {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between border-b px-4 py-2.5">
-          <p className="text-sm font-semibold">Notifications</p>
+          <p className="text-sm font-semibold">Bildirimler</p>
           <Button
             variant="ghost"
             size="sm"
@@ -85,7 +85,7 @@ export function Notifications() {
             onClick={markAll}
           >
             <CheckCheck className="size-3.5" />
-            Mark all read
+            Tümünü okundu işaretle
           </Button>
         </div>
         <ScrollArea className="max-h-80">
@@ -123,7 +123,7 @@ export function Notifications() {
         </ScrollArea>
         <div className="border-t p-1.5">
           <Button variant="ghost" size="sm" className="w-full text-xs">
-            View all notifications
+            Tüm bildirimleri görüntüle
           </Button>
         </div>
       </PopoverContent>

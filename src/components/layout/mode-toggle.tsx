@@ -15,7 +15,7 @@ export function ModeToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Toggle color mode">
+        <Button variant="ghost" size="icon" aria-label="Renk modunu değiştir">
           {resolvedMode === 'dark' ? (
             <Moon className="size-[1.15rem]" />
           ) : (
@@ -25,13 +25,13 @@ export function ModeToggle() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => setMode('light')}>
-          <Sun /> Light {mode === 'light' && '✓'}
+          <Sun /> Açık {mode === 'light' && '✓'}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setMode('dark')}>
-          <Moon /> Dark {mode === 'dark' && '✓'}
+          <Moon /> Koyu {mode === 'dark' && '✓'}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setMode('system')}>
-          <Monitor /> System {mode === 'system' && '✓'}
+          <Monitor /> Sistem {mode === 'system' && '✓'}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

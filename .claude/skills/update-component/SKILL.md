@@ -1,6 +1,6 @@
 ---
 name: update-component
-description: Safely modify an existing component in this design-system template (KentOS Console) — change styles, add a variant/prop, fix behavior, or refactor a component in src/components. Use when asked to edit/update/tweak/fix/restyle an existing component. Preserves the token system, the component API, and DESIGN.md consistency.
+description: Safely modify an existing component in this design-system template (KentOS Console) — change styles, add a variant/prop, fix behavior, or refactor a component in frontend/src/components. Use when asked to edit/update/tweak/fix/restyle an existing component. Preserves the token system, the component API, and DESIGN.md consistency.
 ---
 
 # Update a component
@@ -30,24 +30,25 @@ Change the component **without breaking its contract or the design language**.
 - Express every change through tokens: semantic colors (`bg-*`, `text-*`,
   `border-*`), `rounded-*`, `shadow-*`, spacing/size utilities, `text-*`.
 - **Never** introduce a hardcoded hex/rgb, a px radius, or a raw box-shadow.
-  If a value seems missing, it usually belongs in `src/index.css` as a token —
+  If a value seems missing, it usually belongs in `frontend/src/index.css` as a token —
   add/adjust the token there, not inline in the component.
 - Use `cn()` so overrides via `className` keep winning.
 
 ## 3. Adding a variant or prop (typical task)
 - New visual variant → add a key to the existing `cva` `variants` map; keep
-  `defaultVariants` stable. Demo it in `src/routes/components.tsx`.
+  `defaultVariants` stable. Demo it in `frontend/src/routes/components.tsx`.
 - New behavior prop → extend the props type; give it a safe default so existing
   call sites are unaffected.
 
 ## 4. Verify (required, must pass)
 ```bash
+cd frontend           # frontend commands run here (or `make lint` / `make build` from the repo root)
 pnpm exec tsc -b      # zero errors — catches broken call sites
 pnpm lint             # zero errors
-pnpm build            # succeeds
+pnpm build            # succeeds (emits into ../backend/static)
 ```
 If you changed something visible, also sanity-check the relevant demo on the
-**/components** route (`pnpm dev`).
+**/components** route (`pnpm dev`, i.e. `make dev-frontend`).
 
 ## 5. Keep DESIGN.md true
 If the change alters a documented standard (a variant set, a size, a focus/title

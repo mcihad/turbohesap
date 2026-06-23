@@ -7,10 +7,20 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies & build output
 node_modules
 dist
 dist-ssr
 *.local
+
+# Go binary output
+/bin/
+
+# Frontend build embedded into the backend binary.
+# The placeholder index.html is tracked so `go build` works on a fresh
+# checkout; everything Vite generates on top of it is ignored.
+/backend/static/*
+!/backend/static/index.html
 
 # Editor directories and files
 .vscode/*

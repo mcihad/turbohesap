@@ -1,6 +1,6 @@
 ---
 name: create-component
-description: Create a new React component for this design-system template (KentOS Console) — a shadcn/ui-style primitive in src/components/ui or a composed feature component. Use when asked to add/build/create a component, button variant, card, dialog, widget, or any new reusable UI. Enforces the token system and conventions in DESIGN.md so the result is visually consistent.
+description: Create a new React component for this design-system template (KentOS Console) — a shadcn/ui-style primitive in frontend/src/components/ui or a composed feature component. Use when asked to add/build/create a component, button variant, card, dialog, widget, or any new reusable UI. Enforces the token system and conventions in DESIGN.md so the result is visually consistent.
 ---
 
 # Create a component
@@ -12,14 +12,14 @@ defined entirely by tokens; your job is to compose them, never to invent values.
 1. **`DESIGN.md`** — especially §1 (conventions), §3–4 (tokens/colors),
    §14 (component standards). It is the contract.
 2. An existing sibling that resembles what you're building, e.g.
-   `src/components/ui/button.tsx`, `card.tsx`, `dialog.tsx`, `switch.tsx`.
+   `frontend/src/components/ui/button.tsx`, `card.tsx`, `dialog.tsx`, `switch.tsx`.
    Match its shape exactly.
 
 ## 1. Decide location
 - **Generic, reusable primitive** (button, input, badge, table…) →
-  `src/components/ui/<name>.tsx` (kebab-case file, PascalCase exports).
+  `frontend/src/components/ui/<name>.tsx` (kebab-case file, PascalCase exports).
 - **Composed / app-specific** (a shell part, a feature widget) →
-  `src/components/<feature>/<name>.tsx` or `src/components/layout/` if it's part
+  `frontend/src/components/<feature>/<name>.tsx` or `frontend/src/components/layout/` if it's part
   of the shell. Compose from `ui/*` primitives — don't re-style raw elements.
 
 ## 2. Hard rules (non-negotiable — from DESIGN.md §1)
@@ -30,7 +30,7 @@ defined entirely by tokens; your job is to compose them, never to invent values.
 - Multi-variant? Use **`cva`** from `class-variance-authority` and export the
   variants map (e.g. `xVariants`), like `button.tsx`.
 - Wrapping a Radix primitive? Install it first
-  (`pnpm add @radix-ui/react-<thing>`) and mirror the structure in `dialog.tsx`.
+  (`cd frontend && pnpm add @radix-ui/react-<thing>`) and mirror the structure in `dialog.tsx`.
 - Icons: `lucide-react`, default `size-4`.
 - **Tokens only.** Never hardcode hex/rgb, px radii, or raw shadows.
   - Color: `bg-card`, `text-muted-foreground`, `border-border`, `bg-primary`,
@@ -91,7 +91,7 @@ function Thing({ className, variant, size, ...props }:
 export { Thing, thingVariants }
 ```
 
-**Radix wrapper** — copy the prop/slot pattern from `src/components/ui/dialog.tsx`
+**Radix wrapper** — copy the prop/slot pattern from `frontend/src/components/ui/dialog.tsx`
 or `popover.tsx` (Root/Trigger/Portal/Content + `data-slot` on each).
 
 ## 4. Wire it up
@@ -99,14 +99,15 @@ or `popover.tsx` (Root/Trigger/Portal/Content + `data-slot` on each).
 - If it's a theme-aware feature component, read theme via `useTheme()`
   (`@/lib/theme/use-theme`) and layout state via `useLayout()`
   (`@/lib/layout/use-layout`) — don't add new global state.
-- Add a demo to `src/routes/components.tsx` (a `<Section title=…>`) when it's a
+- Add a demo to `frontend/src/routes/components.tsx` (a `<Section title=…>`) when it's a
   reusable primitive, so it stays in the living reference.
 
 ## 5. Verify (required, must pass)
 ```bash
+cd frontend           # frontend commands run here (or `make lint` / `make build` from the repo root)
 pnpm exec tsc -b      # zero errors
 pnpm lint             # zero errors
-pnpm build            # succeeds
+pnpm build            # succeeds (emits into ../backend/static)
 ```
 Note: strict TS (`noUnusedLocals`/`noUnusedParameters`) — remove unused imports.
 

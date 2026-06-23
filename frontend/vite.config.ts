@@ -16,4 +16,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    // Compiled straight into the Go backend, which embeds this directory
+    // (go:embed) to ship the whole app as a single binary.
+    outDir: path.resolve(__dirname, '../backend/static'),
+    emptyOutDir: true,
+  },
 })

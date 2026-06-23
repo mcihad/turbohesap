@@ -11,6 +11,15 @@
 > engine. If you find yourself typing `#fff`, `16px`, or `rounded-[10px]`, stop —
 > there is a token for it.
 
+> **📁 Repository layout.** This is now a monorepo. The frontend lives in
+> **`frontend/`** and the Go backend in **`backend/`**. Unless stated otherwise,
+> every path in this document (e.g. `src/index.css`, `src/routes`) is **relative
+> to `frontend/`** — i.e. the real path is `frontend/src/index.css`. The compiled
+> SPA is emitted into `backend/static/` and embedded into the Go binary
+> (`go:embed`) so the whole app ships as a single executable. Build/run via the
+> root **`Makefile`** (`make build`, `make run`). See **`AGENTS.md`** for the
+> full system architecture.
+
 ---
 
 ## 1. Stack & Conventions

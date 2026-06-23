@@ -1,10 +1,18 @@
-# KentOS Console — Design System Template
+# KentOS Console — Application Template
 
 A token-driven application shell to build **all our apps** with one consistent,
-fully themeable look and feel.
+fully themeable look and feel — now packaged as a **single self-contained binary**
+that serves the SPA and its JSON API together.
 
-**Stack:** React 19 · TypeScript · Vite · Tailwind CSS v4 · shadcn/ui (Radix) ·
+**Frontend:** React 19 · TypeScript · Vite · Tailwind CSS v4 · shadcn/ui (Radix) ·
 TanStack Router + Query · lucide-react · cmdk · sonner.
+**Backend:** Go · Fiber v3 · pgx (PostgreSQL) · Cobra.
+
+The frontend (`frontend/`) compiles into `backend/static/`, which the Go backend
+(`backend/`) embeds via `go:embed` — so `make build` produces one executable
+(`bin/kentos`) with no separate web server or Node runtime needed at runtime.
+
+> **Architecture:** see **[`AGENTS.md`](./AGENTS.md)** for the full system guide.
 
 ## What's in the box
 
@@ -25,15 +33,23 @@ component standard in enough detail to rebuild this system 1:1. Read it first.
 
 ## Develop
 
+Everything runs through the root **`Makefile`** (`make help` lists all targets):
+
 ```bash
-pnpm install
-pnpm dev        # starts Vite; also generates src/routeTree.gen.ts
-pnpm build      # tsc -b && vite build
-pnpm preview    # serve the production build
-pnpm lint
+make install        # install frontend dependencies (pnpm)
+make run            # build the frontend, run the backend serving it → http://localhost:8080
+make build          # frontend + backend → single binary at bin/kentos
+
+# Fast UI iteration (two terminals):
+make dev-frontend   # Vite dev server with HMR (:5173)
+make dev-backend    # Go API server (:8080)
 ```
 
+Prerequisites: Go (1.26+), Node + pnpm.
+
 ## Customize
+
+> Paths below are relative to **`frontend/`** (e.g. `frontend/src/index.css`).
 
 | Want to change…        | Edit…                                  |
 | ---------------------- | -------------------------------------- |
@@ -42,6 +58,7 @@ pnpm lint
 | Sidebar navigation     | `src/config/navigation.ts`             |
 | App launcher tiles     | `src/config/apps.ts`                   |
 | Add a page             | add a file under `src/routes/`         |
+| Add an API endpoint    | `backend/internal/server/` (`registerAPI` + `handlers.go`) |
 
-> Generated file `src/routeTree.gen.ts` is created by the TanStack Router plugin
-> on `pnpm dev` — do not edit it by hand.
+> Generated file `frontend/src/routeTree.gen.ts` is created by the TanStack Router
+> plugin on `make dev-frontend` — do not edit it by hand.

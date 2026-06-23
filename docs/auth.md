@@ -61,6 +61,50 @@ cached. Keycloak's token response is snake_case and parsed by a private struct;
   the id/access/refresh tokens (masked, copyable, with decoded claims). Helpers:
   `realmRolesOf` / `clientRolesOf` / `currentClientId` in `tokens.ts`.
 
+## Authorization (roles)
+
+Roles come from the access token: **realm roles** (`realm_access.roles`) plus
+**this module's client roles** (`resource_access[<module-name>].roles`). The
+module name is the Keycloak client id, so client roles are scoped to the module.
+
+### Backend — `RolesRequired` middleware
+
+`Server.RolesRequired(anyOf ...string)` (`internal/server/middleware.go`) requires
+a valid access token (Bearer header), **verified against Keycloak's JWKS**
+(go-oidc — signature, issuer, expiry), and, when roles are given, that the caller
+has at least one of them. With no roles it just requires a valid token.
+
+```go
+// any valid token:
+api.Get("/me", s.RolesRequired(), s.handleMe)
+// at least one of these roles:
+api.Get("/reports", s.RolesRequired("Manager", "Admin"), s.handleReports)
+```
+
+The verified `*auth.Claims` is stashed in `c.Locals("claims")` (`claimsFrom(c)`).
+`GET /api/me` is a working example. Forged/expired/missing tokens → `401`;
+valid token without the role → `403`.
+
+### Frontend — `hasAnyRole` / `<RolesRequired>`
+
+Same semantics, two styles (use whichever fits):
+
+```tsx
+// imperative
+const { hasAnyRole, hasAllRoles } = useAuth()
+if (hasAnyRole(['Manager', 'Admin'])) { /* … */ }
+
+// declarative (show/hide UI)
+<RolesRequired anyOf={['Manager', 'Admin']} fallback={null}>
+  <Button>Raporu sil</Button>
+</RolesRequired>
+<RolesRequired allOf={['Manager', 'User']}>…</RolesRequired>
+```
+
+`anyOf` and `allOf` combine with AND. A live demo is on the **/components** page.
+Note: client-side gating is **UX only** — always enforce with `RolesRequired` on
+the backend route too.
+
 ## Configuration (`.env`)
 
 ```

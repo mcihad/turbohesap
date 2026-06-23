@@ -253,6 +253,8 @@ when you add a variable.
 - `GET /api/v1/<module-name>/metadata` → the module manifest JSON (see §3.1).
 - `GET /api/auth/login`, `POST /api/auth/callback|refresh|logout` → Keycloak
   login flow (see §11).
+- `GET /api/me` → verified caller (identity + roles); requires a valid access
+  token (`Authorization: Bearer …`). Example of a role-protected route (§11).
 
 ---
 
@@ -329,12 +331,32 @@ base URL and secret come from `.env` (`KEYCLOAK_*`).
   and cached. The internal `Tokens` struct parses Keycloak's snake_case; the API
   emits camelCase via a DTO.
 
+### Authorization (roles)
+Roles are taken from the access token: **realm roles** (`realm_access.roles`) +
+**this module's client roles** (`resource_access[<module-name>].roles`).
+
+- **Backend middleware** `Server.RolesRequired(anyOf ...string)`
+  (`internal/server/middleware.go`): requires a valid access token (verified
+  against Keycloak's **JWKS** via `internal/auth` / go-oidc) and, when roles are
+  given, that the caller has **at least one**. No roles → any valid token.
+  Protect routes by composing it:
+  `api.Get("/reports", s.RolesRequired("Manager", "Admin"), s.handleReports)`.
+  Example route `GET /api/me` (behind `RolesRequired()`) returns the verified
+  caller. The token is **signature-verified**, not just decoded.
+- **Frontend** mirrors the same semantics — see below.
+
 ### Frontend — `src/lib/auth/*` + routes
 - Tokens are stored in **localStorage** (`tokens.ts`); roles come from the
   **access token** (`realm_access` + this client's `resource_access`), identity
   from the lightweight **id token**.
 - `AuthProvider`/`useAuth` (`auth-provider.tsx` / `auth-context.ts`) hold session
-  state and expose `login/logout/refresh/setSession/expire`.
+  state and expose `login/logout/refresh/setSession/expire` plus role checks
+  `hasRole/hasAnyRole/hasAllRoles`.
+- **Role gating:** `useAuth().hasAnyRole([...])` / `hasAllRoles([...])` for
+  imperative checks, and the declarative `<RolesRequired anyOf={[…]} allOf={[…]}
+  fallback={…}>` component (`roles-required.tsx`) to show/hide UI. Same
+  realm+client role semantics as the backend `RolesRequired` middleware. Live
+  demo on the **/components** page.
 - **Routing:** `__root` only provides auth context; **`_authed`** is a pathless
   layout that guards every app page (renders the shell + `SessionWatcher`), so
   `/login` and `/auth/callback` render bare. `/` redirects authenticated users to

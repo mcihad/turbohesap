@@ -9,6 +9,12 @@ top-level guides:
 - **[`../DESIGN.md`](../DESIGN.md)** — the frontend design-system contract:
   tokens, colors, layout, and component standards (paths there are relative to
   `frontend/`).
+- **[`modules.md`](./modules.md)** — the module manifest (`kentos.module.json`),
+  the `/api/v1/<name>/metadata` endpoint, and claiming a module name with the
+  `init-module` skill.
+- **[`auth.md`](./auth.md)** — Keycloak (OIDC) login: the backend `/api/auth/*`
+  flow, frontend token handling/route gating, and the required Keycloak client
+  settings.
 
 ## Planned documents
 

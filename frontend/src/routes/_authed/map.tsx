@@ -5,7 +5,7 @@ import { PageWrapper } from '@/components/layout/page'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
-export const Route = createFileRoute('/map')({
+export const Route = createFileRoute('/_authed/map')({
   component: MapPage,
 })
 

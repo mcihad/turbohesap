@@ -4,7 +4,7 @@ import { Construction } from 'lucide-react'
 import { PageHeader, PageWrapper } from '@/components/layout/page'
 import { Card, CardContent } from '@/components/ui/card'
 
-export const Route = createFileRoute('/$')({
+export const Route = createFileRoute('/_authed/$')({
   component: PlaceholderPage,
 })
 

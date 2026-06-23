@@ -16,7 +16,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 
-export const Route = createFileRoute('/help')({
+export const Route = createFileRoute('/_authed/help')({
   component: HelpPage,
 })
 

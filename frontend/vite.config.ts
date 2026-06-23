@@ -11,6 +11,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  // Read env vars (VITE_*) from the repo-root .env so the whole monorepo shares
+  // a single configuration file.
+  envDir: path.resolve(__dirname, '..'),
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

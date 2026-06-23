@@ -64,6 +64,6 @@ func runServe(cmd *cobra.Command, _ []string) error {
 		slog.Warn("DATABASE_URL not set; starting without a database")
 	}
 
-	srv := server.New(cfg, db, assets)
+	srv := server.New(cfg, db, assets, mod)
 	return srv.Run(ctx)
 }

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"io/fs"
 	"mime"
 	"path/filepath"
@@ -29,6 +30,7 @@ func (s *Server) registerStatic() {
 			if ierr != nil {
 				return fiber.ErrNotFound
 			}
+			s.setHTMLCacheHeaders(c)
 			c.Set(fiber.HeaderContentType, fiber.MIMETextHTMLCharsetUTF8)
 			return c.Send(index)
 		}
@@ -36,11 +38,23 @@ func (s *Server) registerStatic() {
 		if ct := mime.TypeByExtension(filepath.Ext(reqPath)); ct != "" {
 			c.Set(fiber.HeaderContentType, ct)
 		}
-		// Vite emits content-hashed filenames under assets/, so cache them hard.
-		if strings.HasPrefix(reqPath, "assets/") {
-			c.Set(fiber.HeaderCacheControl, "public, max-age=31536000, immutable")
+
+		// The frontend is rebuilt frequently, so cache conservatively (default
+		// 1 hour, configurable via STATIC_CACHE_MAX_AGE). The HTML entrypoint is
+		// never cached so a new build is always picked up immediately; hashed
+		// assets get the short max-age.
+		if reqPath == "index.html" {
+			s.setHTMLCacheHeaders(c)
+		} else {
+			c.Set(fiber.HeaderCacheControl, fmt.Sprintf("public, max-age=%d", s.cfg.StaticCacheMaxAge))
 		}
 
 		return c.Send(data)
 	})
+}
+
+// setHTMLCacheHeaders marks the SPA entrypoint as always-revalidate so clients
+// pick up a fresh build immediately.
+func (s *Server) setHTMLCacheHeaders(c fiber.Ctx) {
+	c.Set(fiber.HeaderCacheControl, "no-cache")
 }

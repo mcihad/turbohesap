@@ -3,13 +3,16 @@ module kentos-project-template
 go 1.26.3
 
 require (
+	github.com/coreos/go-oidc/v3 v3.19.0
 	github.com/gofiber/fiber/v3 v3.3.0
 	github.com/jackc/pgx/v5 v5.10.0
+	github.com/joho/godotenv v1.5.1
 	github.com/spf13/cobra v1.10.2
 )
 
 require (
 	github.com/andybalholm/brotli v1.2.1 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/gofiber/schema v1.7.1 // indirect
 	github.com/gofiber/utils/v2 v2.0.6 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -27,6 +30,7 @@ require (
 	github.com/valyala/fasthttp v1.71.0 // indirect
 	golang.org/x/crypto v0.51.0 // indirect
 	golang.org/x/net v0.54.0 // indirect
+	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.44.0 // indirect
 	golang.org/x/text v0.37.0 // indirect

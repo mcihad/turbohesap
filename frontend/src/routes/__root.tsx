@@ -1,7 +1,17 @@
-import { createRootRoute } from '@tanstack/react-router'
+import { createRootRoute, Outlet } from '@tanstack/react-router'
 
-import { AppShell } from '@/components/layout/app-shell'
+import { AuthProvider } from '@/lib/auth/auth-provider'
 
 export const Route = createRootRoute({
-  component: AppShell,
+  component: RootLayout,
 })
+
+// The root only provides auth context. The app shell lives in the `_authed`
+// layout so unauthenticated routes (/login, /auth/callback) render bare.
+function RootLayout() {
+  return (
+    <AuthProvider>
+      <Outlet />
+    </AuthProvider>
+  )
+}

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 
+import { useAuth } from '@/lib/auth/auth-context'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,7 +21,17 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '?'
+  return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase()
+}
+
 export function UserMenu() {
+  const { user, logout } = useAuth()
+  const name = user?.name || user?.preferredUsername || 'Kullanıcı'
+  const email = user?.email ?? ''
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -32,7 +43,7 @@ export function UserMenu() {
         >
           <Avatar className="size-8">
             <AvatarFallback className="bg-primary/15 font-semibold text-primary">
-              CG
+              {initials(name)}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -40,16 +51,20 @@ export function UserMenu() {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col">
-            <span className="text-sm font-medium text-foreground">Cihad G.</span>
-            <span className="text-xs text-muted-foreground">cihad@kentos.io</span>
+            <span className="text-sm font-medium text-foreground">{name}</span>
+            {email ? (
+              <span className="text-xs text-muted-foreground">{email}</span>
+            ) : null}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <User />
-            Profil
-            <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+          <DropdownMenuItem asChild>
+            <Link to="/profile">
+              <User />
+              Profil
+              <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to={'/finance/billing' as string}>
@@ -71,7 +86,7 @@ export function UserMenu() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive">
+        <DropdownMenuItem variant="destructive" onClick={() => void logout()}>
           <LogOut />
           Çıkış yap
         </DropdownMenuItem>

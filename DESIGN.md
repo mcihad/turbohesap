@@ -17,8 +17,15 @@
 > to `frontend/`** — i.e. the real path is `frontend/src/index.css`. The compiled
 > SPA is emitted into `backend/static/` and embedded into the Go binary
 > (`go:embed`) so the whole app ships as a single executable. Build/run via the
-> root **`Makefile`** (`make build`, `make run`). See **`AGENTS.md`** for the
-> full system architecture.
+> root **`Makefile`** (`make build`, `make run`; the backend serves on `:5800`).
+> See **`AGENTS.md`** for the full system architecture.
+>
+> **Config:** all runtime config lives in the root **`.env`** (copy from
+> `.env.example`). Vite reads it too (`envDir`), so frontend env vars must be
+> `VITE_`-prefixed — e.g. `VITE_API_BASE_URL` (default `/api/v1`) for API calls.
+> The app's identity (name = Keycloak client, icon, roles, public `address`, …)
+> is declared in **`backend/internal/module/kentos.module.json`** and served at
+> `/api/v1/<name>/metadata`.
 
 ---
 

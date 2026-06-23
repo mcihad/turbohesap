@@ -12,21 +12,28 @@ primitives so padding, breadcrumb, footer, and theming all behave consistently.
 1. **`DESIGN.md`** §6 (layout anatomy), §11 (page primitives), §12 (footer),
    §15.1 (navigation schema).
 2. An existing route as a template:
-   - Standard page → `frontend/src/routes/index.tsx` or `analytics.tsx`.
-   - Full-bleed (map/canvas) → `frontend/src/routes/map.tsx`.
-   - Page-controlled footer → `analytics.tsx` (`PageFooter`).
+   - Standard page → `frontend/src/routes/_authed/dashboard.tsx` or `_authed/analytics.tsx`.
+   - Full-bleed (map/canvas) → `frontend/src/routes/_authed/map.tsx`.
+   - Page-controlled footer → `_authed/analytics.tsx` (`PageFooter`).
 
 ## 1. Create the route file
-- Path = file location under `frontend/src/routes/` (TanStack file-based routing).
-  - `/reports` → `frontend/src/routes/reports.tsx`
-  - `/reports/weekly` → `frontend/src/routes/reports.weekly.tsx` **or**
-    `frontend/src/routes/reports/weekly.tsx`
+> **Auth layout.** App pages live under the pathless **`_authed`** layout
+> (`frontend/src/routes/_authed/`), which guards them behind Keycloak login and
+> renders the app shell. The `_authed` segment adds **no** URL path. Put new
+> authenticated pages here. Only public, shell-less routes (`login.tsx`,
+> `auth.callback.tsx`) sit directly under `routes/`. See AGENTS.md §11.
+
+- Path = file location under `frontend/src/routes/_authed/` (TanStack file-based).
+  The `createFileRoute` id includes `/_authed/`, but the URL does not.
+  - `/reports` → `frontend/src/routes/_authed/reports.tsx` → id `/_authed/reports`
+  - `/reports/weekly` → `frontend/src/routes/_authed/reports.weekly.tsx` **or**
+    `frontend/src/routes/_authed/reports/weekly.tsx`
 - Skeleton:
 ```tsx
 import { createFileRoute } from '@tanstack/react-router'
 import { PageHeader, PageWrapper } from '@/components/layout/page'
 
-export const Route = createFileRoute('/reports')({
+export const Route = createFileRoute('/_authed/reports')({
   component: ReportsPage,
 })
 

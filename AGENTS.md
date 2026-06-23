@@ -39,26 +39,31 @@ React single-page application together with its JSON API.
 ├── DESIGN.md            # frontend design-system contract (tokens, components)
 ├── README.md            # quick start
 ├── Makefile             # single entry point for all build/run tasks
+├── .env                 # local configuration (gitignored; all vars live here)
+├── .env.example         # template for .env (tracked)
 ├── docs/                # longer-form documentation
 ├── frontend/            # the React SPA
 │   ├── src/             # application source (see DESIGN.md; paths there are relative to here)
 │   ├── public/
 │   ├── index.html
-│   ├── vite.config.ts   # build.outDir → ../backend/static
+│   ├── vite.config.ts   # build.outDir → ../backend/static; envDir → repo root
 │   └── package.json
 └── backend/             # the Go service
     ├── go.mod           # module: kentos-project-template
     ├── main.go          # embeds ./static, injects it into the CLI
     ├── cmd/             # Cobra commands (root, serve, version)
     ├── internal/
-    │   ├── config/      # env-driven configuration
+    │   ├── auth/        # Keycloak OIDC: discovery, PKCE, token exchange/refresh
+    │   ├── config/      # env-driven configuration (loads .env)
     │   ├── database/    # pgx connection pool
+    │   ├── module/      # MODULE MANIFEST lives here (kentos.module.json, embedded) + parsing
     │   └── server/      # Fiber app: middleware, API routes, static/SPA serving
     └── static/          # frontend build output, embedded into the binary
         └── index.html   # tracked placeholder (overwritten by the real build)
 ```
 
-**Module name:** `kentos-project-template` (Go import path root).
+**Module name:** `kentos-project-template` (Go import path root). Rename it for a
+real app with the **`init-module`** skill — see §9.
 
 ---
 
@@ -74,9 +79,11 @@ React single-page application together with its JSON API.
 3. `make build` does both → `bin/kentos`, a single executable.
 
 > `go:embed` cannot reference parent directories, which is why the embed
-> directive lives in the root `main` package and the resulting `fs.FS` is
-> **injected** down into the command/server layers (`cmd.Execute(assets)` →
-> `server.New(cfg, db, assets)`) rather than being declared inside `internal/`.
+> directives live in the root `main` package and the resulting values are
+> **injected** down into the command/server layers (`cmd.Execute(assets, mod)` →
+> `server.New(cfg, db, assets, mod)`) rather than being declared inside
+> `internal/`. The module manifest is embedded **by the `internal/module`
+> package itself** (it lives there) — see §3.1.
 
 ### Request flow at runtime
 - `kentos serve` boots the Fiber app (`internal/server`).
@@ -84,7 +91,43 @@ React single-page application together with its JSON API.
 - **`/api/*`** routes are matched first (JSON API).
 - A catch-all `GET /*` serves embedded files. Unknown, non-`/api` paths fall back
   to `index.html` so client-side routing and deep links/reloads work (SPA
-  fallback). Hashed assets under `/assets/*` are served `immutable`, long-cache.
+  fallback).
+
+### Caching policy
+The frontend is rebuilt frequently, so caching is deliberately conservative:
+- **`index.html`** (and the SPA fallback) → `Cache-Control: no-cache` (always
+  revalidated, so a new build is picked up immediately).
+- **All other assets** → `Cache-Control: public, max-age=<STATIC_CACHE_MAX_AGE>`,
+  default **3600s (1 hour)**, configurable via `.env`. No `immutable`/year-long
+  caching, on purpose.
+
+### 3.1 Module manifest & metadata endpoint
+Every app from this template is a **module** that declares its identity in
+**`kentos.module.json`**. The Go binary embeds it and serves it verbatim:
+
+- **Single source of truth:** `backend/internal/module/kentos.module.json` — the
+  one and only copy. It is embedded (`go:embed`) by the `internal/module` package
+  that parses it (`module.Load()`), so the binary stays self-contained with no
+  build-time copy step. Hand-edit it (or use the `init-module` skill). Fields:
+
+  | Field         | Meaning                                                              |
+  | ------------- | ------------------------------------------------------------------- |
+  | `name`        | module identifier (slug). **Also the Keycloak client ID** — keep it stable and URL/realm-safe. Drives the metadata route. |
+  | `displayName` | human-readable title shown in UIs                                   |
+  | `description` | one-line description                                                |
+  | `version`     | module version                                                      |
+  | `icon`        | lucide icon name                                                    |
+  | `address`     | **full public URL** where the module is served, e.g. `https://kentos.sivas.bel.tr` or `https://sivas.bel.tr/kentos` |
+  | `roles`       | roles the module defines/uses                                       |
+  | `api.version` | API version segment used in the metadata route (`v1`)              |
+
+  Any extra fields you add are served as-is.
+- **Embedding:** the `internal/module` package embeds its own
+  `kentos.module.json` and exposes `module.Load()`. There is **no mirror and no
+  sync step** — edit the one file and rebuild.
+- **Endpoint:** `GET /api/<api.version>/<name>/metadata` returns the manifest
+  JSON. With the defaults that is **`/api/v1/kentos-project-template/metadata`**.
+  The route is derived from the manifest, so it tracks the module name.
 
 ---
 
@@ -111,6 +154,11 @@ Conventions:
 - **CLI:** new subcommands go in `backend/cmd/` and register themselves via
   `init()` with `rootCmd.AddCommand(...)`. Flags override env, which overrides
   defaults.
+- **JSON is always camelCase.** Every response (and accepted request body) our
+  API produces uses camelCase keys (`accessToken`, `refreshExpiresIn`, …). When
+  a struct also parses a third-party payload that is snake_case (e.g. Keycloak's
+  token response in `internal/auth`), keep that parsing struct private and map it
+  to a separate camelCase response DTO — never leak snake_case out of our API.
 - Keep packages under `internal/` unless something is genuinely meant to be
   importable by other modules.
 
@@ -135,11 +183,14 @@ UI. Key facts relevant to the system:
 
 Everything is driven from the root **`Makefile`**. Run `make help` for the list.
 
+`make` with no target prints a grouped, formatted list of every target.
+
 | Command              | What it does                                                       |
 | -------------------- | ----------------------------------------------------------------- |
+| `make env`           | create `.env` from `.env.example` if missing                      |
 | `make install`       | install frontend dependencies (pnpm)                              |
 | `make dev-frontend`  | Vite dev server with hot reload (`:5173`)                         |
-| `make dev-backend`   | run the Go API server, no embed rebuild (`:8080`)                 |
+| `make dev-backend`   | run the Go API server, no embed rebuild (`:5800`)                 |
 | `make build-frontend`| compile the SPA into `backend/static`                             |
 | `make build-backend` | compile the Go binary, embedding `backend/static`                |
 | `make build`         | frontend + backend → `bin/kentos` (single binary)                |
@@ -153,30 +204,55 @@ Everything is driven from the root **`Makefile`**. Run `make help` for the list.
 
 ### Two development modes
 - **Full-app loop (single port):** `make run` — frontend is compiled and served
-  by Go on `:8080`. Closest to production; rebuild to see frontend changes.
+  by Go on `:5800`. Closest to production; rebuild to see frontend changes.
 - **Fast frontend loop (two ports):** `make dev-frontend` (Vite/HMR on `:5173`)
-  alongside `make dev-backend` (API on `:8080`). The Vite dev server proxies or
-  the SPA calls the API at `:8080`. Use this for rapid UI iteration.
+  alongside `make dev-backend` (API on `:5800`). The Vite dev server proxies or
+  the SPA calls the API at `:5800`. Use this for rapid UI iteration.
 
 ---
 
 ## 7. Configuration
 
-The backend reads configuration from the environment (CLI flags on `serve`
-override them):
+**All configuration lives in `.env`** at the repo root. Copy `.env.example` to
+`.env` (`make env`) and edit it. The same file feeds both sides:
+- The **Makefile** loads it (`-include .env` + `export`) so every command runs
+  with those variables.
+- The **backend** also reads it at startup via `godotenv` (process environment
+  always wins, then `./.env`, then `../.env`), so the binary picks it up whether
+  run from the repo root or from `backend/`.
+- **Vite** reads the same root `.env` (`envDir`), exposing only `VITE_`-prefixed
+  variables to the browser.
 
-| Variable        | Default       | Meaning                                  |
-| --------------- | ------------- | ---------------------------------------- |
-| `HOST`          | `0.0.0.0`     | bind interface                           |
-| `PORT`          | `8080`        | listen port                              |
-| `DATABASE_URL`  | *(empty)*     | PostgreSQL DSN; if empty, DB is disabled |
-| `APP_ENV`       | `development` | `development` \| `production`            |
-| `LOG_LEVEL`     | `info`        | `debug` \| `info` \| `warn` \| `error`   |
+CLI flags on `serve` override the corresponding variables.
+
+| Variable               | Default       | Meaning                                       |
+| ---------------------- | ------------- | --------------------------------------------- |
+| `HOST`                 | `0.0.0.0`     | bind interface                                |
+| `PORT`                 | `5800`        | listen port                                   |
+| `DATABASE_URL`         | *(empty)*     | PostgreSQL DSN; if empty, DB is disabled      |
+| `APP_ENV`              | `development` | `development` \| `production`                 |
+| `LOG_LEVEL`            | `info`        | `debug` \| `info` \| `warn` \| `error`        |
+| `STATIC_CACHE_MAX_AGE` | `3600`        | max-age (s) for embedded assets (HTML always no-cache) |
+| `KEYCLOAK_URL`         | `http://localhost:8080` | Keycloak base URL                   |
+| `KEYCLOAK_REALM`       | `sivasbeltr`  | Keycloak realm                                |
+| `KEYCLOAK_CLIENT_SECRET` | *(empty)*   | confidential client secret (backend only)     |
+| `KEYCLOAK_REDIRECT_URI`| *(empty)*     | optional override; else derived as `<base>/auth/callback` |
+| `VITE_API_BASE_URL`    | `/api/v1`     | frontend: base path of the module API         |
+
+The OIDC **client_id is the module name** (`kentos.module.json` "name"); it is
+not a separate variable.
 
 Flags: `kentos serve --host --port --database-url`.
 
-Health check: `GET /api/health` → `{"status":"ok"}` (adds `"database":"up"` when
-a DB is configured and reachable; returns `503` if configured but unreachable).
+`.env` is gitignored; `.env.example` is the tracked template. Keep them in sync
+when you add a variable.
+
+### Endpoints
+- `GET /api/health` → `{"status":"ok"}` (adds `"database":"up"` when a DB is
+  configured and reachable; returns `503` if configured but unreachable).
+- `GET /api/v1/<module-name>/metadata` → the module manifest JSON (see §3.1).
+- `GET /api/auth/login`, `POST /api/auth/callback|refresh|logout` → Keycloak
+  login flow (see §11).
 
 ---
 
@@ -190,12 +266,33 @@ a DB is configured and reachable; returns `503` if configured but unreachable).
 - **Never break the embed contract:** `backend/static/` is the embed root and
   must always contain a self-contained `index.html` (the tracked placeholder)
   so a fresh checkout compiles before any frontend build.
+- **Module identity** comes from the single
+  `backend/internal/module/kentos.module.json` (embedded by its package) —
+  change it with the `init-module` skill, not by hand-editing scattered files.
 - Update **this file**, **`DESIGN.md`**, and the **skills** when you change
   structure, conventions, or the build pipeline.
 
 ---
 
-## 9. Roadmap (where this is heading)
+## 9. Skills
+
+Repeatable workflows are encoded as skills under `.claude/skills/`:
+
+| Skill              | Use for                                                        |
+| ------------------ | -------------------------------------------------------------- |
+| `init-module`      | rename the template to a real module across frontend + backend |
+| `create-page`      | add a new route/page (frontend)                                |
+| `update-page`      | edit an existing page (frontend)                               |
+| `create-component` | add a new UI component (frontend)                              |
+| `update-component` | edit an existing component (frontend)                          |
+
+Run `init-module <name>` right after cloning to claim the module name (updates
+`go.mod` + Go imports, `frontend/package.json`, and
+`backend/internal/module/kentos.module.json`, then verifies).
+
+---
+
+## 10. Roadmap (where this is heading)
 
 Planned/expected areas of growth — not yet implemented unless noted:
 - Real API resources backed by PostgreSQL (migrations, repositories, services).
@@ -204,3 +301,55 @@ Planned/expected areas of growth — not yet implemented unless noted:
 - Configuration hardening for production (TLS, timeouts, graceful shutdown
   tuning — graceful shutdown via `GracefulContext` is already wired).
 - CI: lint + test + build of the single binary.
+
+---
+
+## 11. Authentication (Keycloak)
+
+Login uses Keycloak (OIDC, Authorization Code + PKCE) with a **confidential
+client**, mediated by the backend. The client secret lives only on the backend;
+the browser never sees it. Because the SPA and API are same-origin (one binary),
+the `/api/auth/*` calls need no CORS.
+
+**Client identity.** The OIDC `client_id` **is the module name**
+(`kentos.module.json` "name"), which is also the **Keycloak client ID**. Realm,
+base URL and secret come from `.env` (`KEYCLOAK_*`).
+
+### Backend — `internal/auth` + `/api/auth/*`
+- `GET /api/auth/login?redirect=/dashboard` → builds the authorization URL
+  (PKCE/state/nonce stored server-side, keyed by `state`) and 303-redirects the
+  browser to Keycloak.
+- `POST /api/auth/callback {code, state}` → validates state, exchanges the code
+  (client secret + PKCE verifier), checks the id_token nonce, returns the tokens
+  (camelCase) plus the post-login `redirect`.
+- `POST /api/auth/refresh {refreshToken}` → new token set.
+- `POST /api/auth/logout {idToken, refreshToken}` → revokes at Keycloak, returns
+  the end-session `logoutUrl`.
+- Discovery is read once from `KEYCLOAK_URL/realms/<realm>/.well-known/openid-configuration`
+  and cached. The internal `Tokens` struct parses Keycloak's snake_case; the API
+  emits camelCase via a DTO.
+
+### Frontend — `src/lib/auth/*` + routes
+- Tokens are stored in **localStorage** (`tokens.ts`); roles come from the
+  **access token** (`realm_access` + this client's `resource_access`), identity
+  from the lightweight **id token**.
+- `AuthProvider`/`useAuth` (`auth-provider.tsx` / `auth-context.ts`) hold session
+  state and expose `login/logout/refresh/setSession/expire`.
+- **Routing:** `__root` only provides auth context; **`_authed`** is a pathless
+  layout that guards every app page (renders the shell + `SessionWatcher`), so
+  `/login` and `/auth/callback` render bare. `/` redirects authenticated users to
+  `/dashboard`; the guard sends unauthenticated users to `/login`.
+- **Session watcher** (`session-watcher.tsx`): polls access-token expiry and ~30s
+  before it lapses raises a sticky toast with an **"Oturumu uzat"** action that
+  refreshes; if the token lapses unattended the session is dropped and the guard
+  returns the user to `/login`.
+
+### Keycloak client setup (realm `sivasbeltr`)
+Create a client whose **Client ID = the module name**, with:
+- **Client authentication: ON** (confidential) → copy the secret into
+  `KEYCLOAK_CLIENT_SECRET`.
+- **Standard flow** enabled.
+- **Valid redirect URIs:** `http://localhost:5800/auth/callback` (and your prod
+  `address` + `/auth/callback`).
+- **Valid post-logout redirect URIs:** `http://localhost:5800/login` (+ prod).
+- **Web origins:** the app origin (e.g. `http://localhost:5800`).

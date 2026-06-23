@@ -3,17 +3,22 @@ import { createFileRoute } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import {
   Bookmark,
+  Check,
   Copy,
   FileText,
   Heart,
+  Lock,
   MoreHorizontal,
   Pencil,
   Settings2,
   Share2,
+  ShieldCheck,
   Star,
   Trash2,
 } from 'lucide-react'
 
+import { useAuth } from '@/lib/auth/auth-context'
+import { RolesRequired } from '@/lib/auth/roles-required'
 import { PageHeader, PageWrapper } from '@/components/layout/page'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -104,7 +109,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-export const Route = createFileRoute('/components')({
+export const Route = createFileRoute('/_authed/components')({
   component: ComponentsPage,
 })
 
@@ -474,6 +479,122 @@ function TableDemo() {
   )
 }
 
+/* --------------------------- Roles / auth demo -------------------------- */
+function Allowed({ children }: { children: React.ReactNode }) {
+  return (
+    <Badge variant="success">
+      <ShieldCheck />
+      {children}
+    </Badge>
+  )
+}
+
+function Denied() {
+  return (
+    <Badge variant="outline" className="text-muted-foreground">
+      <Lock />
+      Gizli
+    </Badge>
+  )
+}
+
+function Gate({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
+      <code className="font-mono text-xs text-muted-foreground">{label}</code>
+      {children}
+    </div>
+  )
+}
+
+function RoleCheck({ label, ok }: { label: string; ok: boolean }) {
+  return (
+    <Badge variant={ok ? 'success' : 'secondary'} className="gap-1.5">
+      {ok ? <Check /> : <Lock />}
+      <span className="font-mono text-2xs">{label}</span>
+      <span className="opacity-80">{ok ? 'true' : 'false'}</span>
+    </Badge>
+  )
+}
+
+function RolesDemo() {
+  const { roles, hasAnyRole, hasAllRoles } = useAuth()
+
+  return (
+    <div className="w-full space-y-5">
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-muted-foreground">Mevcut roller</p>
+        {roles.length ? (
+          <div className="flex flex-wrap gap-1.5">
+            {roles.map((r) => (
+              <Badge key={r} variant="secondary">
+                {r}
+              </Badge>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Rol yok</p>
+        )}
+      </div>
+
+      <Separator />
+
+      <div className="space-y-3">
+        <p className="text-xs font-medium text-muted-foreground">
+          <code className="font-mono">{'<RolesRequired>'}</code> — deklaratif göster/gizle
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Gate label="anyOf={['User']}">
+            <RolesRequired anyOf={['User']} fallback={<Denied />}>
+              <Allowed>User içeriği</Allowed>
+            </RolesRequired>
+          </Gate>
+          <Gate label="anyOf={['Manager','Admin']}">
+            <RolesRequired anyOf={['Manager', 'Admin']} fallback={<Denied />}>
+              <Allowed>Yönetici aracı</Allowed>
+            </RolesRequired>
+          </Gate>
+          <Gate label="anyOf={['Admin']}">
+            <RolesRequired anyOf={['Admin']} fallback={<Denied />}>
+              <Allowed>Yalnızca Admin</Allowed>
+            </RolesRequired>
+          </Gate>
+          <Gate label="allOf={['Manager','User']}">
+            <RolesRequired allOf={['Manager', 'User']} fallback={<Denied />}>
+              <Allowed>Manager + User</Allowed>
+            </RolesRequired>
+          </Gate>
+          <Gate label="allOf={['Manager','Admin']}">
+            <RolesRequired allOf={['Manager', 'Admin']} fallback={<Denied />}>
+              <Allowed>Manager + Admin</Allowed>
+            </RolesRequired>
+          </Gate>
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-muted-foreground">
+          <code className="font-mono">useAuth().hasAnyRole / hasAllRoles</code> — imperatif
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <RoleCheck label="hasAnyRole(['User'])" ok={hasAnyRole(['User'])} />
+          <RoleCheck label="hasAnyRole(['Admin'])" ok={hasAnyRole(['Admin'])} />
+          <RoleCheck
+            label="hasAllRoles(['Manager','User'])"
+            ok={hasAllRoles(['Manager', 'User'])}
+          />
+          <RoleCheck
+            label="hasAllRoles(['Manager','Admin'])"
+            ok={hasAllRoles(['Manager', 'Admin'])}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ComponentsPage() {
   return (
     <PageWrapper>
@@ -483,6 +604,15 @@ function ComponentsPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Section
+          title="Yetkilendirme (roller)"
+          description="<RolesRequired> ve useAuth().hasAnyRole/hasAllRoles ile role göre göster/gizle"
+          className="lg:col-span-2"
+          contentClassName="block"
+        >
+          <RolesDemo />
+        </Section>
+
         <Section title="Butonlar" description="Varyasyonlar ve boyutlar">
           <Button>Birincil</Button>
           <Button variant="secondary">İkincil</Button>

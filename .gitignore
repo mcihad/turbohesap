@@ -16,6 +16,11 @@ dist-ssr
 # Go binary output
 /bin/
 
+# Local environment — keep .env.example tracked, ignore the real .env
+.env
+.env.local
+!.env.example
+
 # Frontend build embedded into the backend binary.
 # The placeholder index.html is tracked so `go build` works on a fresh
 # checkout; everything Vite generates on top of it is ignored.

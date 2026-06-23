@@ -6,10 +6,16 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+
+	"kentos-project-template/internal/module"
 )
 
-// assets holds the embedded frontend build, injected from main via Execute.
-var assets fs.FS
+// Injected from main via Execute: the embedded frontend build and the parsed
+// module manifest (kentos.module.json).
+var (
+	assets fs.FS
+	mod    *module.Module
+)
 
 // rootCmd is the base command. Running the binary with no subcommand prints help.
 var rootCmd = &cobra.Command{
@@ -22,10 +28,11 @@ it as a single self-contained binary, alongside a JSON API backed by PostgreSQL
 (pgx). Use subcommands to run the server or inspect the build.`,
 }
 
-// Execute runs the root command with the embedded frontend assets and exits
-// non-zero on error.
-func Execute(frontend fs.FS) {
+// Execute runs the root command with the embedded frontend assets and module
+// manifest, and exits non-zero on error.
+func Execute(frontend fs.FS, manifest *module.Module) {
 	assets = frontend
+	mod = manifest
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

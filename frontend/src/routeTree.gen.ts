@@ -9,173 +9,289 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as MapRouteImport } from './routes/map'
-import { Route as HelpRouteImport } from './routes/help'
-import { Route as ComponentsRouteImport } from './routes/components'
-import { Route as AnalyticsRouteImport } from './routes/analytics'
-import { Route as SplatRouteImport } from './routes/$'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthedRouteImport } from './routes/_authed'
+import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as AuthedSettingsRouteImport } from './routes/_authed/settings'
+import { Route as AuthedProfileRouteImport } from './routes/_authed/profile'
+import { Route as AuthedMapRouteImport } from './routes/_authed/map'
+import { Route as AuthedHelpRouteImport } from './routes/_authed/help'
+import { Route as AuthedDashboardRouteImport } from './routes/_authed/dashboard'
+import { Route as AuthedComponentsRouteImport } from './routes/_authed/components'
+import { Route as AuthedAnalyticsRouteImport } from './routes/_authed/analytics'
+import { Route as AuthedSplatRouteImport } from './routes/_authed/$'
 
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MapRoute = MapRouteImport.update({
-  id: '/map',
-  path: '/map',
+const AuthedRoute = AuthedRouteImport.update({
+  id: '/_authed',
   getParentRoute: () => rootRouteImport,
 } as any)
-const HelpRoute = HelpRouteImport.update({
-  id: '/help',
-  path: '/help',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ComponentsRoute = ComponentsRouteImport.update({
-  id: '/components',
-  path: '/components',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AnalyticsRoute = AnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SplatRoute = SplatRouteImport.update({
-  id: '/$',
-  path: '/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
+const AuthedIndexRoute = AuthedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthedSettingsRoute = AuthedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedProfileRoute = AuthedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedMapRoute = AuthedMapRouteImport.update({
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedHelpRoute = AuthedHelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedDashboardRoute = AuthedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedComponentsRoute = AuthedComponentsRouteImport.update({
+  id: '/components',
+  path: '/components',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedAnalyticsRoute = AuthedAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedSplatRoute = AuthedSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => AuthedRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/$': typeof SplatRoute
-  '/analytics': typeof AnalyticsRoute
-  '/components': typeof ComponentsRoute
-  '/help': typeof HelpRoute
-  '/map': typeof MapRoute
-  '/settings': typeof SettingsRoute
+  '/': typeof AuthedIndexRoute
+  '/login': typeof LoginRoute
+  '/$': typeof AuthedSplatRoute
+  '/analytics': typeof AuthedAnalyticsRoute
+  '/components': typeof AuthedComponentsRoute
+  '/dashboard': typeof AuthedDashboardRoute
+  '/help': typeof AuthedHelpRoute
+  '/map': typeof AuthedMapRoute
+  '/profile': typeof AuthedProfileRoute
+  '/settings': typeof AuthedSettingsRoute
+  '/auth/callback': typeof AuthCallbackRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/$': typeof SplatRoute
-  '/analytics': typeof AnalyticsRoute
-  '/components': typeof ComponentsRoute
-  '/help': typeof HelpRoute
-  '/map': typeof MapRoute
-  '/settings': typeof SettingsRoute
+  '/login': typeof LoginRoute
+  '/$': typeof AuthedSplatRoute
+  '/analytics': typeof AuthedAnalyticsRoute
+  '/components': typeof AuthedComponentsRoute
+  '/dashboard': typeof AuthedDashboardRoute
+  '/help': typeof AuthedHelpRoute
+  '/map': typeof AuthedMapRoute
+  '/profile': typeof AuthedProfileRoute
+  '/settings': typeof AuthedSettingsRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/': typeof AuthedIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/$': typeof SplatRoute
-  '/analytics': typeof AnalyticsRoute
-  '/components': typeof ComponentsRoute
-  '/help': typeof HelpRoute
-  '/map': typeof MapRoute
-  '/settings': typeof SettingsRoute
+  '/_authed': typeof AuthedRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_authed/$': typeof AuthedSplatRoute
+  '/_authed/analytics': typeof AuthedAnalyticsRoute
+  '/_authed/components': typeof AuthedComponentsRoute
+  '/_authed/dashboard': typeof AuthedDashboardRoute
+  '/_authed/help': typeof AuthedHelpRoute
+  '/_authed/map': typeof AuthedMapRoute
+  '/_authed/profile': typeof AuthedProfileRoute
+  '/_authed/settings': typeof AuthedSettingsRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/_authed/': typeof AuthedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
     | '/$'
     | '/analytics'
     | '/components'
+    | '/dashboard'
     | '/help'
     | '/map'
+    | '/profile'
     | '/settings'
+    | '/auth/callback'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/$' | '/analytics' | '/components' | '/help' | '/map' | '/settings'
+  to:
+    | '/login'
+    | '/$'
+    | '/analytics'
+    | '/components'
+    | '/dashboard'
+    | '/help'
+    | '/map'
+    | '/profile'
+    | '/settings'
+    | '/auth/callback'
+    | '/'
   id:
     | '__root__'
-    | '/'
-    | '/$'
-    | '/analytics'
-    | '/components'
-    | '/help'
-    | '/map'
-    | '/settings'
+    | '/_authed'
+    | '/login'
+    | '/_authed/$'
+    | '/_authed/analytics'
+    | '/_authed/components'
+    | '/_authed/dashboard'
+    | '/_authed/help'
+    | '/_authed/map'
+    | '/_authed/profile'
+    | '/_authed/settings'
+    | '/auth/callback'
+    | '/_authed/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  SplatRoute: typeof SplatRoute
-  AnalyticsRoute: typeof AnalyticsRoute
-  ComponentsRoute: typeof ComponentsRoute
-  HelpRoute: typeof HelpRoute
-  MapRoute: typeof MapRoute
-  SettingsRoute: typeof SettingsRoute
+  AuthedRoute: typeof AuthedRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/map': {
-      id: '/map'
-      path: '/map'
-      fullPath: '/map'
-      preLoaderRoute: typeof MapRouteImport
+    '/_authed': {
+      id: '/_authed'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/help': {
-      id: '/help'
-      path: '/help'
-      fullPath: '/help'
-      preLoaderRoute: typeof HelpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/components': {
-      id: '/components'
-      path: '/components'
-      fullPath: '/components'
-      preLoaderRoute: typeof ComponentsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/analytics': {
-      id: '/analytics'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof AnalyticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$': {
-      id: '/$'
-      path: '/$'
-      fullPath: '/$'
-      preLoaderRoute: typeof SplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
+    '/_authed/': {
+      id: '/_authed/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AuthedIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authed/settings': {
+      id: '/_authed/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthedSettingsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/profile': {
+      id: '/_authed/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthedProfileRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/map': {
+      id: '/_authed/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof AuthedMapRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/help': {
+      id: '/_authed/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof AuthedHelpRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/dashboard': {
+      id: '/_authed/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthedDashboardRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/components': {
+      id: '/_authed/components'
+      path: '/components'
+      fullPath: '/components'
+      preLoaderRoute: typeof AuthedComponentsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/analytics': {
+      id: '/_authed/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AuthedAnalyticsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/$': {
+      id: '/_authed/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof AuthedSplatRouteImport
+      parentRoute: typeof AuthedRoute
     }
   }
 }
 
+interface AuthedRouteChildren {
+  AuthedSplatRoute: typeof AuthedSplatRoute
+  AuthedAnalyticsRoute: typeof AuthedAnalyticsRoute
+  AuthedComponentsRoute: typeof AuthedComponentsRoute
+  AuthedDashboardRoute: typeof AuthedDashboardRoute
+  AuthedHelpRoute: typeof AuthedHelpRoute
+  AuthedMapRoute: typeof AuthedMapRoute
+  AuthedProfileRoute: typeof AuthedProfileRoute
+  AuthedSettingsRoute: typeof AuthedSettingsRoute
+  AuthedIndexRoute: typeof AuthedIndexRoute
+}
+
+const AuthedRouteChildren: AuthedRouteChildren = {
+  AuthedSplatRoute: AuthedSplatRoute,
+  AuthedAnalyticsRoute: AuthedAnalyticsRoute,
+  AuthedComponentsRoute: AuthedComponentsRoute,
+  AuthedDashboardRoute: AuthedDashboardRoute,
+  AuthedHelpRoute: AuthedHelpRoute,
+  AuthedMapRoute: AuthedMapRoute,
+  AuthedProfileRoute: AuthedProfileRoute,
+  AuthedSettingsRoute: AuthedSettingsRoute,
+  AuthedIndexRoute: AuthedIndexRoute,
+}
+
+const AuthedRouteWithChildren =
+  AuthedRoute._addFileChildren(AuthedRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  SplatRoute: SplatRoute,
-  AnalyticsRoute: AnalyticsRoute,
-  ComponentsRoute: ComponentsRoute,
-  HelpRoute: HelpRoute,
-  MapRoute: MapRoute,
-  SettingsRoute: SettingsRoute,
+  AuthedRoute: AuthedRouteWithChildren,
+  LoginRoute: LoginRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

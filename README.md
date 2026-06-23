@@ -31,21 +31,56 @@ The frontend (`frontend/`) compiles into `backend/static/`, which the Go backend
 **[`DESIGN.md`](./DESIGN.md)** documents every token, color, dimension, and
 component standard in enough detail to rebuild this system 1:1. Read it first.
 
-## Develop
-
-Everything runs through the root **`Makefile`** (`make help` lists all targets):
+## Get started
 
 ```bash
+make env            # create .env from .env.example
 make install        # install frontend dependencies (pnpm)
-make run            # build the frontend, run the backend serving it → http://localhost:8080
+init module <name>  # (in Claude Code) claim a module name across frontend + backend
+make run            # build the frontend, run the backend serving it → http://localhost:5800
+```
+
+`init module <name>` runs the **`init-module`** skill, which renames the Go
+module, `frontend/package.json`, and the module manifest in one step. New here?
+Skip it to try the template as-is.
+
+## Develop
+
+Everything runs through the root **`Makefile`** (run `make` for a grouped list):
+
+```bash
+make run            # full app on one port (rebuild to see frontend changes)
 make build          # frontend + backend → single binary at bin/kentos
 
 # Fast UI iteration (two terminals):
 make dev-frontend   # Vite dev server with HMR (:5173)
-make dev-backend    # Go API server (:8080)
+make dev-backend    # Go API server (:5800)
 ```
 
 Prerequisites: Go (1.26+), Node + pnpm.
+
+## Configuration
+
+All settings live in **`.env`** (root) — copy from `.env.example`. The Makefile,
+the Go binary, and Vite all read this one file. See [`AGENTS.md`](./AGENTS.md) §7
+for every variable.
+
+## Module manifest
+
+Each app is a **module** described by **`kentos.module.json`** (name, icon,
+roles, …), which lives at **`backend/internal/module/kentos.module.json`** — a
+single file embedded into the binary and served at
+`GET /api/v1/<module-name>/metadata`.
+
+## Authentication
+
+Login is handled by **Keycloak** (OIDC, confidential client) — the backend holds
+the secret and runs the code/token exchange (`/api/auth/*`); the SPA stores the
+returned tokens in localStorage, gates routes (`/` → `/login` or `/dashboard`),
+and shows an "extend session" toast ~30s before the token expires. The OIDC
+client ID **is the module name**. Configure `KEYCLOAK_*` in `.env`. Full details
+and the required Keycloak client settings: [`AGENTS.md`](./AGENTS.md) §11 and
+[`docs/auth.md`](./docs/auth.md).
 
 ## Customize
 
@@ -59,6 +94,8 @@ Prerequisites: Go (1.26+), Node + pnpm.
 | App launcher tiles     | `src/config/apps.ts`                   |
 | Add a page             | add a file under `src/routes/`         |
 | Add an API endpoint    | `backend/internal/server/` (`registerAPI` + `handlers.go`) |
+| Module name/identity   | `init module <name>` skill, then `backend/internal/module/kentos.module.json` |
+| Backend/runtime config | `.env` (root)                          |
 
 > Generated file `frontend/src/routeTree.gen.ts` is created by the TanStack Router
 > plugin on `make dev-frontend` — do not edit it by hand.

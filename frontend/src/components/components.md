@@ -61,7 +61,8 @@ Uygulama kabuğu; çoğu yalnızca `AppShell` içinde kullanılır.
 | Bileşen | Ne için |
 | ------- | ------- |
 | `app-shell` | Tüm kabuğu kurar (rail + sidebar + app-bar + içerik + footer) ve layout context'ini sağlar |
-| `module-rail` | En soldaki dikey **modül rayı**; modüller arası geçiş (`src/modules/registry.ts`) |
+| `module-rail` | En soldaki dikey **modül rayı**; modüller arası geçiş (`src/modules/registry.ts`) + altta yardım/geri bildirim |
+| `module-launcher` | Modülleri grid olarak gösteren launcher (mobilde modül değiştirme; sidebar başlığındaki buton açar) |
 | `sidebar` / `sidebar-nav` | Aktif modülün gezinti ağacı (arama + daraltılabilir) |
 | `app-bar` | Üst çubuk: breadcrumb, ⌘K arama, tema/bildirim/mod/kullanıcı |
 | `app-breadcrumb` | Aktif modül nav'ından türeyen kırıntı |

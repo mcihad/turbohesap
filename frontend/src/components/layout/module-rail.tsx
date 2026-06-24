@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Link } from '@tanstack/react-router'
+import { LifeBuoy, MessageSquarePlus, type LucideIcon } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { useActiveModule } from '@/lib/layout/use-active-module'
@@ -11,13 +12,18 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { FeedbackDialog } from './feedback-dialog'
+
+const itemClass =
+  'flex size-10 items-center justify-center rounded-lg text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-foreground'
 
 // The far-left vertical rail of module icons. Clicking one opens that module
 // (its home route) — the shell stays, the sidebar + content swap. Only modules
-// the user can access (≥1 visible nav item) are shown.
+// the user can access are shown. Help + feedback sit pinned at the bottom.
 export function ModuleRail() {
   const active = useActiveModule()
   const { hasPermission } = useAuth()
+  const [feedbackOpen, setFeedbackOpen] = React.useState(false)
   const modules = React.useMemo(
     () => accessibleModules(APP_MODULES, hasPermission),
     [hasPermission],
@@ -43,10 +49,9 @@ export function ModuleRail() {
                 aria-label={m.label}
                 aria-current={isActive ? 'page' : undefined}
                 className={cn(
-                  'flex size-10 items-center justify-center rounded-lg transition-colors',
-                  isActive
-                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
+                  itemClass,
+                  isActive &&
+                    'bg-sidebar-accent text-sidebar-accent-foreground hover:bg-sidebar-accent',
                 )}
               >
                 <Icon className="size-5" />
@@ -56,6 +61,60 @@ export function ModuleRail() {
           </Tooltip>
         )
       })}
+
+      {/* Pinned to the bottom: help + feedback */}
+      <div className="mt-auto flex flex-col items-center gap-1">
+        <RailLink icon={LifeBuoy} label="Yardım ve Dokümanlar" to="/help" />
+        <RailButton
+          icon={MessageSquarePlus}
+          label="Geri bildirim gönder"
+          onClick={() => setFeedbackOpen(true)}
+        />
+      </div>
+
+      <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
     </nav>
+  )
+}
+
+function RailLink({
+  icon: Icon,
+  label,
+  to,
+}: {
+  icon: LucideIcon
+  label: string
+  to: string
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Link to={to} aria-label={label} className={itemClass}>
+          <Icon className="size-5" />
+        </Link>
+      </TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
+  )
+}
+
+function RailButton({
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  icon: LucideIcon
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button type="button" aria-label={label} onClick={onClick} className={itemClass}>
+          <Icon className="size-5" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
   )
 }

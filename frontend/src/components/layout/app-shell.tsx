@@ -13,6 +13,7 @@ import {
 import { ThemeCustomizer } from '@/components/theme-customizer'
 import { SidebarInner } from './sidebar'
 import { ModuleRail } from './module-rail'
+import { ModuleLauncher } from './module-launcher'
 import { AppBar } from './app-bar'
 import { AppFooter } from './footer'
 import { AiChat } from './ai-chat'
@@ -26,6 +27,7 @@ export function AppShell() {
   )
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false)
   const [commandOpen, setCommandOpen] = React.useState(false)
+  const [moduleLauncherOpen, setModuleLauncherOpen] = React.useState(false)
   const [customizerOpen, setCustomizerOpen] = React.useState(false)
   const [aiOpen, setAiOpen] = React.useState(false)
   const [footerSlot, setFooterSlot] = React.useState<HTMLElement | null>(null)
@@ -44,6 +46,8 @@ export function AppShell() {
       setMobileSidebarOpen,
       commandOpen,
       setCommandOpen,
+      moduleLauncherOpen,
+      setModuleLauncherOpen,
       customizerOpen,
       setCustomizerOpen,
       aiOpen,
@@ -57,6 +61,7 @@ export function AppShell() {
       sidebarCollapsed,
       mobileSidebarOpen,
       commandOpen,
+      moduleLauncherOpen,
       customizerOpen,
       aiOpen,
       footerSlot,
@@ -108,6 +113,7 @@ export function AppShell() {
       {/* Floating + overlay surfaces */}
       <AiChat />
       <CommandLauncher />
+      <ModuleLauncher />
 
       {/* Theme customizer */}
       <Sheet open={customizerOpen} onOpenChange={setCustomizerOpen}>

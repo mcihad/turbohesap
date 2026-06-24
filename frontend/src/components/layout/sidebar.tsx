@@ -1,12 +1,5 @@
 import * as React from 'react'
-import {
-  LifeBuoy,
-  MessageSquarePlus,
-  PanelLeftClose,
-  Search,
-  type LucideIcon,
-} from 'lucide-react'
-import { Link } from '@tanstack/react-router'
+import { LayoutGrid, PanelLeftClose, Search } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { useLayout } from '@/lib/layout/use-layout'
@@ -16,16 +9,11 @@ import { filterNavByPermission } from '@/lib/auth/access'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 import { SidebarNav } from './sidebar-nav'
-import { FeedbackDialog } from './feedback-dialog'
 
 /** Sidebar contents — shared by the desktop rail and the mobile sheet. Renders
- * the active module's navigation; the left module rail switches modules. */
+ * the active module's navigation; the left module rail switches modules (and on
+ * mobile the launcher button in the header opens the module grid). */
 export function SidebarInner({
   collapsed = false,
   onNavigate,
@@ -33,12 +21,11 @@ export function SidebarInner({
   collapsed?: boolean
   onNavigate?: () => void
 }) {
-  const { toggleSidebar } = useLayout()
+  const { toggleSidebar, setModuleLauncherOpen } = useLayout()
   const { hasPermission } = useAuth()
   const activeModule = useActiveModule()
   const ModuleIcon = activeModule.icon
   const [query, setQuery] = React.useState('')
-  const [feedbackOpen, setFeedbackOpen] = React.useState(false)
 
   // Only show nav items the user is allowed to access.
   const nav = React.useMemo(
@@ -68,6 +55,17 @@ export function SidebarInner({
                 TurboHesap
               </span>
             </div>
+            {/* Mobile only: open the module launcher (the rail is hidden here). */}
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setModuleLauncherOpen(true)}
+              aria-label="Modüller"
+              className="lg:hidden"
+            >
+              <LayoutGrid className="size-4" />
+            </Button>
+            {/* Desktop only: collapse the sidebar. */}
             <Button
               variant="ghost"
               size="icon-sm"
@@ -107,71 +105,6 @@ export function SidebarInner({
           />
         </div>
       </ScrollArea>
-
-      {/* Footer: help + feedback (icon-only, with tooltips) -------------- */}
-      <div
-        className={cn(
-          'mt-auto border-t border-sidebar-border',
-          collapsed
-            ? 'flex flex-col items-center gap-1 py-2'
-            : 'flex h-footer items-center gap-1 px-2',
-        )}
-      >
-        <FooterAction
-          icon={LifeBuoy}
-          label="Help & Docs"
-          to="/help"
-          side={collapsed ? 'right' : 'top'}
-        />
-        <FooterAction
-          icon={MessageSquarePlus}
-          label="Send feedback"
-          onClick={() => setFeedbackOpen(true)}
-          side={collapsed ? 'right' : 'top'}
-        />
-      </div>
-
-      <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
     </div>
-  )
-}
-
-/** Icon-only sidebar footer action with a tooltip label. */
-function FooterAction({
-  icon: Icon,
-  label,
-  to,
-  onClick,
-  side,
-}: {
-  icon: LucideIcon
-  label: string
-  to?: string
-  onClick?: () => void
-  side: 'top' | 'right'
-}) {
-  const className =
-    'flex size-8 items-center justify-center rounded-md text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-  const inner = <Icon className="size-[1.05rem]" />
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        {to ? (
-          <Link to={to} aria-label={label} className={className}>
-            {inner}
-          </Link>
-        ) : (
-          <button
-            type="button"
-            onClick={onClick}
-            aria-label={label}
-            className={className}
-          >
-            {inner}
-          </button>
-        )}
-      </TooltipTrigger>
-      <TooltipContent side={side}>{label}</TooltipContent>
-    </Tooltip>
   )
 }

@@ -14,6 +14,10 @@ export interface LayoutContextValue {
   commandOpen: boolean
   setCommandOpen: (v: boolean) => void
 
+  /** Module launcher (grid of modules) — the mobile way to switch modules. */
+  moduleLauncherOpen: boolean
+  setModuleLauncherOpen: (v: boolean) => void
+
   /** Theme customizer sheet. */
   customizerOpen: boolean
   setCustomizerOpen: (v: boolean) => void

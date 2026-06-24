@@ -1,19 +1,23 @@
 {
-  "name": "kentos-console",
+  "name": "turbohesap",
   "private": true,
   "version": "0.1.0",
-  "description": "KentOS Console — NestJS API + React SPA sharing a typed @kentos/shared contract layer.",
+  "description": "TurboHesap — ERP monorepo: NestJS API (local JWT auth + RBAC), React SPA, and Expo mobile sharing a typed @turbohesap/shared contract layer.",
   "scripts": {
-    "build:shared": "pnpm --filter @kentos/shared build",
-    "build:frontend": "pnpm --filter @kentos/frontend build",
-    "build:backend": "pnpm --filter @kentos/backend build",
+    "build:shared": "pnpm --filter @turbohesap/shared build",
+    "build:frontend": "pnpm --filter @turbohesap/frontend build",
+    "build:backend": "pnpm --filter @turbohesap/backend build",
     "build": "pnpm build:shared && pnpm build:frontend && pnpm build:backend",
-    "dev:frontend": "pnpm --filter @kentos/frontend dev",
-    "dev:backend": "pnpm --filter @kentos/backend start:dev",
-    "dev:shared": "pnpm --filter @kentos/shared dev",
-    "dev:mobile": "pnpm --filter @kentos/mobile start",
-    "start": "pnpm --filter @kentos/backend start:prod",
-    "lint": "pnpm --filter @kentos/frontend lint && pnpm --filter @kentos/backend typecheck"
+    "dev": "pnpm build:shared && concurrently -n shared,api,web -c blue,green,magenta \"pnpm dev:shared\" \"pnpm dev:backend\" \"pnpm dev:frontend\"",
+    "dev:frontend": "pnpm --filter @turbohesap/frontend dev",
+    "dev:backend": "pnpm --filter @turbohesap/backend start:dev",
+    "dev:shared": "pnpm --filter @turbohesap/shared dev",
+    "dev:mobile": "pnpm --filter @turbohesap/mobile start",
+    "start": "pnpm --filter @turbohesap/backend start:prod",
+    "lint": "pnpm --filter @turbohesap/frontend lint && pnpm --filter @turbohesap/backend typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
   },
   "engines": {
     "node": ">=20"

@@ -31,7 +31,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-export const Route = createFileRoute('/_authed/dashboard')({
+export const Route = createFileRoute('/_authed/genel/dashboard')({
   component: DashboardPage,
 })
 

@@ -1,23 +1,15 @@
-// Token storage + JWT helpers for the Keycloak login flow.
-//
-// Tokens are kept in localStorage (so a reload keeps the session). The backend
-// is the only party that holds the client secret; here we just store the tokens
-// it returns, read claims from them, and decide when to refresh.
+// Local session storage + JWT helpers. Tokens and the current user are kept in
+// localStorage so a reload keeps the session. The shapes (AuthTokens,
+// CurrentUser) come from @turbohesap/shared so the whole stack agrees.
 
-// AuthTokens is defined once in @kentos/shared (the wire contract) and re-used
-// here so the web app, the backend, and the mobile app agree on the shape.
-import type { AuthTokens } from '@kentos/shared'
+import type { AuthTokens, CurrentUser } from '@turbohesap/shared'
 
-export type { AuthTokens }
+export type { AuthTokens, CurrentUser }
 
-const STORAGE_KEY = 'kentos-auth'
-
-export interface UserInfo {
-  sub: string
-  name?: string
-  preferredUsername?: string
-  email?: string
-}
+const TOKENS_KEY = 'turbohesap-auth'
+const USER_KEY = 'turbohesap-user'
+// Permissions are fetched separately (not carried in the token) and cached here.
+const PERMS_KEY = 'turbohesap-permissions'
 
 /** Decode a JWT payload without verifying the signature (display/expiry only). */
 export function decodeJwt<T = Record<string, unknown>>(token: string): T | null {
@@ -38,7 +30,7 @@ export function decodeJwt<T = Record<string, unknown>>(token: string): T | null 
 
 export function loadTokens(): AuthTokens | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(TOKENS_KEY)
     return raw ? (JSON.parse(raw) as AuthTokens) : null
   } catch {
     return null
@@ -46,11 +38,39 @@ export function loadTokens(): AuthTokens | null {
 }
 
 export function saveTokens(tokens: AuthTokens): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens))
+  localStorage.setItem(TOKENS_KEY, JSON.stringify(tokens))
 }
 
-export function clearTokens(): void {
-  localStorage.removeItem(STORAGE_KEY)
+export function loadUser(): CurrentUser | null {
+  try {
+    const raw = localStorage.getItem(USER_KEY)
+    return raw ? (JSON.parse(raw) as CurrentUser) : null
+  } catch {
+    return null
+  }
+}
+
+export function saveUser(user: CurrentUser): void {
+  localStorage.setItem(USER_KEY, JSON.stringify(user))
+}
+
+export function loadPermissions(): string[] {
+  try {
+    const raw = localStorage.getItem(PERMS_KEY)
+    return raw ? (JSON.parse(raw) as string[]) : []
+  } catch {
+    return []
+  }
+}
+
+export function savePermissions(permissions: string[]): void {
+  localStorage.setItem(PERMS_KEY, JSON.stringify(permissions))
+}
+
+export function clearSession(): void {
+  localStorage.removeItem(TOKENS_KEY)
+  localStorage.removeItem(USER_KEY)
+  localStorage.removeItem(PERMS_KEY)
 }
 
 /** Absolute expiry (ms epoch) of the access token, or 0 if unknown. */
@@ -64,59 +84,8 @@ export function isAccessExpired(tokens: AuthTokens, skewMs = 0): boolean {
   return exp === 0 || Date.now() + skewMs >= exp
 }
 
-/** Identity for display — read from the lightweight id token. */
-export function userFromTokens(tokens: AuthTokens): UserInfo | null {
-  const c = decodeJwt<{
-    sub?: string
-    name?: string
-    preferred_username?: string
-    email?: string
-  }>(tokens.idToken)
-  if (!c?.sub) return null
-  return {
-    sub: c.sub,
-    name: c.name,
-    preferredUsername: c.preferred_username,
-    email: c.email,
-  }
-}
-
-/** Realm-level roles from the access token. */
-export function realmRolesOf(tokens: AuthTokens): string[] {
-  const c = decodeJwt<{ realm_access?: { roles?: string[] } }>(tokens.accessToken)
-  return c?.realm_access?.roles ?? []
-}
-
-export interface ClientRoles {
-  clientId: string
-  roles: string[]
-}
-
-/** Client (resource) roles from the access token, grouped by client. */
-export function clientRolesOf(tokens: AuthTokens): ClientRoles[] {
-  const c = decodeJwt<{
-    resource_access?: Record<string, { roles?: string[] }>
-  }>(tokens.accessToken)
-  return Object.entries(c?.resource_access ?? {})
-    .map(([clientId, v]) => ({ clientId, roles: v.roles ?? [] }))
-    .filter((e) => e.roles.length > 0)
-    .sort((a, b) => a.clientId.localeCompare(b.clientId))
-}
-
-/** The authorized party (azp) — i.e. this module's Keycloak client id. */
-export function currentClientId(tokens: AuthTokens): string | undefined {
-  return decodeJwt<{ azp?: string }>(tokens.accessToken)?.azp
-}
-
-/** Roles from the access token: realm roles + this client's roles. */
-export function rolesFromTokens(tokens: AuthTokens): string[] {
-  const c = decodeJwt<{
-    azp?: string
-    realm_access?: { roles?: string[] }
-    resource_access?: Record<string, { roles?: string[] }>
-  }>(tokens.accessToken)
-  if (!c) return []
-  const realm = c.realm_access?.roles ?? []
-  const client = (c.azp && c.resource_access?.[c.azp]?.roles) || []
-  return Array.from(new Set([...realm, ...client]))
+/** Friendly display name for the current user. */
+export function displayName(user: CurrentUser): string {
+  const full = `${user.firstName} ${user.lastName}`.trim()
+  return full || user.username
 }

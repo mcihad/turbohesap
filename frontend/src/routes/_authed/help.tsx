@@ -56,8 +56,8 @@ function HelpPage() {
           <Accordion type="single" collapsible>
             {[
               ['Temayı nasıl özelleştirebilirim?', 'Özelleştiriciyi açmak için uygulama çubuğundaki palet simgesine tıklayın.'],
-              ['Yeni uygulamalar ekleyebilir miyim?', 'Yeni uygulama kartları kaydetmek için src/config/apps.ts dosyasını düzenleyin.'],
-              ['Gezinti (Navigasyon) nasıl tanımlanır?', 'Kenar çubuğu ağacı src/config/navigation.ts dosyasından alınır.'],
+              ['Yeni modül ekleyebilir miyim?', 'Sol moduldaki modüller src/modules/<modul>/module.config.ts ile tanımlanır ve src/modules/registry.ts üzerinden eklenir.'],
+              ['Gezinti (Navigasyon) nasıl tanımlanır?', 'Her modül kendi kenar çubuğu ağacını module.config.ts içindeki nav alanında tanımlar.'],
             ].map(([q, a], i) => (
               <AccordionItem key={i} value={`f${i}`}>
                 <AccordionTrigger>{q}</AccordionTrigger>

@@ -196,22 +196,26 @@ function CollapsedItem({
     item.to === activePath ||
     collectPaths(item.children ?? []).some((p) => p === activePath)
 
-  const trigger = (
-    <button
-      type="button"
-      className={cn(
-        'flex size-9 items-center justify-center rounded-md text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-        active && 'bg-sidebar-accent text-sidebar-accent-foreground',
-      )}
-    >
-      {Icon ? <Icon className="size-[1.15rem]" /> : <span>{item.title[0]}</span>}
-    </button>
+  // Shared icon-button styling; applied directly to the trigger element (button
+  // or Link) so it has a real box — Radix anchors the tooltip/popover to it.
+  const iconClass = cn(
+    'flex size-9 items-center justify-center rounded-md text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+    active && 'bg-sidebar-accent text-sidebar-accent-foreground',
+  )
+  const glyph = Icon ? (
+    <Icon className="size-[1.15rem]" />
+  ) : (
+    <span>{item.title[0]}</span>
   )
 
   if (item.children) {
     return (
       <Popover>
-        <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+        <PopoverTrigger asChild>
+          <button type="button" className={iconClass}>
+            {glyph}
+          </button>
+        </PopoverTrigger>
         <PopoverContent side="right" align="start" className="w-52 p-1">
           <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
             {item.title}
@@ -229,8 +233,8 @@ function CollapsedItem({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Link to={item.to} className="contents">
-          {trigger}
+        <Link to={item.to} aria-label={item.title} className={iconClass}>
+          {glyph}
         </Link>
       </TooltipTrigger>
       <TooltipContent side="right">{item.title}</TooltipContent>

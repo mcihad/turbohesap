@@ -14,10 +14,6 @@ export interface LayoutContextValue {
   commandOpen: boolean
   setCommandOpen: (v: boolean) => void
 
-  /** App launcher (grid of apps) dialog. */
-  appLauncherOpen: boolean
-  setAppLauncherOpen: (v: boolean) => void
-
   /** Theme customizer sheet. */
   customizerOpen: boolean
   setCustomizerOpen: (v: boolean) => void

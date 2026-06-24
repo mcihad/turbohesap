@@ -12,10 +12,10 @@ import {
 } from '@/components/ui/sheet'
 import { ThemeCustomizer } from '@/components/theme-customizer'
 import { SidebarInner } from './sidebar'
+import { ModuleRail } from './module-rail'
 import { AppBar } from './app-bar'
 import { AppFooter } from './footer'
 import { AiChat } from './ai-chat'
-import { AppLauncher } from './app-launcher'
 import { CommandLauncher } from './command-launcher'
 
 const COLLAPSE_KEY = 'sidebar-collapsed'
@@ -26,7 +26,6 @@ export function AppShell() {
   )
   const [mobileSidebarOpen, setMobileSidebarOpen] = React.useState(false)
   const [commandOpen, setCommandOpen] = React.useState(false)
-  const [appLauncherOpen, setAppLauncherOpen] = React.useState(false)
   const [customizerOpen, setCustomizerOpen] = React.useState(false)
   const [aiOpen, setAiOpen] = React.useState(false)
   const [footerSlot, setFooterSlot] = React.useState<HTMLElement | null>(null)
@@ -45,8 +44,6 @@ export function AppShell() {
       setMobileSidebarOpen,
       commandOpen,
       setCommandOpen,
-      appLauncherOpen,
-      setAppLauncherOpen,
       customizerOpen,
       setCustomizerOpen,
       aiOpen,
@@ -60,7 +57,6 @@ export function AppShell() {
       sidebarCollapsed,
       mobileSidebarOpen,
       commandOpen,
-      appLauncherOpen,
       customizerOpen,
       aiOpen,
       footerSlot,
@@ -71,6 +67,9 @@ export function AppShell() {
   return (
     <LayoutContext.Provider value={value}>
       <div className="flex h-screen w-full overflow-hidden">
+        {/* Far-left module rail (vertical) */}
+        <ModuleRail />
+
         {/* Desktop sidebar (vertical, fixed) */}
         <aside
           className={cn(
@@ -108,7 +107,6 @@ export function AppShell() {
 
       {/* Floating + overlay surfaces */}
       <AiChat />
-      <AppLauncher open={appLauncherOpen} onOpenChange={setAppLauncherOpen} />
       <CommandLauncher />
 
       {/* Theme customizer */}

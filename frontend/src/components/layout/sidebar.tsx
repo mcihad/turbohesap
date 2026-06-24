@@ -1,6 +1,5 @@
 import * as React from 'react'
 import {
-  Boxes,
   LifeBuoy,
   MessageSquarePlus,
   PanelLeftClose,
@@ -10,8 +9,10 @@ import {
 import { Link } from '@tanstack/react-router'
 
 import { cn } from '@/lib/utils'
-import { NAVIGATION } from '@/config/navigation'
 import { useLayout } from '@/lib/layout/use-layout'
+import { useActiveModule } from '@/lib/layout/use-active-module'
+import { useAuth } from '@/lib/auth/auth-context'
+import { filterNavByPermission } from '@/lib/auth/access'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -23,31 +24,8 @@ import {
 import { SidebarNav } from './sidebar-nav'
 import { FeedbackDialog } from './feedback-dialog'
 
-/** App brand chip — clicking it opens the application launcher. */
-function AppIconButton({ collapsed }: { collapsed: boolean }) {
-  const { setAppLauncherOpen } = useLayout()
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          onClick={() => setAppLauncherOpen(true)}
-          aria-label="Open application launcher"
-          className={cn(
-            'flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-transform hover:scale-105 active:scale-95',
-          )}
-        >
-          <Boxes className="size-5" />
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side={collapsed ? 'right' : 'bottom'}>
-        Uygulamalar
-      </TooltipContent>
-    </Tooltip>
-  )
-}
-
-/** Sidebar contents — shared by the desktop rail and the mobile sheet. */
+/** Sidebar contents — shared by the desktop rail and the mobile sheet. Renders
+ * the active module's navigation; the left module rail switches modules. */
 export function SidebarInner({
   collapsed = false,
   onNavigate,
@@ -56,8 +34,17 @@ export function SidebarInner({
   onNavigate?: () => void
 }) {
   const { toggleSidebar } = useLayout()
+  const { hasPermission } = useAuth()
+  const activeModule = useActiveModule()
+  const ModuleIcon = activeModule.icon
   const [query, setQuery] = React.useState('')
   const [feedbackOpen, setFeedbackOpen] = React.useState(false)
+
+  // Only show nav items the user is allowed to access.
+  const nav = React.useMemo(
+    () => filterNavByPermission(activeModule.nav, hasPermission),
+    [activeModule, hasPermission],
+  )
 
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
@@ -68,15 +55,17 @@ export function SidebarInner({
           collapsed && 'justify-center px-0',
         )}
       >
-        <AppIconButton collapsed={collapsed} />
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <ModuleIcon className="size-5" />
+        </span>
         {!collapsed && (
           <>
             <div className="flex min-w-0 flex-1 flex-col">
               <span className="truncate text-sm font-semibold leading-tight">
-                KentOS Console
+                {activeModule.label}
               </span>
               <span className="truncate text-xs text-muted-foreground leading-tight">
-                Canlı
+                TurboHesap
               </span>
             </div>
             <Button
@@ -111,7 +100,7 @@ export function SidebarInner({
       <ScrollArea className="min-h-0 flex-1">
         <div className={cn('px-3', collapsed && 'px-2')}>
           <SidebarNav
-            groups={NAVIGATION}
+            groups={nav}
             query={query}
             collapsed={collapsed}
             onNavigate={onNavigate}

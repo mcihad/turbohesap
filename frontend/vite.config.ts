@@ -19,6 +19,17 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  // Dev server: proxy the API to the NestJS backend so same-origin `/api` calls
+  // (and login) work in `make dev` exactly like the built, single-port app.
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5800',
+        changeOrigin: true,
+      },
+    },
+  },
   build: {
     // Compiled straight into the Go backend, which embeds this directory
     // (go:embed) to ship the whole app as a single binary.

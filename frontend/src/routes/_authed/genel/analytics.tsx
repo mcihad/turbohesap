@@ -18,7 +18,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
 
-export const Route = createFileRoute('/_authed/analytics')({
+export const Route = createFileRoute('/_authed/genel/analytics')({
   component: AnalyticsPage,
 })
 

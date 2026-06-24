@@ -2,7 +2,7 @@
   "expo": {
     "name": "KentOS Mobile",
     "slug": "kentos-mobile",
-    "scheme": "kentos",
+    "scheme": "turbohesap",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

@@ -1,15 +1,18 @@
 import * as React from 'react'
 
-import { loginUrl, refreshTokens, requestLogout } from './api'
+import { api } from '@/lib/api'
 import { AuthContext, type AuthState, type AuthStatus } from './auth-context'
 import {
   type AuthTokens,
-  clearTokens,
+  type CurrentUser,
+  clearSession,
   isAccessExpired,
+  loadPermissions,
   loadTokens,
-  rolesFromTokens,
+  loadUser,
+  savePermissions,
   saveTokens,
-  userFromTokens,
+  saveUser,
 } from './tokens'
 
 function initialStatus(): AuthStatus {
@@ -20,83 +23,106 @@ function initialStatus(): AuthStatus {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Initialise synchronously from storage so a reload keeps the session and we
-  // avoid a setState-in-effect on first paint.
   const [tokens, setTokens] = React.useState<AuthTokens | null>(loadTokens)
+  const [user, setUser] = React.useState<CurrentUser | null>(loadUser)
+  // Permissions are fetched from /api/auth/permissions (not in the token).
+  const [permissions, setPermissions] = React.useState<string[]>(loadPermissions)
   const [status, setStatus] = React.useState<AuthStatus>(initialStatus)
 
   // Latest tokens, readable from timers/callbacks without stale closures.
   const tokensRef = React.useRef<AuthTokens | null>(tokens)
-  const apply = React.useCallback((next: AuthTokens | null) => {
+  const applyTokens = React.useCallback((next: AuthTokens | null) => {
     tokensRef.current = next
     setTokens(next)
   }, [])
 
-  const setSession = React.useCallback(
-    (next: AuthTokens) => {
-      saveTokens(next)
-      apply(next)
+  const clear = React.useCallback(() => {
+    clearSession()
+    applyTokens(null)
+    setUser(null)
+    setPermissions([])
+    setStatus('unauthenticated')
+  }, [applyTokens])
+
+  // Pull the permission list for the signed-in user (best effort).
+  const loadPerms = React.useCallback(async () => {
+    try {
+      const perms = await api.auth.permissions()
+      savePermissions(perms)
+      setPermissions(perms)
+    } catch {
+      savePermissions([])
+      setPermissions([])
+    }
+  }, [])
+
+  const login = React.useCallback(
+    async (username: string, password: string) => {
+      const res = await api.auth.login(username, password)
+      const { user: u, ...t } = res
+      saveTokens(t)
+      saveUser(u)
+      applyTokens(t)
+      setUser(u)
       setStatus('authenticated')
+      // Fetch permissions separately (token carries roles only).
+      await loadPerms()
     },
-    [apply],
+    [applyTokens, loadPerms],
   )
 
   const refresh = React.useCallback(async (): Promise<boolean> => {
     const current = tokensRef.current
     if (!current?.refreshToken) {
-      clearTokens()
-      apply(null)
-      setStatus('unauthenticated')
+      clear()
       return false
     }
     try {
-      const next = await refreshTokens(current.refreshToken)
-      setSession(next)
+      const next = await api.auth.refresh(current.refreshToken)
+      saveTokens(next)
+      applyTokens(next)
+      // Pull fresh identity + permissions so role changes take effect.
+      const me = await api.auth.me()
+      saveUser(me)
+      setUser(me)
+      await loadPerms()
+      setStatus('authenticated')
       return true
     } catch {
-      clearTokens()
-      apply(null)
-      setStatus('unauthenticated')
+      clear()
       return false
     }
-  }, [apply, setSession])
+  }, [applyTokens, clear, loadPerms])
 
-  const expire = React.useCallback(() => {
-    clearTokens()
-    apply(null)
-    setStatus('unauthenticated')
-  }, [apply])
-
-  const login = React.useCallback((redirect = '/dashboard') => {
-    window.location.assign(loginUrl(redirect))
-  }, [])
+  const expire = React.useCallback(() => clear(), [clear])
 
   const logout = React.useCallback(async () => {
     const current = tokensRef.current
-    clearTokens()
-    apply(null)
-    setStatus('unauthenticated')
-    const url = current
-      ? await requestLogout(current.idToken, current.refreshToken)
-      : '/login'
-    window.location.assign(url)
-  }, [apply])
+    if (current?.refreshToken) {
+      try {
+        await api.auth.logout(current.refreshToken)
+      } catch {
+        /* best effort */
+      }
+    }
+    clear()
+  }, [clear])
 
-  // If we started in `loading` (stale access token), resolve it once on mount.
+  // On mount: if the stored access token is stale, resolve via refresh; if it's
+  // valid but we have no cached permissions, fetch them once.
   React.useEffect(() => {
-    if (status === 'loading') void refresh()
+    void (async () => {
+      if (status === 'loading') {
+        await refresh()
+      } else if (status === 'authenticated' && permissions.length === 0) {
+        await loadPerms()
+      }
+    })()
     // run once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const roles = React.useMemo(
-    () => (tokens ? rolesFromTokens(tokens) : []),
-    [tokens],
-  )
-  const user = React.useMemo(
-    () => (tokens ? userFromTokens(tokens) : null),
-    [tokens],
-  )
+  const roles = React.useMemo(() => user?.roles ?? [], [user])
 
   const value = React.useMemo<AuthState>(
     () => ({
@@ -104,16 +130,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       tokens,
       user,
       roles,
+      permissions,
       hasRole: (role) => roles.includes(role),
       hasAnyRole: (req) => req.some((r) => roles.includes(r)),
       hasAllRoles: (req) => req.every((r) => roles.includes(r)),
+      hasPermission: (perm) => permissions.includes(perm),
+      hasAnyPermission: (req) => req.some((p) => permissions.includes(p)),
+      hasAllPermissions: (req) => req.every((p) => permissions.includes(p)),
       login,
       logout,
-      setSession,
       refresh,
       expire,
     }),
-    [status, tokens, user, roles, login, logout, setSession, refresh, expire],
+    [status, tokens, user, roles, permissions, login, logout, refresh, expire],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

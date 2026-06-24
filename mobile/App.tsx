@@ -1,50 +1,89 @@
 import { StatusBar } from 'expo-status-bar'
 import { useEffect, useState } from 'react'
-import { Button, Linking, StyleSheet, Text, View } from 'react-native'
+import {
+  Button,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native'
 
-import type { HealthStatus, ModuleManifest } from '@kentos/shared'
+import type { CurrentUser, HealthStatus } from '@turbohesap/shared'
 
 import { api } from './src/lib/api'
+import { clearTokens, loadTokens, saveTokens } from './src/lib/tokens'
 
 // Minimal demo screen proving the mobile app talks to the backend through the
-// SAME @kentos/shared contracts as the web frontend. Replace with real
-// navigation/screens as the app grows.
+// SAME @turbohesap/shared contracts as the web frontend: a health check and a
+// local username/password login. Replace with real navigation as the app grows.
 export default function App() {
   const [health, setHealth] = useState<HealthStatus | null>(null)
-  const [module, setModule] = useState<ModuleManifest | null>(null)
+  const [user, setUser] = useState<CurrentUser | null>(null)
+  const [username, setUsername] = useState('admin')
+  const [password, setPassword] = useState('Admin123!')
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    api.health
-      .getHealth()
-      .then(setHealth)
-      .catch((e: unknown) => setError(String(e)))
-    api.metadata
-      .getMetadata()
-      .then(setModule)
-      .catch(() => {
-        /* metadata is best-effort for the demo */
-      })
+    api.health.getHealth().then(setHealth).catch(() => setHealth(null))
+    loadTokens().then((t) => {
+      if (t) api.auth.me().then(setUser).catch(() => undefined)
+    })
   }, [])
+
+  async function signIn() {
+    setError(null)
+    try {
+      const res = await api.auth.login(username, password)
+      const { user: u, ...tokens } = res
+      await saveTokens(tokens)
+      setUser(u)
+    } catch {
+      setError('Giriş başarısız')
+    }
+  }
+
+  async function signOut() {
+    const t = await loadTokens()
+    if (t) await api.auth.logout(t.refreshToken).catch(() => undefined)
+    await clearTokens()
+    setUser(null)
+  }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{module?.displayName ?? 'KentOS Mobile'}</Text>
-      <Text style={styles.muted}>@kentos/shared · same contracts as web</Text>
+      <Text style={styles.title}>TurboHesap Mobile</Text>
+      <Text style={styles.muted}>@turbohesap/shared · same contracts as web</Text>
 
-      <View style={styles.row}>
-        <Text style={styles.label}>API</Text>
-        <Text>
-          {health ? health.status : error ? 'unreachable' : 'loading…'}
-        </Text>
-      </View>
+      <Text style={styles.row}>
+        API: {health ? health.status : 'unreachable'}
+      </Text>
 
-      <View style={styles.spacer} />
-
-      <Button
-        title="Sign in with Keycloak"
-        onPress={() => Linking.openURL(api.auth.loginUrl('/'))}
-      />
+      {user ? (
+        <View style={styles.block}>
+          <Text style={styles.label}>Signed in as {user.username}</Text>
+          <Text style={styles.muted}>roles: {user.roles.join(', ') || '—'}</Text>
+          <Button title="Sign out" onPress={signOut} />
+        </View>
+      ) : (
+        <View style={styles.block}>
+          <TextInput
+            style={styles.input}
+            placeholder="username"
+            autoCapitalize="none"
+            value={username}
+            onChangeText={setUsername}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="password"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+          <Button title="Sign in" onPress={signIn} />
+        </View>
+      )}
 
       <StatusBar style="auto" />
     </View>
@@ -60,8 +99,16 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   title: { fontSize: 22, fontWeight: '600' },
-  muted: { color: '#666', marginTop: 4, marginBottom: 24 },
-  row: { flexDirection: 'row', gap: 8 },
+  muted: { color: '#666', marginTop: 4 },
+  row: { marginTop: 16 },
+  block: { marginTop: 20, width: '100%', maxWidth: 320, gap: 10 },
   label: { fontWeight: '600' },
-  spacer: { height: 24 },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  error: { color: '#c00' },
 })

@@ -1,16 +1,12 @@
 import * as React from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import {
-  LayoutGrid,
-  Moon,
-  Palette,
-  Sparkles,
-  Sun,
-  type LucideIcon,
-} from 'lucide-react'
+import { Moon, Palette, Sparkles, Sun, type LucideIcon } from 'lucide-react'
 
-import { NAVIGATION, type NavItem } from '@/config/navigation'
+import { type NavItem } from '@/config/navigation'
+import { APP_MODULES } from '@/modules/registry'
 import { useLayout } from '@/lib/layout/use-layout'
+import { useAuth } from '@/lib/auth/auth-context'
+import { accessibleModules, filterNavByPermission } from '@/lib/auth/access'
 import { useTheme } from '@/lib/theme/use-theme'
 import {
   CommandDialog,
@@ -39,9 +35,15 @@ function flatten(items: NavItem[], group: string, acc: FlatLink[]) {
 
 export function CommandLauncher() {
   const navigate = useNavigate()
-  const { commandOpen, setCommandOpen, setAppLauncherOpen, setCustomizerOpen, setAiOpen } =
+  const { commandOpen, setCommandOpen, setCustomizerOpen, setAiOpen } =
     useLayout()
+  const { hasPermission } = useAuth()
   const { toggleMode, resolvedMode } = useTheme()
+
+  const modules = React.useMemo(
+    () => accessibleModules(APP_MODULES, hasPermission),
+    [hasPermission],
+  )
 
   // Global ⌘K / Ctrl+K shortcut.
   React.useEffect(() => {
@@ -57,9 +59,13 @@ export function CommandLauncher() {
 
   const links = React.useMemo(() => {
     const acc: FlatLink[] = []
-    NAVIGATION.forEach((g) => flatten(g.items, g.label ?? 'Gezinti', acc))
+    modules.forEach((m) =>
+      filterNavByPermission(m.nav, hasPermission).forEach((g) =>
+        flatten(g.items, g.label ?? m.label, acc),
+      ),
+    )
     return acc
-  }, [])
+  }, [modules, hasPermission])
 
   const run = (fn: () => void) => {
     setCommandOpen(false)
@@ -72,11 +78,22 @@ export function CommandLauncher() {
       <CommandList>
         <CommandEmpty>Sonuç bulunamadı.</CommandEmpty>
 
+        <CommandGroup heading="Modüller">
+          {modules.map((m) => (
+            <CommandItem
+              key={m.key}
+              value={`modul ${m.label} ${m.key}`}
+              onSelect={() => run(() => navigate({ to: m.home }))}
+            >
+              <m.icon />
+              <span>{m.label}</span>
+            </CommandItem>
+          ))}
+        </CommandGroup>
+
+        <CommandSeparator />
+
         <CommandGroup heading="Eylemler">
-          <CommandItem onSelect={() => run(() => setAppLauncherOpen(true))}>
-            <LayoutGrid />
-            <span>Uygulamaları aç</span>
-          </CommandItem>
           <CommandItem onSelect={() => run(() => setAiOpen(true))}>
             <Sparkles />
             <span>Yapay zeka asistanına sor</span>

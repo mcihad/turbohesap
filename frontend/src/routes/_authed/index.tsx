@@ -7,5 +7,5 @@ export const Route = createFileRoute('/_authed/')({
 // The root path is a gate: authenticated users (the `_authed` guard already
 // ensured it) land on the dashboard.
 function IndexRedirect() {
-  return <Navigate to="/dashboard" replace />
+  return <Navigate to="/genel/dashboard" replace />
 }

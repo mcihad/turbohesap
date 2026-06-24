@@ -1,4 +1,4 @@
-# DESIGN SYSTEM — KentOS Console Template
+# DESIGN SYSTEM — TurboHesap
 
 > This document is the **single source of truth** for the design system. It is
 > written so that the system can be rebuilt **1:1** from this file alone, by a
@@ -13,7 +13,7 @@
 
 > **📁 Repository layout.** This is a pnpm monorepo. The frontend lives in
 > **`frontend/`**, the NestJS backend in **`backend/`**, the shared API contracts
-> in **`shared/`** (`@kentos/shared`), and the Expo app in **`mobile/`**. Unless
+> in **`shared/`** (`@turbohesap/shared`), and the Expo app in **`mobile/`**. Unless
 > stated otherwise, every path in this document (e.g. `src/index.css`,
 > `src/routes`) is **relative to `frontend/`** — i.e. the real path is
 > `frontend/src/index.css`. The compiled SPA is emitted into `backend/static/`,
@@ -24,9 +24,9 @@
 > **Config:** runtime config lives in the root **`.env`** (copy from
 > `.env.example`). Vite reads it too (`envDir`), so frontend env vars must be
 > `VITE_`-prefixed — e.g. `VITE_API_BASE_URL` (default `/api`) for API calls. All
-> backend calls go through `@kentos/shared` via `src/lib/api.ts`. The app's
-> identity (name = Keycloak client, icon, roles, public `address`, …) is declared
-> in **`backend/kentos.module.json`** and served at `/api/v1/<name>/metadata`.
+> backend calls go through `@turbohesap/shared` via `src/lib/api.ts`. Auth is
+> **local** (username/password → JWT); the signed-in user's roles/permissions
+> come from `useAuth()`. API endpoints follow `/api/<module>/<resource>`.
 
 ---
 
@@ -49,6 +49,11 @@
 
 ### Code conventions
 
+- **Need a component? Check the catalog first.**
+  **[`src/components/components.md`](./frontend/src/components/components.md)**
+  lists every available UI primitive + layout component and what it's for. Reuse
+  what exists; only build a custom component when the catalog has no fit (then add
+  it to the catalog).
 - **`cn()`** (`src/lib/utils.ts`) merges class names with Tailwind-aware conflict
   resolution (`clsx` + `tailwind-merge`). Always use it instead of template
   strings so later classes win predictably.

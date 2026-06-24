@@ -1,7 +1,6 @@
 import * as React from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import {
-  BadgeCheck,
   Check,
   Copy,
   Eye,
@@ -9,19 +8,13 @@ import {
   KeyRound,
   RefreshCw,
   ShieldCheck,
-  TriangleAlert,
   UserRound,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth/auth-context'
-import {
-  clientRolesOf,
-  currentClientId,
-  decodeJwt,
-  realmRolesOf,
-} from '@/lib/auth/tokens'
+import { decodeJwt, displayName } from '@/lib/auth/tokens'
 import { PageHeader, PageWrapper } from '@/components/layout/page'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -48,11 +41,6 @@ function initials(name: string): string {
   return (parts[0][0] + (parts[1]?.[0] ?? '')).toUpperCase()
 }
 
-function str(claims: Claims, key: string): string | undefined {
-  const v = claims[key]
-  return typeof v === 'string' ? v : undefined
-}
-
 function expiryLabel(claims: Claims | null): string | null {
   const exp = claims?.exp
   if (typeof exp !== 'number') return null
@@ -65,9 +53,9 @@ function expiryLabel(claims: Claims | null): string | null {
 }
 
 function ProfilePage() {
-  const { tokens, refresh } = useAuth()
+  const { user, permissions, tokens, refresh } = useAuth()
 
-  if (!tokens) {
+  if (!user || !tokens) {
     return (
       <PageWrapper>
         <PageHeader title="Profil" description="Oturum bulunamadı." />
@@ -75,19 +63,13 @@ function ProfilePage() {
     )
   }
 
-  const idClaims = decodeJwt<Claims>(tokens.idToken) ?? {}
-  const name = str(idClaims, 'name') || str(idClaims, 'preferred_username') || 'Kullanıcı'
-  const email = str(idClaims, 'email')
-  const emailVerified = idClaims.email_verified === true
-  const realmRoles = realmRolesOf(tokens)
-  const clientRoles = clientRolesOf(tokens)
-  const azp = currentClientId(tokens)
+  const name = displayName(user)
 
   return (
     <PageWrapper>
       <PageHeader
         title="Profil"
-        description="Oturum açan kullanıcının kimliği, rolleri ve aktif oturum belirteçleri."
+        description="Oturum açan kullanıcının kimliği, rolleri, izinleri ve oturum belirteçleri."
         actions={
           <Button
             variant="outline"
@@ -111,7 +93,7 @@ function ProfilePage() {
               <UserRound className="size-4" />
               Kimlik
             </CardTitle>
-            <CardDescription>id_token içindeki kullanıcı bilgileri</CardDescription>
+            <CardDescription>Hesap bilgileri</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="flex items-center gap-3">
@@ -122,23 +104,10 @@ function ProfilePage() {
               </Avatar>
               <div className="min-w-0">
                 <p className="truncate font-medium">{name}</p>
-                {email ? (
-                  <div className="flex items-center gap-1.5">
-                    <span className="truncate text-sm text-muted-foreground">
-                      {email}
-                    </span>
-                    {emailVerified ? (
-                      <Badge variant="success">
-                        <BadgeCheck />
-                        Doğrulanmış
-                      </Badge>
-                    ) : (
-                      <Badge variant="warning">
-                        <TriangleAlert />
-                        Doğrulanmamış
-                      </Badge>
-                    )}
-                  </div>
+                {user.email ? (
+                  <span className="truncate text-sm text-muted-foreground">
+                    {user.email}
+                  </span>
                 ) : null}
               </div>
             </div>
@@ -146,65 +115,54 @@ function ProfilePage() {
             <Separator />
 
             <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
-              <Claim label="Kullanıcı adı" value={str(idClaims, 'preferred_username')} />
-              <Claim label="Ad" value={str(idClaims, 'given_name')} />
-              <Claim label="Soyad" value={str(idClaims, 'family_name')} />
-              <Claim label="Kullanıcı kimliği (sub)" value={str(idClaims, 'sub')} mono />
-              <Claim label="Oturum (sid)" value={str(idClaims, 'sid')} mono />
-              <Claim label="Yayınlayan (iss)" value={str(idClaims, 'iss')} />
+              <Claim label="Kullanıcı adı" value={user.username} />
+              <Claim label="E-posta" value={user.email} />
+              <Claim label="Ad" value={user.firstName} />
+              <Claim label="Soyad" value={user.lastName} />
+              <Claim label="Kullanıcı kimliği" value={user.id} mono />
             </dl>
           </CardContent>
         </Card>
 
-        {/* Roles */}
+        {/* Roles & permissions */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShieldCheck className="size-4" />
-              Roller
+              Roller ve izinler
             </CardTitle>
-            <CardDescription>access_token içindeki realm ve client rolleri</CardDescription>
+            <CardDescription>access_token içindeki yetkiler</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">Realm rolleri</p>
-              {realmRoles.length ? (
+              <p className="text-xs font-medium text-muted-foreground">Roller</p>
+              {user.roles.length ? (
                 <div className="flex flex-wrap gap-1.5">
-                  {realmRoles.map((r) => (
+                  {user.roles.map((r) => (
                     <Badge key={r} variant="secondary">
                       {r}
                     </Badge>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Realm rolü yok</p>
+                <p className="text-sm text-muted-foreground">Rol yok</p>
               )}
             </div>
 
             <Separator />
 
-            <div className="space-y-3">
-              <p className="text-xs font-medium text-muted-foreground">Client rolleri</p>
-              {clientRoles.length ? (
-                clientRoles.map((c) => (
-                  <div key={c.clientId} className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm">{c.clientId}</span>
-                      {c.clientId === azp ? (
-                        <Badge variant="info">bu modül</Badge>
-                      ) : null}
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {c.roles.map((r) => (
-                        <Badge key={r} variant="outline">
-                          {r}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                ))
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">İzinler</p>
+              {permissions.length ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {permissions.map((p) => (
+                    <Badge key={p} variant="outline" className="font-mono">
+                      {p}
+                    </Badge>
+                  ))}
+                </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Client rolü yok</p>
+                <p className="text-sm text-muted-foreground">İzin yok</p>
               )}
             </div>
           </CardContent>
@@ -223,20 +181,16 @@ function ProfilePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="id">
+          <Tabs defaultValue="access">
             <TabsList className="w-full">
-              <TabsTrigger value="id">ID Token</TabsTrigger>
               <TabsTrigger value="access">Access Token</TabsTrigger>
               <TabsTrigger value="refresh">Refresh Token</TabsTrigger>
             </TabsList>
-            <TabsContent value="id">
-              <TokenPanel token={tokens.idToken} decode />
-            </TabsContent>
             <TabsContent value="access">
               <TokenPanel token={tokens.accessToken} decode />
             </TabsContent>
             <TabsContent value="refresh">
-              <TokenPanel token={tokens.refreshToken} decode />
+              <TokenPanel token={tokens.refreshToken} />
             </TabsContent>
           </Tabs>
         </CardContent>

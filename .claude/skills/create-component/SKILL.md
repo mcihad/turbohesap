@@ -1,6 +1,6 @@
 ---
 name: create-component
-description: Create a new React component for this design-system template (KentOS Console) — a shadcn/ui-style primitive in frontend/src/components/ui or a composed feature component. Use when asked to add/build/create a component, button variant, card, dialog, widget, or any new reusable UI. Enforces the token system and conventions in DESIGN.md so the result is visually consistent.
+description: Create a new React component for TurboHesap — a shadcn/ui-style primitive in frontend/src/components/ui or a composed feature/module component. Use when asked to add/build/create a component, button variant, card, dialog, widget, or any new reusable UI. Enforces the token system and conventions in DESIGN.md so the result is visually consistent.
 ---
 
 # Create a component
@@ -9,18 +9,23 @@ You are adding a component to a **token-driven** design system. The look is
 defined entirely by tokens; your job is to compose them, never to invent values.
 
 ## 0. Read first (required)
-1. **`DESIGN.md`** — especially §1 (conventions), §3–4 (tokens/colors),
+1. **`frontend/src/components/components.md`** — the **component catalog**. Check
+   it first: if a suitable primitive/component already exists, reuse it instead of
+   creating a new one. Only build something new when the catalog has no fit.
+2. **`DESIGN.md`** — especially §1 (conventions), §3–4 (tokens/colors),
    §14 (component standards). It is the contract.
-2. An existing sibling that resembles what you're building, e.g.
+3. An existing sibling that resembles what you're building, e.g.
    `frontend/src/components/ui/button.tsx`, `card.tsx`, `dialog.tsx`, `switch.tsx`.
    Match its shape exactly.
 
 ## 1. Decide location
 - **Generic, reusable primitive** (button, input, badge, table…) →
   `frontend/src/components/ui/<name>.tsx` (kebab-case file, PascalCase exports).
-- **Composed / app-specific** (a shell part, a feature widget) →
-  `frontend/src/components/<feature>/<name>.tsx` or `frontend/src/components/layout/` if it's part
-  of the shell. Compose from `ui/*` primitives — don't re-style raw elements.
+- **Shell part** (app-bar, sidebar, rail piece) →
+  `frontend/src/components/layout/`.
+- **Module-specific** (a widget/page-part for one ERP module) →
+  `frontend/src/modules/<module>/...` (e.g. a `components/` or `pages/` subfolder).
+  Compose from `ui/*` primitives — don't re-style raw elements.
 
 ## 2. Hard rules (non-negotiable — from DESIGN.md §1)
 - Import and use **`cn()`** from `@/lib/utils` for all class composition.
@@ -48,6 +53,9 @@ defined entirely by tokens; your job is to compose them, never to invent values.
 - Overlays (anything that pops/portals): animate with
   `data-[state=open]:animate-in fade-in-0 zoom-in-95` /
   `data-[state=closed]:animate-out …` and portal to body.
+- **Permission-gated UI:** to show/hide by permission use `<Can permission="…">`
+  from `@/lib/auth/permission-gate` (or `useAuth().hasPermission(...)`); by role
+  use `<RolesRequired>`. Don't roll your own check.
 
 ## 3. Skeletons
 
@@ -96,11 +104,10 @@ or `popover.tsx` (Root/Trigger/Portal/Content + `data-slot` on each).
 
 ## 4. Wire it up
 - Export every public part from the file.
-- If it's a theme-aware feature component, read theme via `useTheme()`
-  (`@/lib/theme/use-theme`) and layout state via `useLayout()`
-  (`@/lib/layout/use-layout`) — don't add new global state.
-- Add a demo to `frontend/src/routes/components.tsx` (a `<Section title=…>`) when it's a
-  reusable primitive, so it stays in the living reference.
+- Theme-aware? read theme via `useTheme()` (`@/lib/theme/use-theme`) and layout
+  state via `useLayout()` (`@/lib/layout/use-layout`) — don't add new global state.
+- **Update the catalog:** add a row for the new component to
+  `frontend/src/components/components.md` so the next person finds it.
 
 ## 5. Verify (required, must pass)
 ```bash
@@ -111,7 +118,7 @@ pnpm build            # succeeds (emits into ../backend/static)
 ```
 Note: strict TS (`noUnusedLocals`/`noUnusedParameters`) — remove unused imports.
 
-## 6. Keep DESIGN.md true
-If you added a **reusable primitive** or a new pattern, add a short entry to
-**DESIGN.md §14** (and the file map / stack table if you added a dependency).
-DESIGN.md must always let another agent reproduce the exact UI.
+## 6. Keep the docs true
+- Always add/refresh the entry in **`components.md`**.
+- If you added a **reusable primitive** or a new pattern, also add a short entry
+  to **DESIGN.md §14** (and the file map / stack table if you added a dependency).

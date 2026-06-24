@@ -1,133 +1,110 @@
-# Authentication (Keycloak)
+# Authentication & Authorization
 
-KentOS modules authenticate against **Keycloak** using OIDC **Authorization Code
-+ PKCE** with a **confidential client**. The client secret lives only on the
-NestJS backend; the browser never sees it. Frontend and backend are same-origin
-(one process), so the web `/api/auth/*` calls need no CORS.
-
-The OIDC **client_id is the module name** (`kentos.module.json` "name"), which is
-also the **Keycloak client ID**.
+TurboHesap uses **local authentication**: users live in PostgreSQL with
+bcrypt-hashed passwords, and the backend issues **JWTs** (a short-lived access
+token + a rotating, revocable refresh token). Authorization is **RBAC**: users
+have roles, roles grant permissions.
 
 ## Flow
 
 ```
-Browser            Backend (/api/auth)             Keycloak
-   │  GET /api/auth/login?redirect=/dashboard          │
-   │ ─────────────────►  build PKCE+state+nonce        │
-   │  303 redirect ◄───  (state stored server-side)    │
-   │ ───────────────────────────────────────────────► authorize
-   │  login UI + consent, then redirect back           │
-   │ ◄─────────────────────────────────────────────── /auth/callback?code&state
-   │  POST /api/auth/callback {code,state}             │
-   │ ─────────────────►  exchange (secret+verifier) ─► token endpoint
-   │  {tokens, redirect} ◄─  verify nonce ◄──────────  tokens
-   │  store tokens in localStorage, go to redirect     │
+Browser/App         Backend (/api/auth)              PostgreSQL
+   │  POST /api/auth/login {username,password}            │
+   │ ─────────────────►  bcrypt verify ────────────────► users
+   │  {accessToken, refreshToken, user} ◄── sign JWTs, store refresh row
+   │  store tokens (localStorage / AsyncStorage)          │
+   │
+   │  Authorization: Bearer <accessToken>  on every call  │
+   │  POST /api/auth/refresh {refreshToken}               │
+   │ ─────────────────►  verify + rotate ──────────────► refresh_tokens
+   │  {accessToken, refreshToken} ◄── revoke old, issue new pair
 ```
 
-Refresh and logout follow the same pattern: the browser calls
-`POST /api/auth/refresh` / `POST /api/auth/logout`, and the backend talks to
-Keycloak with the secret.
-
-## Backend — `src/auth/*` + `/api/auth/*`
+## Backend — `src/modules/auth` + `/api/auth/*`
 
 | Endpoint | Purpose |
 | -------- | ------- |
-| `GET /api/auth/login?redirect=…` | 303 to Keycloak; stashes PKCE/state/nonce keyed by `state`. |
-| `POST /api/auth/callback {code, state}` | Validate state, exchange code, verify id_token nonce, return tokens + `redirect`. |
-| `POST /api/auth/refresh {refreshToken}` | Return a fresh token set. |
-| `POST /api/auth/logout {idToken, refreshToken}` | Revoke at Keycloak, return `logoutUrl`. |
+| `POST /api/auth/login {username, password}` | Verify credentials, return tokens + the current user. |
+| `POST /api/auth/refresh {refreshToken}` | Rotate: revoke the presented refresh token, return a fresh pair. |
+| `POST /api/auth/logout {refreshToken}` | Revoke the refresh token (best effort). |
+| `GET /api/auth/me` | The verified caller (identity + roles). |
+| `GET /api/auth/permissions` | The caller's effective permission keys (resolved from roles). |
 
-`KeycloakService` reads discovery once from
-`${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/.well-known/openid-configuration` and
-caches it. Keycloak's token response is snake_case and parsed by a private
-`KeycloakTokens` type; **our API output is camelCase** (mapped through the
-`AuthTokens` DTO from `@kentos/shared`). The DTOs themselves live in
-`@kentos/shared`, so the web and mobile clients consume the exact same shapes.
+- **Access token** (secret `JWT_ACCESS_SECRET`, TTL `JWT_ACCESS_TTL`) carries
+  `sub`, `username`, `roles` — **roles only, not permissions**, so the token stays
+  small no matter how many permissions exist. The client fetches its permission
+  list separately via `GET /api/auth/permissions` (JWT-authenticated) after login.
+- **Refresh token** (secret `JWT_REFRESH_SECRET`, TTL `JWT_REFRESH_TTL`) carries
+  only a `jti` that maps to a row in `refresh_tokens`; a token is valid only
+  while its row exists, is not revoked, and has not expired. Refresh rotates it.
+- Passwords are hashed with bcrypt; the `passwordHash` column is never selected
+  into API output.
 
-## Frontend — `src/lib/auth/*`
+## Authorization (RBAC)
 
-- **Storage:** tokens live in `localStorage` (`tokens.ts`). Roles come from the
-  **access token** (`realm_access` + this client's `resource_access`); identity
-  from the lightweight **id token**.
-- **State:** `AuthProvider` / `useAuth` (`auth-provider.tsx` / `auth-context.ts`).
-- **Routing:** `__root` provides auth context only; the pathless **`_authed`**
-  layout guards every app page and renders the shell + `SessionWatcher`. `/login`
-  and `/auth/callback` render bare. `/` → `/dashboard` when authenticated; the
-  guard sends unauthenticated users to `/login`.
-- **Session watcher** (`session-watcher.tsx`): ~30s before the access token
-  expires it shows a sticky toast with an **"Oturumu uzat"** button that
-  refreshes; if ignored until expiry the session is dropped and the user returns
-  to `/login`.
-- **Profile page** (`/profile`, `routes/_authed/profile.tsx`): shows the id-token
-  identity claims, realm + client roles (grouped, current module flagged), and
-  the id/access/refresh tokens (masked, copyable, with decoded claims). Helpers:
-  `realmRolesOf` / `clientRolesOf` / `currentClientId` in `tokens.ts`.
+Model: `User` ↔ `Role` ↔ `Permission` (many-to-many); each role also belongs to a
+module. Permission keys follow `<module>.<resource>.<action>` (e.g.
+`iam.users.read`, `iam.users.write`). Each module declares its permissions in
+`<module>.permissions.ts`, aggregated in `src/permissions.catalog.ts` and
+auto-seeded on boot.
 
-## Authorization (roles)
+### Backend — global guards (enforced server-side)
 
-Roles come from the access token: **realm roles** (`realm_access.roles`) plus
-**this module's client roles** (`resource_access[<module-name>].roles`). The
-module name is the Keycloak client id, so client roles are scoped to the module.
-
-### Backend — `KeycloakAuthGuard` + `@Roles()`
-
-`KeycloakAuthGuard` (`src/common/keycloak-auth.guard.ts`) requires a valid access
-token (Bearer header), **verified against Keycloak's JWKS** (jose — signature,
-issuer, expiry), and, when `@Roles(...)` is present, that the caller has at least
-one of them. With no `@Roles()` it just requires a valid token.
+Two global guards run on every route: `JwtAuthGuard` (auth; opt out with
+`@Public()`) then `PermissionsGuard` (authz). To protect a route, **just add the
+decorator** — no per-controller `@UseGuards` needed:
 
 ```ts
-// any valid token:
-@UseGuards(KeycloakAuthGuard)
-@Get('me')
-me(@CurrentUser() user: Claims) { … }
+@RequirePermissions('iam.users.write')   // caller must hold ALL listed permissions
+@Post()
+create(@Body() dto: CreateUserDto) { … }
 
-// at least one of these roles:
-@UseGuards(KeycloakAuthGuard)
-@Roles('Manager', 'Admin')
-@Get('reports')
-reports() { … }
+// the verified principal (roles only; permissions are not in the token):
+@Get('me')
+me(@CurrentUser() user: AuthUser) { … }   // { sub, username, roles }
 ```
 
-The verified claims are stashed on the request and read with `@CurrentUser()`.
-`GET /api/me` is a working example. Forged/expired/missing tokens → `401`; valid
-token without the role → `403`.
+`PermissionsGuard` resolves the caller's effective permissions **from the DB**
+(`AccessService.permissionKeys(userId)`) per request — not from the token. So the
+same check that the `GET /api/auth/permissions` endpoint reports is what the guard
+enforces, and editing a role's permissions takes effect on the next request.
+Missing/expired token → `401`; valid token without the permission → `403`.
 
-### Frontend — `hasAnyRole` / `<RolesRequired>`
+### Frontend — `useAuth()`
 
-Same semantics, two styles (use whichever fits):
+Tokens + current user are in `localStorage`; the permission list is fetched
+separately (`api.auth.permissions()`) right after login/refresh and cached
+(`lib/auth/tokens.ts`). `useAuth()` (from `lib/auth/auth-context.ts`) exposes:
 
 ```tsx
-// imperative
-const { hasAnyRole, hasAllRoles } = useAuth()
-if (hasAnyRole(['Manager', 'Admin'])) { /* … */ }
+const { user, permissions, login, logout, refresh,
+        hasRole, hasAnyRole, hasAllRoles,
+        hasPermission, hasAnyPermission, hasAllPermissions } = useAuth()
 
-// declarative (show/hide UI)
-<RolesRequired anyOf={['Manager', 'Admin']} fallback={null}>
-  <Button>Raporu sil</Button>
-</RolesRequired>
-<RolesRequired allOf={['Manager', 'User']}>…</RolesRequired>
+await login(username, password)            // then permissions are fetched
+if (hasPermission('iam.users.write')) { /* show the “new user” button */ }
 ```
 
-`anyOf` and `allOf` combine with AND. A live demo is on the **/components** page.
-Note: client-side gating is **UX only** — always enforce with
-`KeycloakAuthGuard` + `@Roles()` on the backend route too.
+`routes/login.tsx` is a local username/password form; the pathless `_authed`
+layout guards app pages; `SessionWatcher` prompts to extend the session ~30s
+before the access token expires. Client-side gating (nav/rail filtering, `<Can>`,
+`<PermissionRequired>`) is **UX only** — the backend enforces the same keys.
+
+## Seeding
+
+On first boot `SeedService` upserts the permission catalog, the system roles
+(`admin` = all permissions, `user` = minimal), and an admin user from
+`SEED_ADMIN_*` (default **`admin` / `Admin123!`**). Idempotent — safe on every boot.
 
 ## Configuration (`.env`)
 
 ```
-KEYCLOAK_URL=http://localhost:8080
-KEYCLOAK_REALM=sivasbeltr
-KEYCLOAK_CLIENT_SECRET=        # confidential client secret (backend only)
-# KEYCLOAK_REDIRECT_URI=       # optional; else <request-base>/auth/callback
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/turbohesap
+JWT_ACCESS_SECRET=…            # change in production
+JWT_REFRESH_SECRET=…           # change in production
+JWT_ACCESS_TTL=15m
+JWT_REFRESH_TTL=7d
+SEED_ADMIN_USERNAME=admin
+SEED_ADMIN_PASSWORD=Admin123!
+SEED_ADMIN_EMAIL=admin@turbohesap.local
 ```
-
-## Keycloak client setup (realm `sivasbeltr`)
-
-Create a client whose **Client ID = the module name**:
-
-- **Client authentication: ON** (confidential) → put the secret in `KEYCLOAK_CLIENT_SECRET`.
-- **Standard flow** enabled.
-- **Valid redirect URIs:** `http://localhost:5800/auth/callback` (+ your prod `address` + `/auth/callback`).
-- **Valid post-logout redirect URIs:** `http://localhost:5800/login` (+ prod).
-- **Web origins:** the app origin (e.g. `http://localhost:5800`).

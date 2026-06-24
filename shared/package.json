@@ -1,23 +1,25 @@
 {
-  "name": "@kentos/shared",
+  "name": "@turbohesap/shared",
   "version": "0.1.0",
-  "description": "Shared, framework-agnostic contracts for KentOS: DTO models, service interfaces, and their axios-based client implementations. Consumed by the web frontend and (later) the React Native mobile app.",
+  "description": "Shared, framework-agnostic contracts for TurboHesap: DTO models, service interfaces, and their axios-based client implementations. Consumed by the web frontend and the React Native mobile app.",
   "license": "UNLICENSED",
   "type": "commonjs",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/cjs/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "types": "./dist/cjs/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "dev": "tsc -p tsconfig.json --watch",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.esm.json",
+    "dev": "tsc -p tsconfig.esm.json --watch",
     "clean": "rm -rf dist"
   },
   "dependencies": {

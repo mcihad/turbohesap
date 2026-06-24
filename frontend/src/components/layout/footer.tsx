@@ -47,7 +47,7 @@ function DefaultFooter() {
         <a href="#" className="transition-colors hover:text-foreground">
           Koşullar
         </a>
-        <span>© {new Date().getFullYear()} KentOS Inc.</span>
+        <span>© {new Date().getFullYear()} TurboHesap</span>
       </div>
     </div>
   )

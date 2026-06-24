@@ -1,6 +1,6 @@
 ---
 name: update-component
-description: Safely modify an existing component in this design-system template (KentOS Console) — change styles, add a variant/prop, fix behavior, or refactor a component in frontend/src/components. Use when asked to edit/update/tweak/fix/restyle an existing component. Preserves the token system, the component API, and DESIGN.md consistency.
+description: Safely modify an existing component in TurboHesap — change styles, add a variant/prop, fix behavior, or refactor a component in frontend/src/components (or a module's components). Use when asked to edit/update/tweak/fix/restyle an existing component. Preserves the token system, the component API, and DESIGN.md/components.md consistency.
 ---
 
 # Update a component
@@ -8,12 +8,14 @@ description: Safely modify an existing component in this design-system template 
 Change the component **without breaking its contract or the design language**.
 
 ## 0. Read first (required)
-1. **`DESIGN.md`** §1 (conventions) and the relevant §14 entry for this
+1. **`frontend/src/components/components.md`** — the catalog entry for this
+   component (and to keep it accurate after your change).
+2. **`DESIGN.md`** §1 (conventions) and the relevant §14 entry for this
    component (focus rings, variants, slots, the exact look it must keep).
-2. The component file itself, fully.
-3. **Find every usage before changing the API:**
+3. The component file itself, fully.
+4. **Find every usage before changing the API:**
    ```bash
-   grep -rn "ComponentName" src --include=*.tsx
+   grep -rn "ComponentName" frontend/src --include=*.tsx
    ```
 
 ## 1. Preserve these (do not regress)
@@ -36,7 +38,7 @@ Change the component **without breaking its contract or the design language**.
 
 ## 3. Adding a variant or prop (typical task)
 - New visual variant → add a key to the existing `cva` `variants` map; keep
-  `defaultVariants` stable. Demo it in `frontend/src/routes/components.tsx`.
+  `defaultVariants` stable.
 - New behavior prop → extend the props type; give it a safe default so existing
   call sites are unaffected.
 
@@ -47,10 +49,11 @@ pnpm exec tsc -b      # zero errors — catches broken call sites
 pnpm lint             # zero errors
 pnpm build            # succeeds (emits into ../backend/static)
 ```
-If you changed something visible, also sanity-check the relevant demo on the
-**/components** route (`pnpm dev`, i.e. `make dev-frontend`).
+If you changed something visible, sanity-check it in the running app
+(`make dev`).
 
-## 5. Keep DESIGN.md true
-If the change alters a documented standard (a variant set, a size, a focus/title
-style, a default), update the matching **DESIGN.md** entry in the same change so
-the doc still reproduces the real component 1:1.
+## 5. Keep the docs true
+- Update the **`components.md`** entry if the component's purpose/API changed.
+- If the change alters a documented standard (a variant set, a size, a
+  focus/title style, a default), update the matching **DESIGN.md** entry in the
+  same change so the doc still reproduces the real component 1:1.

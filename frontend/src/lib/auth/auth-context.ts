@@ -1,28 +1,32 @@
 import * as React from 'react'
 
-import type { AuthTokens, UserInfo } from './tokens'
+import type { AuthTokens, CurrentUser } from './tokens'
 
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated'
 
 export interface AuthState {
   status: AuthStatus
   tokens: AuthTokens | null
-  user: UserInfo | null
+  user: CurrentUser | null
   roles: string[]
+  permissions: string[]
   hasRole: (role: string) => boolean
   /** True if the user has at least one of the given roles. */
   hasAnyRole: (roles: string[]) => boolean
   /** True if the user has all of the given roles. */
   hasAllRoles: (roles: string[]) => boolean
-  /** Start a full Keycloak login (redirects the browser). */
-  login: (redirect?: string) => void
-  /** Clear the session and redirect to Keycloak end-session. */
+  hasPermission: (permission: string) => boolean
+  /** True if the user has at least one of the given permissions. */
+  hasAnyPermission: (permissions: string[]) => boolean
+  /** True if the user has all of the given permissions. */
+  hasAllPermissions: (permissions: string[]) => boolean
+  /** Local login with username + password. Throws on failure. */
+  login: (username: string, password: string) => Promise<void>
+  /** Clear the session (revokes the refresh token best-effort). */
   logout: () => Promise<void>
-  /** Persist a freshly-obtained token set (used by the callback route). */
-  setSession: (tokens: AuthTokens) => void
   /** Refresh the access token. Returns true on success. */
   refresh: () => Promise<boolean>
-  /** Drop the session locally (no IdP round-trip); the guard sends to /login. */
+  /** Drop the session locally; the route guard sends the user to /login. */
   expire: () => void
 }
 

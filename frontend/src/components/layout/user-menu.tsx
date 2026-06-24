@@ -8,6 +8,7 @@ import {
 import { Link } from '@tanstack/react-router'
 
 import { useAuth } from '@/lib/auth/auth-context'
+import { displayName } from '@/lib/auth/tokens'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -29,7 +30,7 @@ function initials(name: string): string {
 
 export function UserMenu() {
   const { user, logout } = useAuth()
-  const name = user?.name || user?.preferredUsername || 'Kullanıcı'
+  const name = user ? displayName(user) : 'Kullanıcı'
   const email = user?.email ?? ''
 
   return (

@@ -1,9 +1,9 @@
 // Token storage for the mobile app — the React Native counterpart of the web's
-// localStorage-backed tokens. The shape (AuthTokens) comes from @kentos/shared,
+// localStorage-backed tokens. The shape (AuthTokens) comes from @turbohesap/shared,
 // so the web app, the backend, and this app all agree.
 
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import type { AuthTokens } from '@kentos/shared'
+import type { AuthTokens } from '@turbohesap/shared'
 
 const STORAGE_KEY = 'kentos-auth'
 

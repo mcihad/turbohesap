@@ -145,7 +145,7 @@ export const COLOR_PRESETS: ColorPreset[] = [
 
 export const DEFAULT_THEME: ThemeConfig = {
   mode: 'system',
-  preset: 'violet',
+  preset: 'neutral',
   radius: 0.625,
   scale: 1,
   fontSize: 16,

@@ -1,5 +1,5 @@
 // Metro configuration for the pnpm monorepo. The app lives in mobile/ but
-// depends on @kentos/shared at the workspace root, so Metro must watch the whole
+// depends on @turbohesap/shared at the workspace root, so Metro must watch the whole
 // workspace and resolve modules from both node_modules trees.
 // See: https://docs.expo.dev/guides/monorepos/
 const { getDefaultConfig } = require('expo/metro-config')

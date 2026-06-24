@@ -1,6 +1,6 @@
 ---
 name: update-page
-description: Modify an existing page/route in this design-system template (KentOS Console) — change content, header/actions, layout (padded vs full-bleed), or footer for a route under frontend/src/routes. Use when asked to edit/update/change/restyle an existing page, screen, or view. Keeps the page consistent with the app shell and DESIGN.md.
+description: Modify an existing page/route in TurboHesap — change content, header/actions, layout (padded vs full-bleed), footer, or authorization for a route under frontend/src/routes/_authed/<module> (page in frontend/src/modules/<module>/pages). Use when asked to edit/update/change/restyle an existing page, screen, or view. Keeps the page consistent with the app shell, module nav, and DESIGN.md.
 ---
 
 # Update a page
@@ -8,9 +8,11 @@ description: Modify an existing page/route in this design-system template (KentO
 Edit the route while keeping it consistent with the shell and the token system.
 
 ## 0. Read first (required)
-1. **`DESIGN.md`** §11 (page primitives), §12 (footer), and §6 (layout) if you're
-   changing how the page fills space.
-2. The route file under `frontend/src/routes/`.
+1. **`DESIGN.md`** §11 (page primitives), §12 (footer), §6 (layout) and
+   **`AGENTS.md`** §3/§6 (module convention, modular UI) and §7 (roles &
+   permissions) if you touch gating.
+2. The route file under `frontend/src/routes/_authed/<module>/` and the page
+   component it points to under `frontend/src/modules/<module>/pages/`.
 
 ## 1. Preserve the page contract
 - Keep content inside **`<PageWrapper>`** and the heading in **`<PageHeader>`**.
@@ -28,9 +30,15 @@ Edit the route while keeping it consistent with the shell and the token system.
   `shadow-*`, spacing utilities; never hardcode hex/px/shadows.
 - **Add a contextual footer**: render `<PageFooter>` with `<PageFooterStat>`
   items; it overrides the default footer while the page is mounted.
+- **Authorization**: gate reads with `<PermissionRequired permission="…">`
+  (`@/lib/auth/permission-gate`) and `enabled: hasPermission('…')` on queries;
+  gate write UI with `useAuth().hasPermission('<module>.<resource>.write')` or
+  `<Can permission="…">`. Routes are `/<module>/<resource>`; data via
+  `api.<resource>.*` (`@/lib/api`).
 - **Rename/move the route**: changing the file path changes the URL — update the
-  matching entry in `frontend/src/config/navigation.ts` (and `apps.ts` if present), and
-  let Vite regenerate `frontend/src/routeTree.gen.ts` (`pnpm dev`).
+  matching nav item in `frontend/src/modules/<module>/module.config.ts` (keep its
+  `permission`), and let Vite regenerate `frontend/src/routeTree.gen.ts`
+  (`pnpm exec vite build`).
 
 ## 3. Verify (required, must pass)
 ```bash
@@ -43,6 +51,6 @@ For visible changes, check the page in `pnpm dev` (`make dev-frontend`).
 
 ## 4. Keep things in sync
 - If you renamed the route or its nav title, confirm the breadcrumb + command
-  palette still resolve (both derive from `frontend/src/config/navigation.ts`).
+  palette still resolve (both derive from the module's `module.config.ts` nav).
 - Update **DESIGN.md** only if you introduced a new layout pattern worth
   standardizing across pages.

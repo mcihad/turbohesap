@@ -1,22 +1,19 @@
-import { Controller, Get, HttpException, HttpStatus, Optional } from '@nestjs/common'
+import { Controller, Get, HttpException, HttpStatus } from '@nestjs/common'
 import { InjectDataSource } from '@nestjs/typeorm'
 import { DataSource } from 'typeorm'
 
-import type { HealthStatus } from '@kentos/shared'
+import type { HealthStatus } from '@turbohesap/shared'
 
-// HealthController reports liveness, and database connectivity when a database
-// is configured (DataSource is optional — absent when DATABASE_URL is unset).
+import { Public } from '../common/decorators/public.decorator'
+
+// Liveness + database connectivity. Public (no auth required).
 @Controller('health')
 export class HealthController {
-  constructor(
-    @Optional() @InjectDataSource() private readonly dataSource?: DataSource,
-  ) {}
+  constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
+  @Public()
   @Get()
   async health(): Promise<HealthStatus> {
-    if (!this.dataSource) {
-      return { status: 'ok' }
-    }
     try {
       await this.dataSource.query('SELECT 1')
       return { status: 'ok', database: 'up' }

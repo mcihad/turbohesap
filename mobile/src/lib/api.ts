@@ -1,9 +1,9 @@
-// The single API instance for the mobile app, built from @kentos/shared — the
-// exact same contracts the web frontend uses. Only the platform wiring differs:
-// an absolute base URL (no same-origin on a device) and an AsyncStorage-backed
-// token source.
+// The single API instance for the mobile app, built from @turbohesap/shared —
+// the exact same contracts the web frontend uses. Only the platform wiring
+// differs: an absolute base URL (no same-origin on a device) and an
+// AsyncStorage-backed token source.
 
-import { createKentosApi } from '@kentos/shared'
+import { createTurbohesapApi } from '@turbohesap/shared'
 
 import { loadTokens } from './tokens'
 
@@ -12,11 +12,8 @@ import { loadTokens } from './tokens'
 // http://192.168.1.20:5800/api) in mobile/.env or your shell.
 const baseUrl =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://localhost:5800/api'
-const moduleName =
-  process.env.EXPO_PUBLIC_MODULE_NAME ?? 'kentos-project-template'
 
-export const api = createKentosApi({
+export const api = createTurbohesapApi({
   baseUrl,
-  moduleName,
   getAccessToken: async () => (await loadTokens())?.accessToken ?? null,
 })

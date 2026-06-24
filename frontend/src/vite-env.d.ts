@@ -6,8 +6,6 @@
 interface ImportMetaEnv {
   /** Base path of the JSON API. Default: '/api'. */
   readonly VITE_API_BASE_URL?: string
-  /** Module name (kentos.module.json "name") used for the metadata path. */
-  readonly VITE_MODULE_NAME?: string
 }
 
 interface ImportMeta {

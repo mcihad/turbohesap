@@ -11,21 +11,22 @@
 > engine. If you find yourself typing `#fff`, `16px`, or `rounded-[10px]`, stop —
 > there is a token for it.
 
-> **📁 Repository layout.** This is now a monorepo. The frontend lives in
-> **`frontend/`** and the Go backend in **`backend/`**. Unless stated otherwise,
-> every path in this document (e.g. `src/index.css`, `src/routes`) is **relative
-> to `frontend/`** — i.e. the real path is `frontend/src/index.css`. The compiled
-> SPA is emitted into `backend/static/` and embedded into the Go binary
-> (`go:embed`) so the whole app ships as a single executable. Build/run via the
-> root **`Makefile`** (`make build`, `make run`; the backend serves on `:5800`).
-> See **`AGENTS.md`** for the full system architecture.
+> **📁 Repository layout.** This is a pnpm monorepo. The frontend lives in
+> **`frontend/`**, the NestJS backend in **`backend/`**, the shared API contracts
+> in **`shared/`** (`@kentos/shared`), and the Expo app in **`mobile/`**. Unless
+> stated otherwise, every path in this document (e.g. `src/index.css`,
+> `src/routes`) is **relative to `frontend/`** — i.e. the real path is
+> `frontend/src/index.css`. The compiled SPA is emitted into `backend/static/`,
+> which the NestJS backend serves alongside `/api` (one process). Build/run via
+> the root **`Makefile`** (`make build`, `make run`; the backend serves on
+> `:5800`). See **`AGENTS.md`** for the full system architecture.
 >
-> **Config:** all runtime config lives in the root **`.env`** (copy from
+> **Config:** runtime config lives in the root **`.env`** (copy from
 > `.env.example`). Vite reads it too (`envDir`), so frontend env vars must be
-> `VITE_`-prefixed — e.g. `VITE_API_BASE_URL` (default `/api/v1`) for API calls.
-> The app's identity (name = Keycloak client, icon, roles, public `address`, …)
-> is declared in **`backend/internal/module/kentos.module.json`** and served at
-> `/api/v1/<name>/metadata`.
+> `VITE_`-prefixed — e.g. `VITE_API_BASE_URL` (default `/api`) for API calls. All
+> backend calls go through `@kentos/shared` via `src/lib/api.ts`. The app's
+> identity (name = Keycloak client, icon, roles, public `address`, …) is declared
+> in **`backend/kentos.module.json`** and served at `/api/v1/<name>/metadata`.
 
 ---
 

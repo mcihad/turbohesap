@@ -1,28 +1,19 @@
 # KentOS Console — root Makefile
-# Single entry point for building and running the frontend + Go backend.
-# The frontend compiles into backend/static; the Go binary embeds that
-# directory (go:embed), so `make build` yields one self-contained binary.
-
-FRONTEND_DIR := frontend
-BACKEND_DIR  := backend
-BIN_DIR      := bin
-BINARY       := $(BIN_DIR)/kentos
-
-# Module path is derived from go.mod so renaming the module (see the
-# init-module skill) is picked up automatically.
-MODULE := $(shell cd $(BACKEND_DIR) && $(GO) list -m 2>/dev/null || echo kentos-project-template)
+# Single entry point for the pnpm monorepo: @kentos/shared (contracts),
+# @kentos/frontend (React SPA) and @kentos/backend (NestJS API). The frontend
+# compiles into backend/static; the NestJS server serves that directory, so the
+# whole app runs from a single backend process.
 
 PNPM ?= pnpm
-GO   ?= go
+
+# Module name is read from the manifest (single source of truth). Renaming the
+# module (see the init-module skill) is picked up automatically.
+MODULE := $(shell node -e "process.stdout.write(require('./backend/kentos.module.json').name)" 2>/dev/null || echo kentos-project-template)
 
 # Load configuration from .env so every command sees the same variables
 # (missing file is ignored). `export` forwards them to recipe subprocesses.
 -include .env
 export
-
-# Version is stamped into the binary (see cmd/version.go).
-VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
-LDFLAGS := -X $(MODULE)/cmd.Version=$(VERSION)
 
 .DEFAULT_GOAL := help
 
@@ -41,61 +32,56 @@ env: ## Create .env from .env.example if it does not exist
 	@test -f .env && echo ".env already exists" || (cp .env.example .env && echo "created .env from .env.example")
 
 .PHONY: install
-install: ## Install frontend dependencies (pnpm)
-	cd $(FRONTEND_DIR) && $(PNPM) install
+install: ## Install all workspace dependencies (pnpm)
+	$(PNPM) install
 
 ##@ Develop
 .PHONY: dev-frontend
 dev-frontend: ## Start the Vite dev server with hot reload (:5173)
-	cd $(FRONTEND_DIR) && $(PNPM) dev
+	$(PNPM) --filter @kentos/frontend dev
 
 .PHONY: dev-backend
-dev-backend: ## Run the Go API server without rebuilding the embed (:5800)
-	cd $(BACKEND_DIR) && $(GO) run . serve
+dev-backend: ## Run the NestJS API in watch mode (:5800)
+	$(PNPM) --filter @kentos/backend start:dev
+
+.PHONY: dev-shared
+dev-shared: ## Recompile @kentos/shared on change (watch)
+	$(PNPM) --filter @kentos/shared dev
 
 ##@ Build
+.PHONY: build-shared
+build-shared: ## Compile @kentos/shared (contracts) to dist
+	$(PNPM) --filter @kentos/shared build
+
 .PHONY: build-frontend
-build-frontend: ## Compile the SPA into backend/static
-	cd $(FRONTEND_DIR) && $(PNPM) build
+build-frontend: build-shared ## Compile the SPA into backend/static
+	$(PNPM) --filter @kentos/frontend build
 
 .PHONY: build-backend
-build-backend: ## Compile the Go binary, embedding backend/static
-	mkdir -p $(BIN_DIR)
-	cd $(BACKEND_DIR) && $(GO) build -ldflags "$(LDFLAGS)" -o ../$(BINARY) .
+build-backend: build-shared ## Compile the NestJS server to backend/dist
+	$(PNPM) --filter @kentos/backend build
 
 .PHONY: build
-build: build-frontend build-backend ## Build the frontend then the single self-contained binary
-	@echo "Built $(BINARY) ($(VERSION)) — module: $(MODULE)"
+build: build-shared build-frontend build-backend ## Build shared, frontend, then the NestJS backend
+	@echo "Built KentOS Console — module: $(MODULE)"
 
 ##@ Run
 .PHONY: run
-run: build-frontend ## Build the frontend and run the backend serving it (:5800)
-	cd $(BACKEND_DIR) && $(GO) run -ldflags "$(LDFLAGS)" . serve
+run: build-frontend ## Build the frontend and run the NestJS backend serving it (:5800)
+	$(PNPM) --filter @kentos/backend start
 
-.PHONY: run-bin
-run-bin: build ## Build everything and run the compiled binary
-	./$(BINARY) serve
+.PHONY: run-prod
+run-prod: build ## Build everything and run the compiled server
+	$(PNPM) --filter @kentos/backend start:prod
 
 ##@ Quality
-.PHONY: tidy
-tidy: ## Tidy Go module dependencies
-	cd $(BACKEND_DIR) && $(GO) mod tidy
-
-.PHONY: fmt
-fmt: ## Format Go source
-	cd $(BACKEND_DIR) && $(GO) fmt ./...
-
 .PHONY: lint
-lint: ## Lint the frontend (eslint) and vet the backend (go vet)
-	cd $(FRONTEND_DIR) && $(PNPM) lint
-	cd $(BACKEND_DIR) && $(GO) vet ./...
-
-.PHONY: test
-test: ## Run backend tests
-	cd $(BACKEND_DIR) && $(GO) test ./...
+lint: ## Lint the frontend (eslint) and type-check the backend (tsc)
+	$(PNPM) --filter @kentos/frontend lint
+	$(PNPM) --filter @kentos/backend typecheck
 
 .PHONY: clean
-clean: ## Remove build artifacts (binary + generated frontend assets)
-	rm -rf $(BIN_DIR)
-	rm -rf $(BACKEND_DIR)/static/assets
-	cd $(FRONTEND_DIR) && rm -rf dist
+clean: ## Remove build artifacts (dist + generated frontend assets)
+	rm -rf shared/dist backend/dist
+	rm -rf backend/static/assets
+	$(PNPM) --filter @kentos/frontend exec rm -rf dist 2>/dev/null || true

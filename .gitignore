@@ -13,17 +13,18 @@ dist
 dist-ssr
 *.local
 
-# Go binary output
-/bin/
+# Compiled TypeScript output (NestJS backend, shared package)
+/backend/dist/
+/shared/dist/
 
 # Local environment — keep .env.example tracked, ignore the real .env
 .env
 .env.local
 !.env.example
 
-# Frontend build embedded into the backend binary.
-# The placeholder index.html is tracked so `go build` works on a fresh
-# checkout; everything Vite generates on top of it is ignored.
+# Frontend build served by the NestJS backend (static files from backend/static).
+# The placeholder index.html is tracked so the server boots on a fresh checkout;
+# everything Vite generates on top of it is ignored.
 /backend/static/*
 !/backend/static/index.html
 

@@ -1,0 +1,14 @@
+{
+  "name": "kentos-project-template",
+  "displayName": "KentOS Console",
+  "description": "Base template module for KentOS apps — a token-driven React SPA served by a single-binary Go backend.",
+  "version": "0.1.0",
+  "icon": "layout-dashboard",
+  "address": "https://kentos.example.com",
+  "roles": ["admin", "user"],
+  "api": {
+    "version": "v1"
+  },
+  "author": "",
+  "tags": ["template"]
+}

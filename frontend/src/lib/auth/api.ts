@@ -1,59 +1,35 @@
-// Thin client for the backend's /api/auth/* endpoints. The browser never talks
-// to Keycloak's token endpoint directly — the backend (which holds the client
-// secret) does that. These are same-origin calls.
+// Thin wrappers over the shared auth client (@kentos/shared). The browser never
+// talks to Keycloak directly — the backend (which holds the client secret) does.
+// These keep the original function-style API the auth provider/callback use,
+// while the actual implementation lives in @kentos/shared so the mobile app can
+// reuse it.
 
-import type { AuthTokens } from './tokens'
+import type { AuthTokens, CallbackResponse } from '@kentos/shared'
 
-const AUTH_BASE = '/api/auth'
+import { api } from '@/lib/api'
 
 /** Full-page redirect URL that starts the Keycloak login. */
 export function loginUrl(redirect = '/dashboard'): string {
-  return `${AUTH_BASE}/login?redirect=${encodeURIComponent(redirect)}`
-}
-
-interface CallbackResponse extends AuthTokens {
-  redirect: string
+  return api.auth.loginUrl(redirect)
 }
 
 /** Exchange the authorization code (+ state) for tokens. */
-export async function exchangeCode(
+export function exchangeCode(
   code: string,
   state: string,
 ): Promise<CallbackResponse> {
-  const res = await fetch(`${AUTH_BASE}/callback`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code, state }),
-  })
-  if (!res.ok) throw new Error(`callback failed: ${res.status}`)
-  return (await res.json()) as CallbackResponse
+  return api.auth.exchangeCode(code, state)
 }
 
 /** Swap a refresh token for a fresh token set. */
-export async function refreshTokens(refreshToken: string): Promise<AuthTokens> {
-  const res = await fetch(`${AUTH_BASE}/refresh`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
-  })
-  if (!res.ok) throw new Error(`refresh failed: ${res.status}`)
-  return (await res.json()) as AuthTokens
+export function refreshTokens(refreshToken: string): Promise<AuthTokens> {
+  return api.auth.refresh(refreshToken)
 }
 
 /** Ask the backend for the Keycloak end-session URL (best effort). */
-export async function requestLogout(
+export function requestLogout(
   idToken: string,
   refreshToken: string,
 ): Promise<string> {
-  try {
-    const res = await fetch(`${AUTH_BASE}/logout`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken, refreshToken }),
-    })
-    const data = (await res.json()) as { logoutUrl?: string }
-    return data.logoutUrl ?? '/login'
-  } catch {
-    return '/login'
-  }
+  return api.auth.logout(idToken, refreshToken)
 }

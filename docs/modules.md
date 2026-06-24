@@ -1,16 +1,15 @@
 # Modules
 
-Every app built from this template is a **module**. A module is the single
-binary plus its identity manifest. This page explains the manifest, the metadata
+Every app built from this template is a **module**. A module is the NestJS
+service plus its identity manifest. This page explains the manifest, the metadata
 endpoint, and how to claim a module name.
 
 ## The manifest — `kentos.module.json`
 
-The manifest is a **single file** at
-**`backend/internal/module/kentos.module.json`**. The `internal/module` package
-embeds it (`go:embed`) and parses it (`module.Load()`), so it ships inside the
-binary and is served verbatim by the API. There is no second copy and no sync
-step — edit this one file and rebuild.
+The manifest is a **single file** at **`backend/kentos.module.json`**. The NestJS
+manifest loader (`src/module/manifest.ts`) reads it from the filesystem at
+startup and serves it verbatim from the API. There is no second copy and no sync
+step — edit this one file and restart.
 
 ```json
 {
@@ -57,14 +56,14 @@ rename.
 
 ## Claiming a module name
 
-Use the **`init-module`** skill (in Claude Code: `init module <name>`). It updates
-the Go module path and imports, `frontend/package.json`, and the manifest `name`,
-re-syncs the embedded mirror, and verifies the build. Because `name` is also the
-Keycloak client ID, choose it deliberately. Afterwards, fill in the remaining
-manifest fields (`displayName`, `address`, `roles`, …) by hand.
+Use the **`init-module`** skill (in Claude Code: `init module <name>`). It stamps
+the manifest `name`, the frontend's `VITE_MODULE_NAME`, and the mobile app's
+`EXPO_PUBLIC_MODULE_NAME`, then verifies the workspaces build. Because `name` is
+also the Keycloak client ID, choose it deliberately. Afterwards, fill in the
+remaining manifest fields (`displayName`, `address`, `roles`, …) by hand.
 
 ## Ports & configuration
 
 The backend listens on **`:5800`** by default. All settings come from the root
-**`.env`** (see [`../AGENTS.md`](../AGENTS.md) §7) — including `PORT` and
-`STATIC_CACHE_MAX_AGE` (the short, ≤1h browser cache for embedded assets).
+**`.env`** (see [`../AGENTS.md`](../AGENTS.md) §8) — including `PORT` and
+`STATIC_CACHE_MAX_AGE` (the short, ≤1h browser cache for static assets).

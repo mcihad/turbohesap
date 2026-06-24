@@ -1,16 +1,25 @@
 # KentOS Console — Application Template
 
 A token-driven application shell to build **all our apps** with one consistent,
-fully themeable look and feel — now packaged as a **single self-contained binary**
-that serves the SPA and its JSON API together.
+fully themeable look and feel — a **pnpm monorepo** where one NestJS process
+serves the SPA and its JSON API together.
 
 **Frontend:** React 19 · TypeScript · Vite · Tailwind CSS v4 · shadcn/ui (Radix) ·
 TanStack Router + Query · lucide-react · cmdk · sonner.
-**Backend:** Go · Fiber v3 · pgx (PostgreSQL) · Cobra.
+**Backend:** NestJS · TypeScript · TypeORM (PostgreSQL) · jose (Keycloak OIDC).
+**Shared:** `@kentos/shared` — framework-agnostic DTO models, service interfaces,
+and their axios client implementations, consumed by the web frontend and (later)
+the React Native mobile app.
 
-The frontend (`frontend/`) compiles into `backend/static/`, which the Go backend
-(`backend/`) embeds via `go:embed` — so `make build` produces one executable
-(`bin/kentos`) with no separate web server or Node runtime needed at runtime.
+Three workspaces:
+
+- **`shared/`** (`@kentos/shared`) — the typed contract layer (models + service
+  interfaces + axios clients). The single source of truth for the API shapes.
+- **`frontend/`** (`@kentos/frontend`) — the React SPA; compiles into
+  `backend/static/`.
+- **`backend/`** (`@kentos/backend`) — the NestJS API; serves `backend/static/`
+  as the SPA (deep-link fallback included) alongside `/api`, so the whole app
+  runs from one Node process.
 
 > **Architecture:** see **[`AGENTS.md`](./AGENTS.md)** for the full system guide.
 
@@ -35,13 +44,13 @@ component standard in enough detail to rebuild this system 1:1. Read it first.
 
 ```bash
 make env            # create .env from .env.example
-make install        # install frontend dependencies (pnpm)
-init module <name>  # (in Claude Code) claim a module name across frontend + backend
-make run            # build the frontend, run the backend serving it → http://localhost:5800
+make install        # install all workspace dependencies (pnpm)
+init module <name>  # (in Claude Code) claim a module name across the workspaces
+make run            # build shared + frontend, run the NestJS backend → http://localhost:5800
 ```
 
-`init module <name>` runs the **`init-module`** skill, which renames the Go
-module, `frontend/package.json`, and the module manifest in one step. New here?
+`init module <name>` runs the **`init-module`** skill, which renames the package
+names, `frontend/package.json`, and the module manifest in one step. New here?
 Skip it to try the template as-is.
 
 ## Develop
@@ -50,27 +59,27 @@ Everything runs through the root **`Makefile`** (run `make` for a grouped list):
 
 ```bash
 make run            # full app on one port (rebuild to see frontend changes)
-make build          # frontend + backend → single binary at bin/kentos
+make build          # shared + frontend + backend (NestJS → backend/dist)
 
-# Fast UI iteration (two terminals):
+# Fast UI iteration (three terminals):
+make dev-shared     # recompile @kentos/shared on change (watch)
 make dev-frontend   # Vite dev server with HMR (:5173)
-make dev-backend    # Go API server (:5800)
+make dev-backend    # NestJS API in watch mode (:5800)
 ```
 
-Prerequisites: Go (1.26+), Node + pnpm.
+Prerequisites: Node 20+ and pnpm.
 
 ## Configuration
 
 All settings live in **`.env`** (root) — copy from `.env.example`. The Makefile,
-the Go binary, and Vite all read this one file. See [`AGENTS.md`](./AGENTS.md) §7
+the NestJS server, and Vite all read this one file. See [`AGENTS.md`](./AGENTS.md) §7
 for every variable.
 
 ## Module manifest
 
 Each app is a **module** described by **`kentos.module.json`** (name, icon,
-roles, …), which lives at **`backend/internal/module/kentos.module.json`** — a
-single file embedded into the binary and served at
-`GET /api/v1/<module-name>/metadata`.
+roles, …), which lives at **`backend/kentos.module.json`** — read at startup by
+the NestJS server and served at `GET /api/v1/<module-name>/metadata`.
 
 ## Authentication
 
@@ -93,8 +102,9 @@ and the required Keycloak client settings: [`AGENTS.md`](./AGENTS.md) §11 and
 | Sidebar navigation     | `src/config/navigation.ts`             |
 | App launcher tiles     | `src/config/apps.ts`                   |
 | Add a page             | add a file under `src/routes/`         |
-| Add an API endpoint    | `backend/internal/server/` (`registerAPI` + `handlers.go`) |
-| Module name/identity   | `init module <name>` skill, then `backend/internal/module/kentos.module.json` |
+| Add an API endpoint    | a NestJS controller under `backend/src/` (+ a contract in `shared/src/`) |
+| Shared API contracts   | `shared/src/` (models · services · clients) |
+| Module name/identity   | `init module <name>` skill, then `backend/kentos.module.json` |
 | Backend/runtime config | `.env` (root)                          |
 
 > Generated file `frontend/src/routeTree.gen.ts` is created by the TanStack Router

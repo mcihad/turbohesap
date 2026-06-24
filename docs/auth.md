@@ -1,9 +1,9 @@
 # Authentication (Keycloak)
 
 KentOS modules authenticate against **Keycloak** using OIDC **Authorization Code
-+ PKCE** with a **confidential client**. The client secret lives only on the Go
-backend; the browser never sees it. Frontend and backend are same-origin (one
-binary), so the `/api/auth/*` calls need no CORS.
++ PKCE** with a **confidential client**. The client secret lives only on the
+NestJS backend; the browser never sees it. Frontend and backend are same-origin
+(one process), so the web `/api/auth/*` calls need no CORS.
 
 The OIDC **client_id is the module name** (`kentos.module.json` "name"), which is
 also the **Keycloak client ID**.
@@ -28,7 +28,7 @@ Refresh and logout follow the same pattern: the browser calls
 `POST /api/auth/refresh` / `POST /api/auth/logout`, and the backend talks to
 Keycloak with the secret.
 
-## Backend — `internal/auth` + `/api/auth/*`
+## Backend — `src/auth/*` + `/api/auth/*`
 
 | Endpoint | Purpose |
 | -------- | ------- |
@@ -37,10 +37,12 @@ Keycloak with the secret.
 | `POST /api/auth/refresh {refreshToken}` | Return a fresh token set. |
 | `POST /api/auth/logout {idToken, refreshToken}` | Revoke at Keycloak, return `logoutUrl`. |
 
-Discovery is read once from
+`KeycloakService` reads discovery once from
 `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/.well-known/openid-configuration` and
-cached. Keycloak's token response is snake_case and parsed by a private struct;
-**our API output is camelCase** (mapped through a DTO).
+caches it. Keycloak's token response is snake_case and parsed by a private
+`KeycloakTokens` type; **our API output is camelCase** (mapped through the
+`AuthTokens` DTO from `@kentos/shared`). The DTOs themselves live in
+`@kentos/shared`, so the web and mobile clients consume the exact same shapes.
 
 ## Frontend — `src/lib/auth/*`
 
@@ -67,23 +69,29 @@ Roles come from the access token: **realm roles** (`realm_access.roles`) plus
 **this module's client roles** (`resource_access[<module-name>].roles`). The
 module name is the Keycloak client id, so client roles are scoped to the module.
 
-### Backend — `RolesRequired` middleware
+### Backend — `KeycloakAuthGuard` + `@Roles()`
 
-`Server.RolesRequired(anyOf ...string)` (`internal/server/middleware.go`) requires
-a valid access token (Bearer header), **verified against Keycloak's JWKS**
-(go-oidc — signature, issuer, expiry), and, when roles are given, that the caller
-has at least one of them. With no roles it just requires a valid token.
+`KeycloakAuthGuard` (`src/common/keycloak-auth.guard.ts`) requires a valid access
+token (Bearer header), **verified against Keycloak's JWKS** (jose — signature,
+issuer, expiry), and, when `@Roles(...)` is present, that the caller has at least
+one of them. With no `@Roles()` it just requires a valid token.
 
-```go
+```ts
 // any valid token:
-api.Get("/me", s.RolesRequired(), s.handleMe)
+@UseGuards(KeycloakAuthGuard)
+@Get('me')
+me(@CurrentUser() user: Claims) { … }
+
 // at least one of these roles:
-api.Get("/reports", s.RolesRequired("Manager", "Admin"), s.handleReports)
+@UseGuards(KeycloakAuthGuard)
+@Roles('Manager', 'Admin')
+@Get('reports')
+reports() { … }
 ```
 
-The verified `*auth.Claims` is stashed in `c.Locals("claims")` (`claimsFrom(c)`).
-`GET /api/me` is a working example. Forged/expired/missing tokens → `401`;
-valid token without the role → `403`.
+The verified claims are stashed on the request and read with `@CurrentUser()`.
+`GET /api/me` is a working example. Forged/expired/missing tokens → `401`; valid
+token without the role → `403`.
 
 ### Frontend — `hasAnyRole` / `<RolesRequired>`
 
@@ -102,8 +110,8 @@ if (hasAnyRole(['Manager', 'Admin'])) { /* … */ }
 ```
 
 `anyOf` and `allOf` combine with AND. A live demo is on the **/components** page.
-Note: client-side gating is **UX only** — always enforce with `RolesRequired` on
-the backend route too.
+Note: client-side gating is **UX only** — always enforce with
+`KeycloakAuthGuard` + `@Roles()` on the backend route too.
 
 ## Configuration (`.env`)
 

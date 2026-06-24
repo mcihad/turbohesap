@@ -3,9 +3,9 @@
 Longer-form documentation for KentOS Console lives here. Start with the
 top-level guides:
 
-- **[`../AGENTS.md`](../AGENTS.md)** — whole-system architecture: how the
-  frontend, the Go backend, and the single-binary embed pipeline fit together,
-  plus build/run/config and conventions.
+- **[`../AGENTS.md`](../AGENTS.md)** — whole-system architecture: how the shared
+  contracts (`@kentos/shared`), the React frontend, the NestJS backend, and the
+  Expo mobile app fit together, plus build/run/config and conventions.
 - **[`../DESIGN.md`](../DESIGN.md)** — the frontend design-system contract:
   tokens, colors, layout, and component standards (paths there are relative to
   `frontend/`).

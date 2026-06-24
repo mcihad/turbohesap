@@ -4,17 +4,13 @@
 // is the only party that holds the client secret; here we just store the tokens
 // it returns, read claims from them, and decide when to refresh.
 
-const STORAGE_KEY = 'kentos-auth'
+// AuthTokens is defined once in @kentos/shared (the wire contract) and re-used
+// here so the web app, the backend, and the mobile app agree on the shape.
+import type { AuthTokens } from '@kentos/shared'
 
-export interface AuthTokens {
-  accessToken: string
-  idToken: string
-  refreshToken: string
-  tokenType: string
-  expiresIn: number
-  refreshExpiresIn: number
-  scope: string
-}
+export type { AuthTokens }
+
+const STORAGE_KEY = 'kentos-auth'
 
 export interface UserInfo {
   sub: string

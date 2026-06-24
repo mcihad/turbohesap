@@ -1,0 +1,22 @@
+{
+  "name": "kentos-console",
+  "private": true,
+  "version": "0.1.0",
+  "description": "KentOS Console — NestJS API + React SPA sharing a typed @kentos/shared contract layer.",
+  "scripts": {
+    "build:shared": "pnpm --filter @kentos/shared build",
+    "build:frontend": "pnpm --filter @kentos/frontend build",
+    "build:backend": "pnpm --filter @kentos/backend build",
+    "build": "pnpm build:shared && pnpm build:frontend && pnpm build:backend",
+    "dev:frontend": "pnpm --filter @kentos/frontend dev",
+    "dev:backend": "pnpm --filter @kentos/backend start:dev",
+    "dev:shared": "pnpm --filter @kentos/shared dev",
+    "dev:mobile": "pnpm --filter @kentos/mobile start",
+    "start": "pnpm --filter @kentos/backend start:prod",
+    "lint": "pnpm --filter @kentos/frontend lint && pnpm --filter @kentos/backend typecheck"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@11.5.0"
+}

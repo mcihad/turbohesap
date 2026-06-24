@@ -1,8 +1,11 @@
 import * as React from 'react'
 import { createPortal } from 'react-dom'
+import { Search, X } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { useLayout } from '@/lib/layout/use-layout'
+import { Input } from '@/components/ui/input'
+import { EntityAuditButton } from '@/modules/iam/components/entity-audit-button'
 
 /**
  * PageWrapper — the per-page container rendered inside the app shell's content
@@ -42,38 +45,105 @@ export function PageWrapper({
   )
 }
 
+/** Parametric page search: a controlled box that declares which fields it covers. */
+export interface PageSearch {
+  value: string
+  onChange: (value: string) => void
+  /** Human-readable searched fields, e.g. ['Ad', 'E-posta'] — drives the placeholder/hint. */
+  fields: string[]
+  /** Override the auto-generated placeholder. */
+  placeholder?: string
+  className?: string
+}
+
+/** Reference to the entity a detail page is about — powers the standard audit button. */
+export interface PageAuditRef {
+  entityType: string
+  entityId: string
+  title?: string
+}
+
+function PageSearchBox({ value, onChange, fields, placeholder, className }: PageSearch) {
+  const hint = placeholder ?? `${fields.join(', ')} içinde ara…`
+  return (
+    <div className={cn('relative w-full sm:w-64', className)}>
+      <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={hint}
+        title={fields.length ? `Aranan alanlar: ${fields.join(', ')}` : undefined}
+        aria-label={hint}
+        className="h-9 bg-background/60 pl-8"
+      />
+      {value ? (
+        <button
+          type="button"
+          aria-label="Aramayı temizle"
+          onClick={() => onChange('')}
+          className="absolute top-1/2 right-1.5 -translate-y-1/2 rounded-sm p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+        >
+          <X className="size-3.5" />
+        </button>
+      ) : null}
+    </div>
+  )
+}
+
 /**
- * PageHeader — standard page heading band: title (+ optional description) on the
- * left, actions (buttons / dropdowns) on the right.
+ * PageHeader — standard page heading band: title (+ description) with actions on
+ * the right; an optional parametric **search** box on the left of a toolbar row;
+ * and, for entity detail pages, an automatic **audit log** button (`audit`) shown
+ * when the user has `iam.audit.read`.
  */
 export function PageHeader({
   title,
   description,
   actions,
+  search,
+  audit,
   className,
   children,
 }: {
   title: React.ReactNode
   description?: React.ReactNode
   actions?: React.ReactNode
+  search?: PageSearch
+  audit?: PageAuditRef
   className?: string
   children?: React.ReactNode
 }) {
+  const hasToolbar = Boolean(search || actions || audit)
+
   return (
-    <div className={cn('mb-6 flex flex-col gap-4', className)}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1">
-          <h1 className="truncate text-2xl font-semibold tracking-tight">
+    <div className={cn('mb-5', className)}>
+      {/* Compact toolbar band: title/description (left) + search & actions
+          grouped on the right of the same row, over a thin divider. */}
+      <div className="flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="truncate text-xl font-semibold tracking-tight">
             {title}
           </h1>
           {description && (
-            <p className="text-sm text-muted-foreground">{description}</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
           )}
         </div>
-        {actions && (
-          <div className="flex shrink-0 items-center gap-2">{actions}</div>
-        )}
+
+        {hasToolbar ? (
+          <div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:justify-end">
+            {search ? <PageSearchBox {...search} /> : null}
+            {audit ? (
+              <EntityAuditButton
+                entityType={audit.entityType}
+                entityId={audit.entityId}
+                title={audit.title}
+              />
+            ) : null}
+            {actions}
+          </div>
+        ) : null}
       </div>
+
       {children}
     </div>
   )
@@ -94,12 +164,12 @@ export function PageActions({
  *
  * Renders nothing inline; it portals `children` into the footer slot and marks
  * the footer as page-controlled (hiding the default status strip) for as long as
- * it is mounted. Use it for contextual footers: table totals, selection counts,
- * thin page stats, bulk-action toolbars, etc.
+ * it is mounted. Contextual footers use a **monospace** strip for page info and
+ * short stats (totals, selection counts, filter state).
  *
  *   <PageFooter>
- *     <PageFooterStat label="Rows" value="1,204" />
- *     <PageFooterStat label="Selected" value="12" />
+ *     <PageFooterStat label="Toplam" value="1.204" />
+ *     <PageFooterStat label="Seçili" value="12" />
  *   </PageFooter>
  */
 export function PageFooter({ children }: { children: React.ReactNode }) {
@@ -112,14 +182,14 @@ export function PageFooter({ children }: { children: React.ReactNode }) {
 
   if (!footerSlot) return null
   return createPortal(
-    <div className="flex w-full items-center gap-4 overflow-x-auto">
+    <div className="flex w-full items-center gap-x-5 gap-y-1 overflow-x-auto font-mono text-xs">
       {children}
     </div>,
     footerSlot,
   )
 }
 
-/** A compact label/value pair for thin footer stat strips. */
+/** A compact label/value pair for the monospace footer stat strip. */
 export function PageFooterStat({
   label,
   value,
@@ -131,8 +201,10 @@ export function PageFooterStat({
 }) {
   return (
     <span className={cn('flex items-center gap-1.5 whitespace-nowrap', className)}>
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium text-foreground">{value}</span>
+      <span className="text-2xs tracking-wide text-muted-foreground uppercase">
+        {label}
+      </span>
+      <span className="font-medium text-foreground tabular-nums">{value}</span>
     </span>
   )
 }

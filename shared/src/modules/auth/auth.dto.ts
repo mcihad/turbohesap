@@ -27,3 +27,12 @@ export interface RefreshRequest {
 export interface LogoutRequest {
   refreshToken: string
 }
+
+// Re-confirm the current user's password (e.g. before a destructive action).
+export interface VerifyPasswordRequest {
+  password: string
+}
+
+export interface VerifyPasswordResponse {
+  valid: boolean
+}

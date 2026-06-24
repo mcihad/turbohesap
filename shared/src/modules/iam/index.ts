@@ -1,5 +1,6 @@
-// iam module contracts: DTOs (user, role, permission), the service interfaces,
-// and their axios clients.
+// iam module contracts: DTOs (user, role, permission), permission keys, the
+// service interfaces, and their axios clients.
+export * from './iam.permissions'
 export * from './user.dto'
 export * from './role.dto'
 export * from './permission.dto'
@@ -9,3 +10,9 @@ export * from './roles.service'
 export * from './roles.client'
 export * from './permissions.service'
 export * from './permissions.client'
+export * from './audit-log.dto'
+export * from './audit-logs.service'
+export * from './audit-logs.client'
+export * from './error-log.dto'
+export * from './error-logs.service'
+export * from './error-logs.client'

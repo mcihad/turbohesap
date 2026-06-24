@@ -10,12 +10,14 @@ function Tabs({
   return (
     <TabsPrimitive.Root
       data-slot="tabs"
-      className={cn('flex flex-col gap-3', className)}
+      className={cn('flex flex-col gap-4', className)}
       {...props}
     />
   )
 }
 
+// Underline-style tab bar: a bottom-bordered track with a per-trigger active
+// indicator. Cleaner than a pill track for page-level sections.
 function TabsList({
   className,
   ...props
@@ -24,7 +26,8 @@ function TabsList({
     <TabsPrimitive.List
       data-slot="tabs-list"
       className={cn(
-        'inline-flex h-9 w-fit items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground',
+        // Mobile-first: scrolls horizontally instead of wrapping/overflowing.
+        'no-scrollbar flex h-auto w-full items-center justify-start gap-1 overflow-x-auto border-b border-border bg-transparent p-0 text-muted-foreground',
         className,
       )}
       {...props}
@@ -40,10 +43,11 @@ function TabsTrigger({
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
       className={cn(
-        "inline-flex h-7 flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2.5 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] outline-none [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
-        'focus-visible:ring-[3px] focus-visible:ring-ring/50',
+        "relative -mb-px inline-flex shrink-0 items-center justify-center gap-1.5 rounded-t-md border-b-2 border-transparent px-3 py-2 text-sm font-medium whitespace-nowrap text-muted-foreground transition-colors outline-none [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
+        'hover:bg-muted/40 hover:text-foreground',
+        'focus-visible:ring-[3px] focus-visible:ring-ring/40',
         'disabled:pointer-events-none disabled:opacity-50',
-        'data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
+        'data-[state=active]:border-primary data-[state=active]:text-foreground',
         className,
       )}
       {...props}

@@ -243,6 +243,102 @@ function CollapsedItem({
 }
 
 /* -------------------------------------------------------------------------- */
+/* Collapsed group (icon + flyout)                                             */
+/* -------------------------------------------------------------------------- */
+
+/** A labeled group shown as a single icon in the collapsed rail. The flyout
+ * (the group's items) opens on hover with a mouse and on click/tap with touch —
+ * the same anchor works for desktop and mobile. */
+function CollapsedGroup({
+  group,
+  activePath,
+  onNavigate,
+}: {
+  group: NavGroup
+  activePath: string
+  onNavigate?: () => void
+}) {
+  const [open, setOpen] = React.useState(false)
+  const closeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  const cancelClose = () => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current)
+      closeTimer.current = null
+    }
+  }
+  const scheduleClose = () => {
+    cancelClose()
+    closeTimer.current = setTimeout(() => setOpen(false), 120)
+  }
+  React.useEffect(
+    () => () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current)
+    },
+    [],
+  )
+
+  const Icon = group.icon ?? group.items[0]?.icon
+  const active = collectPaths(group.items).some((p) => p === activePath)
+  const iconClass = cn(
+    'flex size-9 items-center justify-center rounded-md text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+    (active || open) && 'bg-sidebar-accent text-sidebar-accent-foreground',
+  )
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={group.label}
+          className={iconClass}
+          onPointerEnter={(e) => {
+            if (e.pointerType === 'mouse') {
+              cancelClose()
+              setOpen(true)
+            }
+          }}
+          onPointerLeave={(e) => {
+            if (e.pointerType === 'mouse') scheduleClose()
+          }}
+        >
+          {Icon ? <Icon className="size-[1.15rem]" /> : <span>{group.label?.[0]}</span>}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        side="right"
+        align="start"
+        sideOffset={8}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onPointerEnter={cancelClose}
+        onPointerLeave={(e) => {
+          if (e.pointerType === 'mouse') scheduleClose()
+        }}
+        className="w-56 p-1"
+      >
+        <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+          {group.label}
+        </p>
+        <div className="flex flex-col gap-0.5">
+          {group.items.map((item) => (
+            <NavNode
+              key={item.title}
+              item={item}
+              depth={0}
+              activePath={activePath}
+              forceOpen={false}
+              onNavigate={() => {
+                setOpen(false)
+                onNavigate?.()
+              }}
+            />
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+/* -------------------------------------------------------------------------- */
 /* Public component                                                            */
 /* -------------------------------------------------------------------------- */
 
@@ -268,13 +364,23 @@ export function SidebarNav({
         {groups.map((group, gi) => (
           <React.Fragment key={group.label ?? gi}>
             {gi > 0 && <div className="my-1 h-px w-6 bg-sidebar-border" />}
-            {group.items.map((item) => (
-              <CollapsedItem
-                key={item.title}
-                item={item}
+            {group.label ? (
+              // Labeled group → a single representative icon with a flyout.
+              <CollapsedGroup
+                group={group}
                 activePath={activePath}
+                onNavigate={onNavigate}
               />
-            ))}
+            ) : (
+              // Label-less group → its items rendered as individual icons.
+              group.items.map((item) => (
+                <CollapsedItem
+                  key={item.title}
+                  item={item}
+                  activePath={activePath}
+                />
+              ))
+            )}
           </React.Fragment>
         ))}
       </nav>
@@ -294,26 +400,76 @@ export function SidebarNav({
   }
 
   return (
-    <nav className="flex flex-col gap-4 py-2">
+    <nav className="flex flex-col gap-3 py-2">
       {filtered.map((group, gi) => (
-        <div key={group.label ?? gi} className="flex flex-col gap-0.5">
-          {group.label && (
-            <p className="px-2 pb-1 text-2xs font-semibold tracking-wide text-muted-foreground/80 uppercase">
-              {group.label}
-            </p>
-          )}
-          {group.items.map((item) => (
-            <NavNode
-              key={item.title}
-              item={item}
-              depth={0}
-              activePath={activePath}
-              forceOpen={Boolean(q)}
-              onNavigate={onNavigate}
-            />
-          ))}
-        </div>
+        <NavGroupSection
+          key={group.label ?? gi}
+          group={group}
+          activePath={activePath}
+          forceOpen={Boolean(q)}
+          onNavigate={onNavigate}
+        />
       ))}
     </nav>
+  )
+}
+
+/* -------------------------------------------------------------------------- */
+/* Collapsible group section                                                   */
+/* -------------------------------------------------------------------------- */
+
+function NavGroupSection({
+  group,
+  activePath,
+  forceOpen,
+  onNavigate,
+}: {
+  group: NavGroup
+  activePath: string
+  forceOpen: boolean
+  onNavigate?: () => void
+}) {
+  const items = group.items
+  const containsActive = React.useMemo(
+    () => collectPaths(items).some((p) => p === activePath),
+    [items, activePath],
+  )
+  const [userOpen, setUserOpen] = React.useState<boolean | null>(null)
+
+  const renderItems = () =>
+    items.map((item) => (
+      <NavNode
+        key={item.title}
+        item={item}
+        depth={0}
+        activePath={activePath}
+        forceOpen={forceOpen}
+        onNavigate={onNavigate}
+      />
+    ))
+
+  // Groups without a label aren't collapsible — just render the items.
+  if (!group.label) {
+    return <div className="flex flex-col gap-0.5">{renderItems()}</div>
+  }
+
+  // Collapsed by default; the group holding the active route starts open, and
+  // searching forces every group open. Once the user toggles, their choice wins.
+  const open = forceOpen || (userOpen ?? containsActive)
+  const GroupIcon = group.icon
+
+  return (
+    <Collapsible open={open} onOpenChange={setUserOpen}>
+      <CollapsibleTrigger className="group/grp flex h-7 w-full select-none items-center justify-between gap-2 rounded-md px-2 text-2xs font-semibold tracking-wide text-muted-foreground/70 uppercase transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground">
+        <span className="flex min-w-0 items-center gap-2">
+          {GroupIcon && <GroupIcon className="size-3.5 shrink-0" />}
+          <span className="truncate">{group.label}</span>
+        </span>
+        <ChevronRight className="size-3 shrink-0 text-muted-foreground/50 transition-transform duration-200 group-data-[state=open]/grp:rotate-90" />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+        <div className="flex flex-col gap-0.5 pt-1">{renderItems()}</div>
+      </CollapsibleContent>
+    </Collapsible>
   )
 }

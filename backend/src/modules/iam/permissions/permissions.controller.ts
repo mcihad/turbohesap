@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common'
 
-import type { PermissionDto } from '@turbohesap/shared'
+import { IamPermissions, type PermissionDto } from '@turbohesap/shared'
 
 import { RequirePermissions } from '../../../common/decorators/permissions.decorator'
 import { PermissionsService } from './permissions.service'
@@ -12,7 +12,7 @@ export class PermissionsController {
   constructor(private readonly permissions: PermissionsService) {}
 
   @Get()
-  @RequirePermissions('iam.permissions.read')
+  @RequirePermissions(IamPermissions.permissionsRead)
   list(): Promise<PermissionDto[]> {
     return this.permissions.list()
   }

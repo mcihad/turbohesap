@@ -8,19 +8,32 @@ import { RolesApiClient } from '../modules/iam/roles.client'
 import type { IRolesService } from '../modules/iam/roles.service'
 import { PermissionsApiClient } from '../modules/iam/permissions.client'
 import type { IPermissionsService } from '../modules/iam/permissions.service'
+import { AuditLogsApiClient } from '../modules/iam/audit-logs.client'
+import type { IAuditLogsService } from '../modules/iam/audit-logs.service'
+import { ErrorLogsApiClient } from '../modules/iam/error-logs.client'
+import type { IErrorLogsService } from '../modules/iam/error-logs.service'
 import { HealthApiClient } from '../modules/health/health.client'
 import type { IHealthService } from '../modules/health/health.service'
 import { createHttpClient, type HttpClientConfig } from './http'
 
-// TurbohesapApi bundles every module's service client behind its interface.
-// Consumers depend on these interfaces, not the concrete axios classes. As new
-// modules are added, expose their service here (and add the client to the
-// factory below).
-export interface TurbohesapApi {
-  auth: IAuthService
+// Resources are grouped by module — `api.<module>.<resource>` — mirroring the
+// `/api/<module>/<resource>` routes. A module with a single service (auth,
+// health) is exposed directly; a module with multiple resources (iam) groups
+// them. This keeps resource names from colliding as modules grow.
+export interface IamApi {
   users: IUsersService
   roles: IRolesService
   permissions: IPermissionsService
+  auditLogs: IAuditLogsService
+  errorLogs: IErrorLogsService
+}
+
+// TurbohesapApi bundles every module's service client behind its interface.
+// Consumers depend on these interfaces, not the concrete axios classes. Add new
+// modules here (a new top-level key, or grouped like `iam`).
+export interface TurbohesapApi {
+  auth: IAuthService
+  iam: IamApi
   health: IHealthService
   /** The underlying axios instance, for app-specific calls. */
   http: AxiosInstance
@@ -38,9 +51,13 @@ export function createTurbohesapApi(
   return {
     http,
     auth: new AuthApiClient(http),
-    users: new UsersApiClient(http),
-    roles: new RolesApiClient(http),
-    permissions: new PermissionsApiClient(http),
+    iam: {
+      users: new UsersApiClient(http),
+      roles: new RolesApiClient(http),
+      permissions: new PermissionsApiClient(http),
+      auditLogs: new AuditLogsApiClient(http),
+      errorLogs: new ErrorLogsApiClient(http),
+    },
     health: new HealthApiClient(http),
   }
 }

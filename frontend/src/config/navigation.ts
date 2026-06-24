@@ -24,5 +24,11 @@ export interface NavItem {
 /** Navigation is organized into labeled groups, each holding a tree of items. */
 export interface NavGroup {
   label?: string
+  /**
+   * Icon for the group. Shown next to the label when expanded, and as the single
+   * representative glyph (with a hover/click flyout of the items) when the sidebar
+   * is collapsed. Only meaningful for labeled groups.
+   */
+  icon?: LucideIcon
   items: NavItem[]
 }

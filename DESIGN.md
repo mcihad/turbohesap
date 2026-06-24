@@ -44,11 +44,20 @@
 | Command palette| `cmdk`                                                           |
 | Toasts         | `sonner`                                                         |
 | Drawer         | `vaul`                                                          |
+| Calendar/dates | `react-day-picker` + `date-fns`                                 |
 | Context menu   | `@radix-ui/react-context-menu`                                 |
 | Path alias     | `@/*` → `src/*` (vite + tsconfig)                                |
 
 ### Code conventions
 
+- **Mobile-first — build for small screens first.** Author base styles for the
+  phone viewport, then layer larger layouts with responsive prefixes
+  (`sm:`/`md:`/`lg:`/`xl:`). Never write desktop-only markup that breaks on a
+  phone. The shell's structural breakpoint is **`lg` (1024px)** (sidebar ↔ sheet);
+  content components should already work below it. Anything that can overflow
+  horizontally (tab bars, toolbars, filter rows, tables) must **scroll** on small
+  screens (e.g. `no-scrollbar overflow-x-auto`), never wrap into a broken layout
+  or get clipped. Test every new screen/component at ~375px wide.
 - **Need a component? Check the catalog first.**
   **[`src/components/components.md`](./frontend/src/components/components.md)**
   lists every available UI primitive + layout component and what it's for. Reuse
@@ -452,9 +461,20 @@ Files: `sidebar.tsx` (shell), `sidebar-nav.tsx` (tree/search/rail).
 - Hidden in collapsed mode.
 
 ### 7.3 Navigation tree (grouping + tree)
-- Source: `NAVIGATION: NavGroup[]` in `config/navigation.ts`.
-- **Groups** render an uppercase `text-2xs` label (`Workspace`, `Operations`,
-  `Admin`); the first group is label-less.
+- Source: the **active module's** `nav: NavGroup[]` (each module's
+  `src/modules/<module>/module.config.ts`; the left rail picks the module). The
+  `NavItem`/`NavGroup` types live in `config/navigation.ts`.
+- **Groups are collapsible.** A labelled group renders a clickable header
+  (`h-7 rounded-md px-2`, uppercase `text-2xs font-semibold tracking-wide
+  text-muted-foreground/70`, `hover:bg-sidebar-accent/50`) with a **leading
+  group icon** (`NavGroup.icon`, `size-3.5`) + label, and a **trailing**
+  `ChevronRight` (`size-3`, muted) that rotates 90° when open. Groups are
+  **collapsed by default**, except the one containing the active route (which
+  starts open); searching force-opens all. Once the user toggles a group their
+  choice persists (until remount). A **label-less** group (e.g. the first/Genel
+  group) is not collapsible — its items always show.
+- **`NavGroup.icon`** (lucide) is required for labelled groups: it is the group's
+  glyph in both the expanded header and the collapsed rail flyout (below).
 - **Leaf** (`NavLeaf`) = TanStack `Link`, `h-8 rounded-md`, icon + title +
   optional `Badge`. Active state via `data-[status=active]` (TanStack sets
   `data-status`) → `bg-sidebar-accent font-medium`.
@@ -466,10 +486,17 @@ Files: `sidebar.tsx` (shell), `sidebar-nav.tsx` (tree/search/rail).
   `…closed:animate-accordion-up` (from `tw-animate-css`).
 
 ### 7.4 Collapsed icon rail (`w-sidebar-collapsed` = 3.5rem)
-- Top-level items become `size-9` icon buttons, centered, grouped by a short
-  divider.
-- **Leaf** → wrapped in a `Tooltip` (side="right") showing the title.
-- **Branch** → a `Popover` (side="right") listing its children as `NavLeaf`s.
+- `size-9` icon buttons, centered, with a short divider between groups.
+- **Labelled group** (`CollapsedGroup`) → collapses to **one** representative
+  icon (`NavGroup.icon`); its items open in a right-side **flyout** (`Popover`,
+  `sideOffset 8`, group label as a muted header, items as `NavLeaf`s). The flyout
+  opens **on hover with a mouse and on click/tap with touch** — one anchor for
+  desktop and mobile (pointer handlers gate hover to `pointerType==='mouse'`; the
+  trigger's click toggles it for touch; a ~120ms close delay bridges the gap into
+  the content). The trigger gets the active style while open.
+- **Label-less group** → its items render as individual `size-9` icons:
+  - **Leaf** → wrapped in a `Tooltip` (side="right") showing the title.
+  - **Branch** → a `Popover` (side="right") listing its children as `NavLeaf`s.
 
 ### 7.5 Footer (pinned bottom, `border-t`)
 - **Icon-only**, in both expanded and collapsed states, each with a `Tooltip`:
@@ -499,8 +526,18 @@ Height `h-appbar`, `border-b`, `bg-background/80 backdrop-blur-md`. Three zones:
 
 ### 8.1 Breadcrumb (`app-breadcrumb.tsx`)
 Derived from the current pathname: splits into cumulative segments, resolves each
-to a human title using a map built from `NAVIGATION` (`to → title`), falling back
-to title-cased segment. The last crumb is a non-link `BreadcrumbPage`.
+to a human title using a map built from the active module's nav (`to → title`),
+then a **page-registered label**, then a title-cased fallback (opaque ids — uuid
+or numeric — fall back to "Detay", never the raw id). The last crumb is a non-link
+`BreadcrumbPage`.
+
+- **Dynamic labels:** a detail page gives its `$id` segment a meaningful label via
+  `useRegisterBreadcrumbLabel('/iam/users/' + id, username)` (`lib/layout/breadcrumb-store.ts`
+  — a module store, so it never causes render loops). See `UserDetailPage`.
+- **Entity detail routes:** use the index + param pattern so the detail renders in
+  the shell (not under the list): `routes/_authed/<mod>/<res>.index.tsx` (list) +
+  `<res>.$id.tsx` (detail). A bare `<res>.tsx` with content would nest `$id` under
+  it and need an `<Outlet/>`.
 
 ---
 
@@ -532,26 +569,46 @@ listener), or programmatically (`useLayout().setCommandOpen`). Two groups:
 Exports: `PageWrapper`, `PageHeader`, `PageActions`, `PageFooter`,
 `PageFooterStat` (the last two documented in Section 12).
 
-### 11.1 `PageWrapper`
+### 11.1 `PageWrapper` — **page width & gutters STANDARD**
+- **Every page renders inside a `<PageWrapper>`.** Don't apply page padding by
+  hand on the content root; the gutters live here so all pages line up.
 - `padded` (default `true`): **fills the full width** of the content area with
   only the page-padding gutters — `mx-auto w-full px-[--app-page-padding-x]
-  py-[--app-page-padding-y]`. No max-width cap by default, so content is never
-  left floating with large side gaps on wide screens. Gutters are kept tight
-  (1rem / 0.875rem) on purpose — adjust the tokens, not per-page padding.
-- To **cap + center** a page for readability (forms, prose), pass a `max-w-*`
-  via `className` (e.g. `<PageWrapper className="max-w-3xl">`); `mx-auto` is
-  retained so it centers. `--app-content-max-width` (96rem) is available as a
-  convenience cap if you want a global maximum.
+  py-[--app-page-padding-y]`. **No max-width cap by default** — this is the
+  standard. Content must never float in the middle with large empty side gaps on
+  wide screens. Gutters are kept tight (1rem / 0.875rem) on purpose — adjust the
+  tokens, not per-page padding.
+- **Do NOT add `max-w-*`** to normal pages (lists, dashboards, **detail pages**).
+  Capping width is the *exception*, reserved for genuinely reading-/form-only
+  surfaces (e.g. a login or a focused wizard). Detail pages use the full width
+  and lay out internally with grids/cards. When you do cap, `mx-auto` (already in
+  `PageWrapper`) centers it; `--app-content-max-width` (96rem) is the optional
+  global maximum.
+- `padded={false}`: `relative h-full w-full`, **no gutters**, fills the content
+  area. Use for maps/canvases/editors (see `routes/map.tsx`, which absolutely
+  positions its surface with `absolute inset-0`).
 - `padded={false}`: `relative h-full w-full`, **no gutters**, fills the content
   area. Use for maps/canvases/editors (see `routes/map.tsx`, which absolutely
   positions its surface with `absolute inset-0`).
 
 ### 11.2 `PageHeader`
-- Title row: `H1` `text-2xl font-semibold tracking-tight` (truncates) + optional
-  `description` (`text-sm text-muted-foreground`) on the left; `actions` slot on
-  the right (`flex shrink-0 gap-2`). Bottom margin `mb-6`.
+- **Compact toolbar band:** one row — `H1` `text-xl font-semibold tracking-tight`
+  (truncates) + optional `description` (`text-sm text-muted-foreground`) on the
+  **left**; **search + audit + actions grouped on the right** (`flex flex-wrap
+  items-center gap-2`, `sm:justify-end`). Closed with a **thin divider**
+  (`border-b pb-4`), then `mb-5`. On mobile the right cluster wraps below the
+  title (search goes full-width, `sm:w-64` on desktop).
 - `actions` typically holds a secondary `Button variant="outline"` + a primary
-  `Button` and/or a `DropdownMenu` (see `routes/index.tsx`).
+  `Button`, a **`ButtonGroup`** (segmented), and/or a `DropdownMenu`.
+- **`search`** (parametric): pass `{ value, onChange, fields, placeholder? }`.
+  Renders the search box (left of the right cluster); the searched `fields` drive
+  the placeholder/title hint, so it's explicit what the box matches. Free-text
+  quick-search lives here; advanced structured filters go in a `FilterBar` below.
+- **`audit`** (entity detail pages): pass `{ entityType, entityId, title? }`. When
+  the user has `iam.audit.read`, a standard **"Denetim Kayıtları"** button appears
+  in the actions area; clicking opens a right drawer with the entity's
+  `EntityAuditTrail`. Implemented by `EntityAuditButton` (`modules/iam/components`,
+  self-hides without permission).
 
 ### 11.3 `PageActions`
 - Thin `flex items-center gap-2` wrapper for grouping header controls.
@@ -572,10 +629,12 @@ The footer's content is **controlled by the page**, not hardcoded:
   and a **default status strip** (status dot + version · Privacy/Terms/©) that
   shows only when no page has taken over (`!pageFooterActive`).
 - A page takes over by rendering **`<PageFooter>`** (from `page.tsx`). It portals
-  its children into the footer slot and flips `pageFooterActive` while mounted
-  (via `useLayout()` state — no render loop, unlike passing JSX through state).
-- **`<PageFooterStat label value />`** is a compact label/value pair for thin
-  stat strips (table totals, selection counts, page stats, bulk-action bars).
+  its children into the footer slot (a **monospace** `font-mono text-xs` strip for
+  page info / short stats) and flips `pageFooterActive` while mounted (via
+  `useLayout()` state — no render loop, unlike passing JSX through state).
+- **`<PageFooterStat label value />`** is a compact pair for the strip — an
+  uppercase muted `label` + a `tabular-nums` `value` (table totals, selection
+  counts, page/filter state). See the audit & error log pages.
 
 ```tsx
 // inside any page
@@ -655,17 +714,32 @@ Side drawer (`left|right|top|bottom`), `bg-popover shadow-xl`, slides per side.
 the theme customizer.
 
 ### 14.6 Accordion (`accordion.tsx`) — **header/title standard**
-- Items separated by `border-b` (last none).
-- **Trigger** = `py-4 text-sm font-medium`, full-width, `hover:underline`, with a
-  trailing `ChevronDown` that rotates 180° when open
-  (`[&[data-state=open]>svg]:rotate-180`).
-- Content animates with `animate-accordion-up/down`; inner padding `pb-4`.
+- **Panel style:** each `AccordionItem` is its own `rounded-lg border bg-card`
+  card with `mb-2` spacing (not hairline-divided).
+- **Trigger** = `px-3.5 py-3 text-sm font-medium`, full-width, `hover:bg-muted/50`
+  and `data-[state=open]:bg-muted/30` (no underline), with a trailing
+  `ChevronDown` that rotates 180° when open. Content has a `border-t px-3.5 py-3`
+  body and animates with `animate-accordion-up/down`.
+- **Behavior (wrapper, not raw Radix):**
+  - **`type` is optional** and defaults to **`multiple`**.
+  - **All open by default:** a multiple accordion with no `value`/`defaultValue`
+    auto-opens **every** item (the wrapper collects child item values). Pass
+    `defaultValue`/`value` to control which are open.
+  - **`type="single"`** = one open at a time; `collapsible` defaults to `true`.
+- **Permission lists** use `PermissionGroups` (`modules/iam/components`), which
+  groups keys **by module** and renders this accordion (`single` on the user's
+  "Etkin yetkiler" / role detail — one group at a time).
 
 ### 14.7 Tabs (`tabs.tsx`) — **tab style standard**
-- `TabsList` = `h-9 rounded-lg bg-muted p-1` (segmented "pill track").
-- `TabsTrigger` = `h-7 rounded-md text-sm font-medium`; active =
-  **`data-[state=active]:bg-background data-[state=active]:shadow-sm`** (raised
-  pill). Triggers can hold a leading icon.
+- **Underline tab bar** (page-level sections). `TabsList` = a left-aligned
+  `border-b` track (`w-full`, transparent bg, `gap-1`). `TabsTrigger` =
+  `border-b-2 border-transparent px-3 py-2 text-sm font-medium text-muted-foreground`
+  with `-mb-px` so the indicator sits on the list border; active =
+  **`data-[state=active]:border-primary data-[state=active]:text-foreground`**,
+  hover = `bg-muted/40 text-foreground` (subtle `rounded-t-md`). Triggers can hold
+  a leading icon. `Tabs` root stacks list + content with `gap-4`.
+- **Mobile:** the list is `no-scrollbar overflow-x-auto` and triggers are
+  `shrink-0`, so many/long tabs scroll horizontally instead of wrapping.
 
 ### 14.8 Dropdown Menu (`dropdown-menu.tsx`)
 `min-w-8rem rounded-lg border bg-popover p-1 shadow-lg`. Items `rounded-md
@@ -695,7 +769,8 @@ Swipeable sheet with a drag handle. Direction-aware via
 `data-[vaul-drawer-direction=…]`: bottom (default) →
 `rounded-t-2xl border-t max-h-[82vh]` + a centered `h-1.5 w-12` grab handle;
 left/right → `w-3/4 sm:max-w-sm`. Surface `bg-popover shadow-2xl`, overlay
-`bg-black/50 backdrop-blur-[1px]`. Slots: `DrawerTrigger`, `DrawerContent`,
+`bg-black/50 backdrop-blur-sm` (slight blur on open). Direction-switchable via the
+`direction` prop on `<Drawer>` (`top|bottom|left|right`). Slots: `DrawerTrigger`, `DrawerContent`,
 `DrawerHeader`/`DrawerFooter` (`p-5`), `DrawerTitle` (`text-base font-semibold`),
 `DrawerDescription`, `DrawerClose`. Use for filters/quick forms on touch.
 (Distinct from `Sheet`, which is a non-draggable Radix dialog drawer.)
@@ -709,7 +784,8 @@ menus. Wrap any region in `<ContextMenuTrigger asChild>`.
 
 ### 14.13 Table (`table.tsx`)
 Semantic `<table>` wrapped in an overflow-x container. `TableHead` =
-`h-10 px-3 text-xs font-medium text-muted-foreground`; `TableCell` = `p-3`;
+`h-9 px-3 text-xs font-medium text-muted-foreground`; `TableCell` = `px-3 py-2`
+(compact rows);
 `TableRow` = `border-b hover:bg-muted/50 data-[state=selected]:bg-accent` (set
 `data-state="selected"` for row selection); `TableFooter` =
 `border-t bg-muted/50 font-medium` for totals. Pair with `Checkbox` for select,
@@ -736,6 +812,67 @@ A consistent row list: `divide-y rounded-lg border` container; each row
 muted subtitle (`min-w-0 flex-1 truncate`), a trailing `Badge`, and a ghost
 `icon-sm` row-actions `DropdownMenu`. See `routes/components.tsx` → "List view".
 
+### 14.17 Audit trail (`audit-trail.tsx`)
+Vertical timeline of audit entries (`AuditTrail`, props `logs: AuditLogDto[]`,
+`loading`, `emptyText`, `loadDetail?`). Each row has a circular **action icon
+chip** (`size-9 rounded-full`, tinted by action: Insert→success, Update→info,
+Delete→destructive); a thin **connector** (`w-px bg-border`, `left-[17px]`) is
+drawn from just **below** each chip to the next one — never through a chip and not
+past the last row (so the tinted/translucent chip never reveals a line behind it).
+Each row is a `rounded-lg border bg-card` card:
+a clickable header (entity type + mono `#id` + action label, then a muted
+`user · relative-time · module-chip` line, with a `changeCount` + chevron on the
+right) that expands to a **field diff** — per change a `field` label and
+`old → new` value chips (`font-mono text-[11px]`; old = `bg-destructive/10
+line-through`, new = `bg-success/10`; Insert shows only new, Delete only old).
+**Lazy diffs:** when `loadDetail(id)` is passed, lists carry only `changeCount`
+and the full diff is fetched on first expand (skeleton while loading). The
+self-fetching `EntityAuditTrail` (`modules/iam/components`) wraps it for entity
+detail pages. Times via `@/lib/datetime` (`formatRelative` + `formatDateTime`
+title).
+
+> **Drawer/Sheet bodies that scroll:** give the body its own
+> `min-h-0 flex-1 overflow-x-hidden overflow-y-auto` container (not the Radix
+> `ScrollArea`, whose viewport can let wide content drift horizontally), and keep
+> children `min-w-0` with `break-words`/`break-all`. Wide code (stack traces) goes
+> in a `min-w-0 overflow-auto` `pre`. See the error-log detail sheet.
+
+### 14.18 Calendar & date range (`calendar.tsx`, `date-range-picker.tsx`)
+`Calendar` wraps **react-day-picker** (v10, `tr` locale) token-driven via
+`classNames` (day buttons reuse `buttonVariants`; range uses
+`range_start`/`range_middle`/`range_end` over `bg-accent` with primary endpoints;
+custom lucide `Chevron`). Supports `mode="single"` / `"range"`.
+
+`DateRangePicker` is the composed control used in filters: a `Popover` whose
+content is **presets on the left** (`defaultDateRangePresets()` — Bugün, Son 3/7
+gün, Bu hafta, Son 30 gün, Bu/Geçen ay; pass a subset to restrict, `[]` to hide)
+and a 2-month range `Calendar` on the right, with a footer (Temizle/Uygula) and a
+clearable trigger (`CalendarDays` + formatted label). **Restrictable** via
+`min`/`max` (disables out-of-range days) and the `presets` prop. Returns a
+`DateRange` ({from,to}); callers format to ISO for queries. **Responsive:** on
+small screens presets scroll in a row above the calendar and it drops to **one
+month** (two side-by-side on `sm+`); the popover caps at `max-h-[85vh]` and the
+trigger is full-width.
+
+### 14.19 Filter bar (`filter-bar.tsx`)
+`FilterBar` is the standard **collapsible** container for list/table filters,
+**collapsed by default** to keep pages tidy. A `Collapsible` whose header
+(clickable trigger) shows a `SlidersHorizontal` icon, the title, an
+**active-filter count** `Badge`, a rotating `ChevronDown`, and a sibling
+"Temizle" `Button` (shown only when `activeCount > 0`, and outside the trigger so
+it doesn't toggle). Body is a responsive grid (`sm:grid-cols-2 lg:grid-cols-4`)
+of `FilterField`s (a `text-2xs uppercase` label over the control; span via
+`className="sm:col-span-2"`). The header background is **theme-aware**
+(`bg-muted/40` default, overridable via `headerClassName`). Props: `activeCount`,
+`onClear`, `title`, `defaultOpen`, `headerClassName`. Used by the audit & error
+log pages.
+
+### 14.20 Button group (`button-group.tsx`)
+`ButtonGroup` joins a row of `Button`s into one segmented control: children get
+`rounded-none` except the ends, with `-ml-px` so borders collapse and
+`focus-visible` raised via `z-10`. Best with `variant="outline"`. Pure layout
+(no own colors). Use for view switchers / mutually-exclusive quick actions.
+
 ---
 
 ## 15. Configuration Schemas
@@ -750,7 +887,7 @@ interface NavItem {
   children?: NavItem[]   // branch → nested items
   keywords?: string[]    // extra search terms
 }
-interface NavGroup { label?: string; items: NavItem[] }
+interface NavGroup { label?: string; icon?: LucideIcon; items: NavItem[] }
 export const NAVIGATION: NavGroup[]
 ```
 `SIDEBAR_FOOTER_ITEMS` holds pinned bottom links. Breadcrumb + command palette

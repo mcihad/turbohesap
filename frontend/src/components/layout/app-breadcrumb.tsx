@@ -4,6 +4,10 @@ import { Link, useRouterState } from '@tanstack/react-router'
 import type { NavItem } from '@/config/navigation'
 import { useActiveModule } from '@/lib/layout/use-active-module'
 import {
+  getBreadcrumbLabel,
+  useBreadcrumbLabelsVersion,
+} from '@/lib/layout/breadcrumb-store'
+import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbLink,
@@ -21,7 +25,12 @@ function buildTitleMap(items: NavItem[], map: Map<string, string>) {
   return map
 }
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 function humanize(segment: string): string {
+  // Opaque ids (uuid) get a neutral label until a page registers a real one.
+  if (UUID_RE.test(segment) || /^\d+$/.test(segment)) return 'Detay'
   return segment
     .split('-')
     .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
@@ -31,6 +40,8 @@ function humanize(segment: string): string {
 export function AppBreadcrumb() {
   const activeModule = useActiveModule()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
+  // Subscribe to page-registered labels (dynamic routes provide their own).
+  const labelsVersion = useBreadcrumbLabelsVersion()
 
   const titleMap = React.useMemo(() => {
     const map = new Map<string, string>()
@@ -39,6 +50,7 @@ export function AppBreadcrumb() {
   }, [activeModule])
 
   const crumbs = React.useMemo(() => {
+    void labelsVersion // re-run when a page (un)registers a dynamic label
     const segments = pathname.split('/').filter(Boolean)
     const acc: { path: string; label: string }[] = []
     let current = ''
@@ -48,14 +60,18 @@ export function AppBreadcrumb() {
         // The module segment links to the module home.
         acc.push({ path: activeModule.home, label: activeModule.label })
       } else {
-        acc.push({ path: current, label: titleMap.get(current) ?? humanize(seg) })
+        acc.push({
+          path: current,
+          label:
+            titleMap.get(current) ?? getBreadcrumbLabel(current) ?? humanize(seg),
+        })
       }
     })
     if (acc.length === 0) {
       acc.push({ path: activeModule.home, label: activeModule.label })
     }
     return acc
-  }, [pathname, activeModule, titleMap])
+  }, [pathname, activeModule, titleMap, labelsVersion])
 
   return (
     <Breadcrumb>

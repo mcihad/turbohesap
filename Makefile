@@ -49,6 +49,14 @@ dev-backend: ## Run the NestJS API in watch mode (:5800)
 dev-shared: ## Recompile @turbohesap/shared on change (watch)
 	$(PNPM) --filter @turbohesap/shared dev
 
+.PHONY: stop
+stop: ## Stop running dev/server processes (API + Vite :5173)
+	@for p in $(PORT) 5173; do \
+		pids=$$(lsof -ti tcp:$$p 2>/dev/null); \
+		if [ -n "$$pids" ]; then echo "stopping port $$p (pid $$pids)"; kill $$pids 2>/dev/null || true; \
+		else echo "nothing listening on port $$p"; fi; \
+	done
+
 ##@ Build
 .PHONY: build-shared
 build-shared: ## Compile @turbohesap/shared (contracts) to dist
@@ -75,11 +83,33 @@ run: build-frontend ## Build the frontend and run the NestJS backend serving it 
 run-prod: build ## Build everything and run the compiled server
 	$(PNPM) --filter @turbohesap/backend start:prod
 
+##@ Database
+.PHONY: migrate
+migrate: ## Apply pending TypeORM migrations
+	$(PNPM) --filter @turbohesap/backend migration:run
+
+.PHONY: migration-generate
+migration-generate: ## Generate a migration from entity changes (NAME=AddThing)
+	@test -n "$(NAME)" || (echo "usage: make migration-generate NAME=AddThing" && exit 1)
+	$(PNPM) --filter @turbohesap/backend migration:generate src/migrations/$(NAME)
+
+.PHONY: migration-revert
+migration-revert: ## Revert the most recently applied migration
+	$(PNPM) --filter @turbohesap/backend migration:revert
+
 ##@ Quality
 .PHONY: lint
 lint: ## Lint the frontend (eslint) and type-check the backend (tsc)
 	$(PNPM) --filter @turbohesap/frontend lint
 	$(PNPM) --filter @turbohesap/backend typecheck
+
+.PHONY: test
+test: ## Backend unit tests (jest)
+	$(PNPM) --filter @turbohesap/backend test
+
+.PHONY: test-e2e
+test-e2e: ## Backend e2e tests (boots the app; needs Postgres, uses turbohesap_test)
+	$(PNPM) --filter @turbohesap/backend test:e2e
 
 .PHONY: clean
 clean: ## Remove build artifacts (dist + generated frontend assets)

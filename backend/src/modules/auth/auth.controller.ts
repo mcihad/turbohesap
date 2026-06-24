@@ -1,6 +1,12 @@
 import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common'
+import { Throttle } from '@nestjs/throttler'
 
-import type { AuthTokens, CurrentUser, LoginResponse } from '@turbohesap/shared'
+import type {
+  AuthTokens,
+  CurrentUser,
+  LoginResponse,
+  VerifyPasswordResponse,
+} from '@turbohesap/shared'
 
 import {
   type AuthUser,
@@ -10,6 +16,7 @@ import { Public } from '../../common/decorators/public.decorator'
 import { AuthService } from './auth.service'
 import { LoginDto } from './dto/login.dto'
 import { LogoutDto, RefreshDto } from './dto/token.dto'
+import { VerifyPasswordDto } from './dto/verify-password.dto'
 
 // Local authentication endpoints under /api/auth. login/refresh/logout are
 // public; /me requires a valid access token (global JwtAuthGuard).
@@ -17,6 +24,8 @@ import { LogoutDto, RefreshDto } from './dto/token.dto'
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
+  // Tight limit to blunt brute-force attempts.
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @Public()
   @Post('login')
   @HttpCode(200)
@@ -48,5 +57,16 @@ export class AuthController {
   @Get('permissions')
   permissions(@Principal() user: AuthUser): Promise<string[]> {
     return this.auth.permissions(user.sub)
+  }
+
+  // Re-confirm the caller's password before a destructive action. Returns 200
+  // with {valid} (not 401) so a wrong password isn't treated as a session error.
+  @Post('verify-password')
+  @HttpCode(200)
+  verifyPassword(
+    @Principal() user: AuthUser,
+    @Body() dto: VerifyPasswordDto,
+  ): Promise<VerifyPasswordResponse> {
+    return this.auth.verifyPassword(user.sub, dto.password)
   }
 }

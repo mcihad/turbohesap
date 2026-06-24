@@ -3,3 +3,8 @@ packages:
   - frontend
   - backend
   - mobile
+# @scarf/scarf is telemetry; never run its install script. unrs-resolver needs
+# its native binding built.
+allowBuilds:
+  '@scarf/scarf': false
+  unrs-resolver: true

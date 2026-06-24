@@ -1,9 +1,10 @@
 import * as React from 'react'
+import { Link } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-import type { UserDto } from '@turbohesap/shared'
+import { IamPermissions, toApiError, type UserDto } from '@turbohesap/shared'
 
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth/auth-context'
@@ -55,17 +56,17 @@ const EMPTY: FormState = {
 export function UsersPage() {
   const qc = useQueryClient()
   const { hasPermission } = useAuth()
-  const canRead = hasPermission('iam.users.read')
-  const canWrite = hasPermission('iam.users.write')
+  const canRead = hasPermission(IamPermissions.usersRead)
+  const canWrite = hasPermission(IamPermissions.usersWrite)
 
   const usersQuery = useQuery({
     queryKey: ['iam', 'users'],
-    queryFn: () => api.users.list(),
+    queryFn: () => api.iam.users.list(),
     enabled: canRead,
   })
   const rolesQuery = useQuery({
     queryKey: ['iam', 'roles'],
-    queryFn: () => api.roles.list(),
+    queryFn: () => api.iam.roles.list(),
     enabled: canRead,
   })
 
@@ -97,7 +98,7 @@ export function UsersPage() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (editing) {
-        await api.users.update(editing.id, {
+        await api.iam.users.update(editing.id, {
           email: form.email,
           firstName: form.firstName,
           lastName: form.lastName,
@@ -106,7 +107,7 @@ export function UsersPage() {
           ...(form.password ? { password: form.password } : {}),
         })
       } else {
-        await api.users.create({
+        await api.iam.users.create({
           username: form.username,
           email: form.email,
           password: form.password,
@@ -122,11 +123,12 @@ export function UsersPage() {
       setOpen(false)
       void invalidate()
     },
-    onError: () => toast.error('İşlem başarısız'),
+    onError: (e) =>
+      toast.error('İşlem başarısız', { description: toApiError(e).message }),
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.users.remove(id),
+    mutationFn: (id: string) => api.iam.users.remove(id),
     onSuccess: () => {
       toast.success('Kullanıcı silindi')
       void invalidate()
@@ -138,7 +140,7 @@ export function UsersPage() {
   const roles = rolesQuery.data ?? []
 
   return (
-    <PermissionRequired permission="iam.users.read">
+    <PermissionRequired permission={IamPermissions.usersRead}>
     <PageWrapper>
       <PageHeader
         title="Kullanıcılar"
@@ -168,7 +170,15 @@ export function UsersPage() {
           <TableBody>
             {users.map((u) => (
               <TableRow key={u.id}>
-                <TableCell className="font-medium">{u.username}</TableCell>
+                <TableCell>
+                  <Link
+                    to="/iam/users/$id"
+                    params={{ id: u.id }}
+                    className="font-medium text-primary hover:underline"
+                  >
+                    {u.username}
+                  </Link>
+                </TableCell>
                 <TableCell>{`${u.firstName} ${u.lastName}`.trim() || '—'}</TableCell>
                 <TableCell className="text-muted-foreground">{u.email}</TableCell>
                 <TableCell>

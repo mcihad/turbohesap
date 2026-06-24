@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt'
 import type { Request } from 'express'
 
 import { configuration } from '../../config/configuration'
+import { RequestContext } from '../context/request-context'
 import type { AuthUser } from '../decorators/current-user.decorator'
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator'
 
@@ -46,6 +47,13 @@ export class JwtAuthGuard implements CanActivate {
         sub: payload.sub,
         username: payload.username,
         roles: payload.roles ?? [],
+      }
+      // Fill in the request context (seeded by RequestContextMiddleware) so the
+      // audit subscriber / error filter can attribute changes to this user.
+      const store = RequestContext.get()
+      if (store) {
+        store.userId = payload.sub
+        store.userName = payload.username
       }
       return true
     } catch {

@@ -5,6 +5,11 @@
 > **yoksa**, ancak o zaman yeni/özel bir bileşen üret — ve eklediğinde bu listeyi
 > güncelle.
 >
+> 🔎 **Canlı önizleme:** çalışan uygulamada **Bileşenler** modülü (`/components`)
+> her bileşeni kategorisine göre listeler; her birinin demosu `/components/<slug>`
+> sayfasında. Kaynağı: `src/modules/components/showcases.tsx`. Yeni bir paylaşılan
+> primitif eklediğinde oraya da bir showcase ekle.
+>
 > Kurallar (bkz. `../../DESIGN.md`):
 > - shadcn/ui (new-york) + Radix primitifleri; ikonlar `lucide-react`.
 > - Asla token'ın ifade edebileceği bir değeri sabit yazma; renk/boşluk/radius
@@ -21,18 +26,23 @@ Import: `@/components/ui/<dosya>`.
 | Bileşen | Ana export(lar) | Ne için |
 | ------- | --------------- | ------- |
 | `accordion` | `Accordion`, `AccordionItem`, `AccordionTrigger`, `AccordionContent` | Katlanır içerik bölümleri (ör. SSS) |
+| `audit-trail` | `AuditTrail` (`logs: AuditLogDto[]`) | Varlık değişikliklerinin zaman çizelgesi; genişletilebilir alan diff'i. Varlık detay sayfalarında `EntityAuditTrail` (modules/iam) ile kendi kendine veri çeker |
 | `avatar` | `Avatar`, `AvatarImage`, `AvatarFallback` | Kullanıcı/öğe avatarı, baş harf fallback'i |
 | `badge` | `Badge` (`variant`: default/secondary/outline/success/warning/info/destructive) | Durum/etiket rozeti |
 | `breadcrumb` | `Breadcrumb`, `BreadcrumbList`, `BreadcrumbItem`, `BreadcrumbLink`, `BreadcrumbPage`, `BreadcrumbSeparator` | Sayfa kırıntısı (app-bar'da kullanılır) |
 | `button` | `Button` (`variant`: default/secondary/outline/ghost/link/destructive; `size`: default/sm/lg/icon/icon-sm) | Tüm tıklanabilir aksiyonlar |
+| `button-group` | `ButtonGroup` | Bitişik (segment) buton grubu; içine `Button`'lar koyun (genelde `variant="outline"`) |
+| `calendar` | `Calendar` (react-day-picker, tr; `mode` single/range) | Takvim / gün seçimi (genelde `date-range-picker` içinde) |
 | `card` | `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter` | İçerik kartı/panel |
 | `checkbox` | `Checkbox` (`checked`, `onCheckedChange`) | Tekil onay kutusu, çoklu seçim |
 | `collapsible` | `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent` | Aç/kapa tekil bölüm |
 | `command` | `Command`, `CommandDialog`, `CommandInput`, `CommandList`, `CommandItem`, `CommandGroup`, `CommandEmpty`, `CommandSeparator`, `CommandShortcut` | Komut paleti / aranabilir liste (⌘K) |
 | `context-menu` | `ContextMenu`, `ContextMenuTrigger`, `ContextMenuContent`, `ContextMenuItem`, … | Sağ tık menüsü |
+| `date-range-picker` | `DateRangePicker` (`value`, `onChange`, `presets`, `min`/`max`), `defaultDateRangePresets`, `DateRange` | Tarih aralığı seçimi; solda hazır seçimler (son 7 gün, bu ay…), filtrelerde kullanılır |
 | `dialog` | `Dialog`, `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose` | Modal pencere (form/onay) |
 | `drawer` | `Drawer`, `DrawerTrigger`, `DrawerContent`, `DrawerHeader`, `DrawerTitle`, `DrawerFooter` | Alttan/yandan kayan panel (vaul) |
 | `dropdown-menu` | `DropdownMenu`, `DropdownMenuTrigger`, `DropdownMenuContent`, `DropdownMenuItem`, `DropdownMenuLabel`, `DropdownMenuSeparator`, `DropdownMenuGroup`, `DropdownMenuShortcut` | Açılır menü (kullanıcı menüsü vb.) |
+| `filter-bar` | `FilterBar` (`activeCount`, `onClear`, `defaultOpen`, `headerClassName`), `FilterField` (`label`) | Liste/tablo filtreleri için katlanır, şık kapsayıcı (varsayılan kapalı; aktif filtre sayısı + Temizle) |
 | `input` | `Input` | Tek satır metin/şifre/email girişi |
 | `kbd` | `Kbd` | Klavye kısayolu rozeti |
 | `label` | `Label` | Form alanı etiketi (`htmlFor`) |

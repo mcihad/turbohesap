@@ -3,10 +3,15 @@ import {
   UnauthorizedException,
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { IsNull, Repository } from 'typeorm'
 import * as bcrypt from 'bcryptjs'
 
-import type { AuthTokens, CurrentUser, LoginResponse } from '@turbohesap/shared'
+import type {
+  AuthTokens,
+  CurrentUser,
+  LoginResponse,
+  VerifyPasswordResponse,
+} from '@turbohesap/shared'
 
 import { AccessService } from '../iam/access.service'
 import { User } from '../iam/entities/user.entity'
@@ -46,8 +51,19 @@ export class AuthService {
     }
 
     const row = await this.refreshTokens.findOne({ where: { id: jti } })
-    if (!row || row.revokedAt || row.expiresAt.getTime() < Date.now()) {
-      throw new UnauthorizedException('refresh token expired or revoked')
+    if (!row) throw new UnauthorizedException('invalid refresh token')
+
+    // Reuse detection: an already-rotated (revoked) token presented again signals
+    // possible theft → revoke the user's entire active token family.
+    if (row.revokedAt) {
+      await this.refreshTokens.update(
+        { userId: row.userId, revokedAt: IsNull() },
+        { revokedAt: new Date() },
+      )
+      throw new UnauthorizedException('refresh token reuse detected')
+    }
+    if (row.expiresAt.getTime() < Date.now()) {
+      throw new UnauthorizedException('refresh token expired')
     }
 
     const user = await this.users.findOne({ where: { id: sub } })
@@ -84,6 +100,21 @@ export class AuthService {
   /** The caller's effective permission keys (resolved from roles in the DB). */
   permissions(userId: string): Promise<string[]> {
     return this.access.permissionKeys(userId)
+  }
+
+  /** Re-confirm the caller's own password. Returns {valid} (never 401, so a
+   *  wrong password doesn't trip the client's unauthorized handler). */
+  async verifyPassword(
+    userId: string,
+    password: string,
+  ): Promise<VerifyPasswordResponse> {
+    const user = await this.users
+      .createQueryBuilder('user')
+      .addSelect('user.passwordHash')
+      .where('user.id = :id', { id: userId })
+      .getOne()
+    if (!user) return { valid: false }
+    return { valid: bcrypt.compareSync(password, user.passwordHash) }
   }
 
   /** Verify credentials; throws 401 on any failure. */

@@ -76,14 +76,16 @@ pnpm --filter @turbohesap/mobile start   # Expo (set EXPO_PUBLIC_API_BASE_URL in
 ## Configuration
 
 All backend + frontend settings live in the root **`.env`** (copy from
-`.env.example`). Key variables: `DATABASE_URL`, `DB_SYNCHRONIZE`,
+`.env.example`). Key variables: `DATABASE_URL`, `DB_MIGRATIONS_RUN`,
 `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET`, `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL`,
 `SEED_ADMIN_*`, and `VITE_API_BASE_URL`. Mobile uses `EXPO_PUBLIC_*` in
 `mobile/.env`. See [`AGENTS.md`](./AGENTS.md) for the full system guide and
 [`docs/auth.md`](./docs/auth.md) for the auth flow.
 
-> In development TypeORM auto-creates tables (`DB_SYNCHRONIZE=true`). For
-> production set it to `false` and manage the schema with migrations.
+> The schema is managed by **TypeORM migrations** (`backend/src/migrations/`).
+> Pending migrations run on boot (`DB_MIGRATIONS_RUN=true`); after changing an
+> entity run `make migration-generate NAME=...` and commit the result. An empty
+> database is fully provisioned on first boot.
 
 ## Add an endpoint / module
 

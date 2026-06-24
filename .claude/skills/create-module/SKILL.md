@@ -44,13 +44,23 @@ run + permission-gated API calls succeeded). Follow it in order.
 
 ## 1. Shared — the contract (`shared/src/modules/<mod>/`)
 
-Create `<res>.dto.ts`, `<res>.service.ts`, `<res>.client.ts`, `index.ts`:
+Create `<res>.dto.ts`, `<mod>.permissions.ts`, `<res>.service.ts`,
+`<res>.client.ts`, `index.ts`:
 
 ```ts
 // <res>.dto.ts
 export interface <Res>Dto { id: string; name: string; /* fields… */ createdAt: string; updatedAt: string }
 export interface Create<Res>Request { name: string /* … */ }
 export interface Update<Res>Request { name?: string /* … */ }
+```
+```ts
+// <mod>.permissions.ts — typed permission KEY constants (single source of truth;
+// backend guard/catalog + frontend gating both import these).
+export const <Mod>Permissions = {
+  <res>Read: '<mod>.<res>.read',
+  <res>Write: '<mod>.<res>.write',
+} as const
+export type <Mod>Permission = (typeof <Mod>Permissions)[keyof typeof <Mod>Permissions]
 ```
 ```ts
 // <res>.service.ts
@@ -80,16 +90,18 @@ export class <Res>ApiClient implements I<Res>Service {
 ```ts
 // index.ts
 export * from './<res>.dto'
+export * from './<mod>.permissions'
 export * from './<res>.service'
 export * from './<res>.client'
 ```
 
 **Register (3 edits):**
 - `shared/src/index.ts` → add `export * from './modules/<mod>'`
-- `shared/src/core/api.ts` → import `<Res>ApiClient` + `I<Res>Service`; add
-  `<res>: I<Res>Service` to `TurbohesapApi`; add `<res>: new <Res>ApiClient(http)`
-  to the `createTurbohesapApi` return. *(Pick a unique key; if a resource name
-  could collide across modules, namespace it, e.g. `inventoryProducts`.)*
+- `shared/src/core/api.ts` → import `<Res>ApiClient` + `I<Res>Service`; add a
+  **grouped** module key to `TurbohesapApi` (e.g. `<mod>: { <res>: I<Res>Service }`,
+  define a `<Mod>Api` interface like `IamApi`); build it in the factory return
+  (`<mod>: { <res>: new <Res>ApiClient(http) }`). Resources nest under their module
+  → `api.<mod>.<res>` (no cross-module collisions).
 - `shared/src/core/app-modules.ts` → add `{ key: '<mod>', label: '<Label>', description: '…' }` to `MODULES`.
 
 Build it: `pnpm --filter @turbohesap/shared build`.
@@ -114,6 +126,9 @@ export class <Res> {
   @UpdateDateColumn() updatedAt!: Date
 }
 ```
+> Use **camelCase** property names — a `SnakeNamingStrategy` maps them to
+> snake_case columns automatically (`createdAt` → `created_at`). Don't add
+> `@Column({ name: '…' })` overrides; the JSON API stays camelCase via the DTO.
 ```ts
 // dto/create-<res-singular>.dto.ts  (class-validator; implements the shared request)
 import { IsNotEmpty, IsString } from 'class-validator'
@@ -124,20 +139,21 @@ export class Create<Res>Dto implements Create<Res>Request {
 // dto/update-<res-singular>.dto.ts → same fields, all @IsOptional()
 ```
 ```ts
-// <mod>.permissions.ts
+// <mod>.permissions.ts — pair each SHARED key with a Turkish description.
+import { <Mod>Permissions } from '@turbohesap/shared'
 import type { PermissionDef } from '../../common/permission.types'
-export const <MOD>_PERMISSIONS: PermissionDef[] = [
-  { key: '<mod>.<res>.read',  description: '… görüntüleme', group: '<res>' },
-  { key: '<mod>.<res>.write', description: '… ekleme, düzenleme ve silme', group: '<res>' },
+export const <MOD>_PERMISSION_DEFS: PermissionDef[] = [
+  { key: <Mod>Permissions.<res>Read,  description: '… görüntüleme', group: '<res>' },
+  { key: <Mod>Permissions.<res>Write, description: '… ekleme, düzenleme ve silme', group: '<res>' },
 ]
 ```
 
 `<res>.service.ts` — inject `@InjectRepository(<Res>)`, implement
 list/get/create/update/remove, map entity → `<Res>Dto` (dates → `.toISOString()`).
 `<res>.controller.ts` — `@Controller('<mod>/<res>')`, one method per CRUD op, each
-decorated with `@RequirePermissions('<mod>.<res>.read'|'…write')`. **No
-`@UseGuards`** — the global guard enforces it. (Copy `modules/iam/users/` verbatim
-and rename.)
+decorated with `@RequirePermissions(<Mod>Permissions.<res>Read | …<res>Write)`
+(import `<Mod>Permissions` from `@turbohesap/shared`). **No `@UseGuards`** — the
+global guard enforces it. (Copy `modules/iam/users/` verbatim and rename.)
 
 ```ts
 // <mod>.module.ts
@@ -151,12 +167,22 @@ export class <Mod>Module {}
 ```
 
 **Register (2 edits):**
-- `backend/src/permissions.catalog.ts` → import `<MOD>_PERMISSIONS`; spread
-  `...<MOD>_PERMISSIONS` into `PERMISSION_CATALOG` (auto-seeds on boot; `admin`
+- `backend/src/permissions.catalog.ts` → import `<MOD>_PERMISSION_DEFS`; spread
+  `...<MOD>_PERMISSION_DEFS` into `PERMISSION_CATALOG` (auto-seeds on boot; `admin`
   gets the keys automatically).
 - `backend/src/app.module.ts` → import `<Mod>Module` and add it to `imports`.
 
 Build it: `pnpm --filter @turbohesap/backend build`.
+
+**Generate a migration (required — schema is migration-owned, `synchronize` is
+off).** After the entity exists and the backend builds, diff it into a migration
+and commit the file:
+```bash
+make migration-generate NAME=Add<Mod><Res>     # backend/src/migrations/<ts>-Add<Mod><Res>.ts
+make migrate                                    # apply locally (also runs on boot)
+```
+Review the generated SQL. Without this, the new table never gets created (no
+`synchronize` fallback). See AGENTS.md §5.1.
 
 ---
 
@@ -165,19 +191,22 @@ Build it: `pnpm --filter @turbohesap/backend build`.
 ```ts
 // module.config.ts
 import { <Icon> } from 'lucide-react'
+import { <Mod>Permissions } from '@turbohesap/shared'
 import type { AppModule } from '@/modules/types'
 export const <mod>Module: AppModule = {
   key: '<mod>', label: '<Label>', icon: <Icon>, home: '/<mod>/<res>',
   nav: [{ items: [
-    { title: '<Res Label>', icon: <Icon>, to: '/<mod>/<res>', permission: '<mod>.<res>.read' },
+    { title: '<Res Label>', icon: <Icon>, to: '/<mod>/<res>', permission: <Mod>Permissions.<res>Read },
   ]}],
 }
 ```
 - **Page** `pages/<res>-page.tsx`: data via `import { api } from '@/lib/api'` →
-  `api.<res>.list()/...` (TanStack Query, `enabled: hasPermission('<mod>.<res>.read')`);
-  wrap the return in `<PermissionRequired permission="<mod>.<res>.read">`; gate write
-  buttons with `useAuth().hasPermission('<mod>.<res>.write')` or `<Can>`. **Reuse
-  `components.md` primitives** (Table, Dialog, Button…). Copy `modules/iam/pages/users-page.tsx`.
+  `api.<mod>.<res>.list()/...` (TanStack Query,
+  `enabled: hasPermission(<Mod>Permissions.<res>Read)`); wrap the return in
+  `<PermissionRequired permission={<Mod>Permissions.<res>Read}>`; gate write buttons
+  with `useAuth().hasPermission(<Mod>Permissions.<res>Write)` or `<Can>`; surface
+  server errors with `toApiError(e).message`. **Reuse `components.md` primitives**
+  (Table, Dialog, Button…). Copy `modules/iam/pages/users-page.tsx`.
 - **Route (thin)** `frontend/src/routes/_authed/<mod>/<res>.tsx`:
   ```tsx
   import { createFileRoute } from '@tanstack/react-router'
@@ -196,9 +225,10 @@ Regenerate routes + build: `pnpm --filter @turbohesap/frontend exec vite build`
 ## 4. Mobile
 
 Nothing module-specific is required: `@turbohesap/mobile` already calls
-`createTurbohesapApi`, so `api.<res>.*` is available the moment shared is rebuilt.
-Add a screen under `mobile/src/...` only if the module needs mobile UI (use the
-same `api.<res>` calls; gate with the permission list from `api.auth.permissions()`).
+`createTurbohesapApi`, so `api.<mod>.<res>.*` is available the moment shared is
+rebuilt. Add a screen under `mobile/src/...` only if the module needs mobile UI
+(use the same `api.<mod>.<res>` calls; gate with the permission list from
+`api.auth.permissions()`).
 
 ---
 
@@ -206,6 +236,8 @@ same `api.<res>` calls; gate with the permission list from `api.auth.permissions
 
 ```bash
 make build                                   # shared + frontend + backend
+make migration-generate NAME=Add<Mod><Res>   # commit the generated migration
+make migrate                                 # apply it (schema is migration-owned)
 pnpm --filter @turbohesap/mobile typecheck   # mobile still resolves the contract
 ```
 Then run and exercise the new endpoint (this is the real check):
@@ -232,14 +264,16 @@ permission gets `403`. The module icon appears in the left rail.
 | Layer | File | Add |
 | ----- | ---- | --- |
 | shared | `src/index.ts` | `export * from './modules/<mod>'` |
-| shared | `src/core/api.ts` | client import, `TurbohesapApi.<res>`, factory `<res>:` |
+| shared | `src/core/api.ts` | client import, `TurbohesapApi.<mod>` group, factory `<mod>: { <res>: … }` |
 | shared | `src/core/app-modules.ts` | `MODULES` entry |
-| backend | `src/permissions.catalog.ts` | `...<MOD>_PERMISSIONS` |
+| backend | `src/permissions.catalog.ts` | `...<MOD>_PERMISSION_DEFS` |
 | backend | `src/app.module.ts` | `<Mod>Module` in `imports` |
+| backend | `src/migrations/` | a generated migration for the new entity/table |
 | frontend | `src/modules/registry.ts` | `<mod>Module` in `APP_MODULES` |
 
 Miss one and the symptom is: route 404 (app.module), no permissions (catalog),
-client undefined (api.ts), module absent from rail (registry/app-modules).
+client undefined (api.ts), module absent from rail (registry/app-modules),
+**table missing / query fails (no migration)**.
 
 ## 7. Gotchas
 - **Rebuild shared first** after editing contracts (`make build-shared` /
@@ -250,6 +284,16 @@ client undefined (api.ts), module absent from rail (registry/app-modules).
   run rewrites it. `createFileRoute('/_authed/<mod>/<res>')` must match the file path.
 - **Permissions resolve from the DB**, so after adding a write permission, assign
   it to a role (`/iam/roles`) for non-admins; admin gets every key automatically.
-- **Same key both sides:** the controller's `@RequirePermissions('<mod>.<res>.write')`
-  and the frontend's `hasPermission('<mod>.<res>.write')` must be identical.
+- **No `synchronize` fallback** — a new entity needs a migration
+  (`make migration-generate NAME=…`) or its table simply won't exist. Generate it
+  against an up-to-date local DB and review the SQL before committing (AGENTS.md §5.1).
+- **Auditing is automatic** — every entity's Insert/Update/Delete is recorded by
+  the global audit subscriber (AGENTS.md §5.2). Add your entity class to
+  `ENTITY_MODULE_MAP` (`modules/iam/audit/audited-entities.ts`) so its audit rows
+  are labelled with your module. Errors (5xx) are captured automatically too.
+- **Same key both sides — via the shared constant:** the controller's
+  `@RequirePermissions(<Mod>Permissions.<res>Write)` and the frontend's
+  `hasPermission(<Mod>Permissions.<res>Write)` both import the same
+  `<Mod>Permissions` constant from `@turbohesap/shared` — never hardcode the
+  string, so a rename is a compile error, not silent drift.
 - **camelCase JSON only**; return the shared DTO type from controllers.

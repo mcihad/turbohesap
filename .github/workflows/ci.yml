@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Shared contracts must build first — frontend/backend/mobile import them.
+      - name: Build shared
+        run: pnpm --filter @turbohesap/shared build
+
+      - name: Lint frontend
+        run: pnpm --filter @turbohesap/frontend lint
+
+      - name: Typecheck backend
+        run: pnpm --filter @turbohesap/backend typecheck
+
+      - name: Typecheck mobile
+        run: pnpm --filter @turbohesap/mobile typecheck
+
+      # Frontend build runs `tsc -b && vite build` (typecheck + bundle).
+      - name: Build frontend
+        run: pnpm --filter @turbohesap/frontend build
+
+      - name: Build backend
+        run: pnpm --filter @turbohesap/backend build
+
+      - name: Test backend (unit)
+        run: pnpm --filter @turbohesap/backend test
+
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: turbohesap_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Build shared
+        run: pnpm --filter @turbohesap/shared build
+      - name: Backend e2e
+        run: pnpm --filter @turbohesap/backend test:e2e
+        env:
+          # Postgres service is reachable on localhost:5432; DB already created.
+          TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/turbohesap_test
+          TEST_ADMIN_URL: postgres://postgres:postgres@localhost:5432/postgres

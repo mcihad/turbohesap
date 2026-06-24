@@ -9,7 +9,7 @@ import {
   Post,
 } from '@nestjs/common'
 
-import type { UserDto } from '@turbohesap/shared'
+import { IamPermissions, type UserDto } from '@turbohesap/shared'
 
 import { RequirePermissions } from '../../../common/decorators/permissions.decorator'
 import { CreateUserDto } from './dto/create-user.dto'
@@ -23,32 +23,32 @@ export class UsersController {
   constructor(private readonly users: UsersService) {}
 
   @Get()
-  @RequirePermissions('iam.users.read')
+  @RequirePermissions(IamPermissions.usersRead)
   list(): Promise<UserDto[]> {
     return this.users.list()
   }
 
   @Get(':id')
-  @RequirePermissions('iam.users.read')
+  @RequirePermissions(IamPermissions.usersRead)
   get(@Param('id') id: string): Promise<UserDto> {
     return this.users.get(id)
   }
 
   @Post()
-  @RequirePermissions('iam.users.write')
+  @RequirePermissions(IamPermissions.usersWrite)
   create(@Body() dto: CreateUserDto): Promise<UserDto> {
     return this.users.create(dto)
   }
 
   @Patch(':id')
-  @RequirePermissions('iam.users.write')
+  @RequirePermissions(IamPermissions.usersWrite)
   update(@Param('id') id: string, @Body() dto: UpdateUserDto): Promise<UserDto> {
     return this.users.update(id, dto)
   }
 
   @Delete(':id')
   @HttpCode(204)
-  @RequirePermissions('iam.users.write')
+  @RequirePermissions(IamPermissions.usersWrite)
   async remove(@Param('id') id: string): Promise<void> {
     await this.users.remove(id)
   }

@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@turbohesap/shared": "workspace:*",
     "@radix-ui/react-accordion": "^1.2.14",
     "@radix-ui/react-avatar": "^1.2.0",
     "@radix-ui/react-checkbox": "^1.3.5",
@@ -35,6 +34,7 @@
     "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-router": "^1.170.16",
     "@tanstack/react-table": "^8.21.3",
+    "@turbohesap/shared": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -42,6 +42,7 @@
     "lucide-react": "^1.21.0",
     "next-themes": "^0.4.6",
     "react": "^19.2.6",
+    "react-day-picker": "^10.0.1",
     "react-dom": "^19.2.6",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",

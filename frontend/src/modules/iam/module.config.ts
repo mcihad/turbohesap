@@ -1,4 +1,14 @@
-import { KeyRound, ShieldCheck, Users } from 'lucide-react'
+import {
+  Activity,
+  Bug,
+  FileClock,
+  IdCard,
+  KeyRound,
+  ShieldCheck,
+  Users,
+} from 'lucide-react'
+
+import { IamPermissions } from '@turbohesap/shared'
 
 import type { AppModule } from '@/modules/types'
 
@@ -11,25 +21,46 @@ export const iamModule: AppModule = {
   nav: [
     {
       label: 'Kimlik ve Yetki',
+      icon: IdCard,
       items: [
         {
           title: 'Kullanıcılar',
           icon: Users,
           to: '/iam/users',
-          permission: 'iam.users.read',
+          permission: IamPermissions.usersRead,
         },
         {
           title: 'Roller',
           icon: ShieldCheck,
           to: '/iam/roles',
-          permission: 'iam.roles.read',
+          permission: IamPermissions.rolesRead,
         },
         {
           title: 'İzinler',
           icon: KeyRound,
           to: '/iam/permissions',
           keywords: ['yetki', 'permission'],
-          permission: 'iam.permissions.read',
+          permission: IamPermissions.permissionsRead,
+        },
+      ],
+    },
+    {
+      label: 'İzleme',
+      icon: Activity,
+      items: [
+        {
+          title: 'Denetim Kayıtları',
+          icon: FileClock,
+          to: '/iam/audit-logs',
+          keywords: ['audit', 'denetim', 'log', 'değişiklik'],
+          permission: IamPermissions.auditRead,
+        },
+        {
+          title: 'Hata Kayıtları',
+          icon: Bug,
+          to: '/iam/error-logs',
+          keywords: ['error', 'hata', 'log', 'exception'],
+          permission: IamPermissions.errorsRead,
         },
       ],
     },

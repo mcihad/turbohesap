@@ -1,4 +1,7 @@
+import { Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
+
+import { IamPermissions } from '@turbohesap/shared'
 
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth/auth-context'
@@ -20,12 +23,12 @@ export function PermissionsPage() {
   const { hasPermission } = useAuth()
   const { data, isLoading } = useQuery({
     queryKey: ['iam', 'permissions'],
-    queryFn: () => api.permissions.list(),
-    enabled: hasPermission('iam.permissions.read'),
+    queryFn: () => api.iam.permissions.list(),
+    enabled: hasPermission(IamPermissions.permissionsRead),
   })
 
   return (
-    <PermissionRequired permission="iam.permissions.read">
+    <PermissionRequired permission={IamPermissions.permissionsRead}>
     <PageWrapper>
       <PageHeader
         title="İzinler"
@@ -52,7 +55,15 @@ export function PermissionsPage() {
             ) : data && data.length > 0 ? (
               data.map((p) => (
                 <TableRow key={p.key}>
-                  <TableCell className="font-mono text-xs">{p.key}</TableCell>
+                  <TableCell>
+                    <Link
+                      to="/iam/permissions/$key"
+                      params={{ key: p.key }}
+                      className="font-mono text-xs text-primary hover:underline"
+                    >
+                      {p.key}
+                    </Link>
+                  </TableCell>
                   <TableCell>
                     <Badge variant="secondary">{p.group}</Badge>
                   </TableCell>

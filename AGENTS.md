@@ -137,9 +137,11 @@ shared/src/
 ├── core/                       # module-agnostic
 │   ├── http.ts                 # createHttpClient(config) → axios instance
 │   ├── app-modules.ts          # MODULES (catalog) + MODULE_KEYS
-│   └── api.ts                  # createTurbohesapApi(config) → { auth, users, ... , http }
+│   ├── errors.ts               # ApiError shape + toApiError(err) normalizer
+│   └── api.ts                  # createTurbohesapApi(config) → { auth, iam:{…}, health, http }
 └── modules/<module>/           # everything a module's API needs
     ├── <name>.dto.ts           # DTOs (data transfer objects) — the wire shapes
+    ├── <module>.permissions.ts # permission KEY constants (e.g. IamPermissions) — typed, shared
     ├── <name>.service.ts       # service INTERFACE (the contract, I<Name>Service)
     ├── <name>.client.ts        # axios implementation of that interface
     └── index.ts                # re-exports the module's contracts
@@ -158,9 +160,17 @@ alongside). Examples today:
 ### Rules that keep separation clean
 
 - **One entry point:** consumers import only from the barrel `@turbohesap/shared`
-  (never deep paths). `createTurbohesapApi(config)` returns one typed object
-  `{ auth, users, roles, permissions, health, http }`. Consumers depend on the
-  **interfaces**, not the concrete axios classes.
+  (never deep paths). `createTurbohesapApi(config)` returns one typed object where
+  **resources are grouped by module** — `{ auth, iam: { users, roles, permissions },
+  health, http }` — mirroring `/api/<module>/<resource>` and avoiding resource-name
+  collisions across modules. Consumers depend on the **interfaces**, not the axios
+  classes (e.g. `api.iam.users.list()`).
+- **Permission keys are typed shared constants** (`<module>.permissions.ts`, e.g.
+  `IamPermissions.usersWrite === 'iam.users.write'`). Backend and frontend both
+  import them — a rename is a compile error, not silent drift. See §7.
+- **Errors are one shape:** `ApiError` (`core/errors.ts`); every endpoint returns
+  it (backend global filter), and `toApiError(err)` normalizes any thrown value on
+  the client.
 - **DTOs are framework-agnostic types** — plain interfaces, no React, no Nest, no
   TypeORM. The backend imports the same DTOs and returns them from controllers,
   so the server and clients can never drift.
@@ -178,21 +188,25 @@ alongside). Examples today:
 ### Adding a module end-to-end (the separation contract)
 
 1. **Contracts** — `shared/src/modules/<module>/`: add `*.dto.ts`,
-   `*.service.ts` (the `I<Name>Service` interface), `*.client.ts` (axios impl),
-   and `index.ts`. Export the folder from `shared/src/index.ts`, and register the
-   new client in `shared/src/core/api.ts` (add it to `TurbohesapApi` + the
-   factory). If the module needs to appear in the rail / role dropdown, add it to
-   `core/app-modules.ts`. Rebuild: `make build-shared`.
+   `<module>.permissions.ts` (typed permission **key constants**, e.g.
+   `<Mod>Permissions`), `*.service.ts` (the `I<Name>Service` interface),
+   `*.client.ts` (axios impl), and `index.ts`. Export the folder from
+   `shared/src/index.ts`, and register the new client in `shared/src/core/api.ts`
+   (add it to `TurbohesapApi` — grouped per module — + the factory). If the module
+   needs to appear in the rail / role dropdown, add it to `core/app-modules.ts`.
+   Rebuild: `make build-shared`.
 2. **Backend** — `backend/src/modules/<module>/`: entities, service(s), and a
    controller `@Controller('<module>/<resource>')` that returns the shared DTO
-   types. Declare the module's permissions in `<module>.permissions.ts` and add
-   that list to `src/permissions.catalog.ts` (they auto-seed on boot — see §5);
-   protect routes with `@RequirePermissions('<module>.<resource>.<action>')`.
-   Import the module in `app.module.ts`.
-3. **Frontend** — `frontend/src/modules/<module>/module.config.ts` (icon + nav)
-   registered in `src/modules/registry.ts`, with pages in `pages/` and thin route
-   files under `src/routes/_authed/<module>/`. Call the API via
-   `api.<resource>.<method>()`; gate UI with `useAuth().hasPermission(...)`.
+   types. Declare the permission **definitions** (shared key + Turkish description)
+   in `<module>.permissions.ts` and add them to `src/permissions.catalog.ts` (they
+   auto-seed on boot — see §5/§7); protect routes with
+   `@RequirePermissions(<Mod>Permissions.<resource>Write)`. Import the module in
+   `app.module.ts`.
+3. **Frontend** — `frontend/src/modules/<module>/module.config.ts` (icon + nav,
+   with `permission: <Mod>Permissions.<resource>Read`) registered in
+   `src/modules/registry.ts`, pages in `pages/`, thin route files under
+   `src/routes/_authed/<module>/`. Call the API via `api.<module>.<resource>.<method>()`;
+   gate UI with `useAuth().hasPermission(<Mod>Permissions.…)`.
 
 ---
 
@@ -221,8 +235,14 @@ alongside). Examples today:
 - **`iam`** (`/api/iam`): `users`, `roles`, `permissions` (CRUD). RBAC model:
   `User` ↔ `Role` ↔ `Permission` (many-to-many); each `Role` belongs to a
   `module`. On startup `SeedService` upserts the permission catalog
-  (`iam.constants.ts`, Turkish descriptions), the system roles (`admin`, `user`),
-  and a default admin user from `SEED_ADMIN_*` — idempotent.
+  (`src/permissions.catalog.ts` — keys from `@turbohesap/shared`, Turkish
+  descriptions in each `<module>.permissions.ts`), the system roles
+  (`admin`, `user`), and a default admin user from `SEED_ADMIN_*` — idempotent.
+- **Errors:** a global exception filter (`common/filters/all-exceptions.filter.ts`,
+  wired in `main.ts`) normalizes every thrown error to the shared `ApiError`
+  (`{ statusCode, error, message, details? }`); validation arrays collapse to a
+  single `message` + `details`. (Health is the one endpoint that returns its own
+  body on 503 via `@Res` so its `HealthStatus` shape is preserved.)
 
 ### Permissions (module-declared, auto-seeded)
 Permissions are **declared per module and auto-created on startup** — no manual
@@ -269,8 +289,101 @@ DB work, no migration to add one.
 - **camelCase JSON** everywhere; DTOs come from `@turbohesap/shared`.
 - **Seed/data is Turkish** (permission/role descriptions, admin name) since the
   app is Turkish-facing.
-- **DB:** TypeORM is global; `DB_SYNCHRONIZE=true` auto-creates tables in dev,
-  `false` + migrations in prod.
+- **DB:** TypeORM is global with **`synchronize` off** — the schema is owned by
+  **migrations** (see §5.1). Pending migrations run on boot (`DB_MIGRATIONS_RUN`,
+  default on); the seed then upserts permissions/roles/admin.
+
+### 5.1 Migrations
+The schema is managed by TypeORM migrations, not auto-synchronize.
+
+- **Files:** `backend/src/migrations/*.ts`, compiled to `dist/migrations/*.js`.
+  The CLI uses a standalone DataSource at `backend/src/data-source.ts`; the NestJS
+  runtime config (`database/database.module.ts`) points at the same migrations glob
+  with `migrationsRun` from `DB_MIGRATIONS_RUN`.
+- **After changing any entity** (new module, new column, new index), generate a
+  migration and commit it:
+  ```bash
+  make migration-generate NAME=AddInventoryProducts   # diffs entities ↔ DB
+  make migrate                                         # apply (also runs on boot)
+  make migration-revert                               # undo the last one
+  ```
+  `migration-generate` diffs the entities against the **current** DB, so run it
+  against an up-to-date local DB. Review the generated SQL before committing.
+- **Boot behaviour:** with `DB_MIGRATIONS_RUN=true` (default) the app applies any
+  pending migrations at startup. For multi-instance deploys set it to `false` and
+  run `make migrate` once out-of-band before rolling out.
+- **Fresh install:** an empty DB is fully provisioned by the migrations on first
+  boot; the initial `Init` migration enables `uuid-ossp` and creates every table.
+- **snake_case DB identifiers:** a `SnakeNamingStrategy` (set in both
+  `data-source.ts` and `database.module.ts`) maps camelCase entity properties to
+  snake_case **columns/join-columns** (`passwordHash` → `password_hash`,
+  `userId` → `user_id`). Entity property names and the **JSON API stay camelCase**
+  (services map entity → shared DTO), so this is a DB-only convention. Don't add
+  `@Column({ name: '…' })` overrides — let the strategy do it consistently.
+
+### 5.2 Audit & error logging (cross-cutting, under `iam`)
+Two always-on observability mechanisms live in the `iam` module (surfaced in the
+UI under **Yönetim → İzleme**: `/iam/audit-logs`, `/iam/error-logs`).
+
+- **Audit log** (`audit_logs`): a global TypeORM subscriber
+  (`modules/iam/audit/audit.subscriber.ts`) records every Insert/Update/Delete of
+  tracked entities in the **same transaction**, with a field-level diff
+  (`{ field, oldValue, newValue }[]`). It self-registers on the DataSource.
+  - **Opt-out / config** lives in `audit/audited-entities.ts`:
+    `IGNORED_AUDIT_ENTITIES` (AuditLog/ErrorLog/RefreshToken — never audited, avoids
+    recursion), `REDACTED_AUDIT_FIELDS` (passwordHash… → `***`),
+    `NOISE_AUDIT_FIELDS` (e.g. `lastLoginAt`-only updates are skipped), and
+    `ENTITY_MODULE_MAP` (entity class → module label). **When you add an audited
+    entity in a new module, add it to `ENTITY_MODULE_MAP`** so its rows are labelled.
+  - **Who/where** comes from `RequestContext` (AsyncLocalStorage): seeded by
+    `RequestContextMiddleware` (ip/method/path) and filled with userId/userName by
+    `JwtAuthGuard`. Reads `GET /api/iam/audit-logs` (filters: entityType, entityId,
+    module, action, userId, search, from/to; paged) require `iam.audit.read`;
+    `…/entity/:type/:id` powers entity detail pages.
+- **Error log** (`error_logs`): the global exception filter
+  (`common/filters/all-exceptions.filter.ts`, registered via `APP_FILTER` for DI)
+  persists every **5xx** to the error log via `ErrorLogsService.capture`, deduped by
+  a fingerprint hash (type+message+first frame) — repeats bump `occurrenceCount` /
+  `lastSeenAt` instead of inserting. `origin` is `server` or `client`.
+  - **Client errors:** the SPA reports unhandled errors / rejections / React
+    render errors to `POST /api/iam/error-logs/client` (**`@Public()`**) via
+    `frontend/src/lib/errors/` (`installGlobalErrorHandlers` + `ErrorBoundary`,
+    wired in `main.tsx`; locally throttled).
+  - Reads `GET /api/iam/error-logs` need `iam.errors.read`; triage
+    (`PATCH …/:id` → `status` + `developerNotes`) needs `iam.errors.write`;
+    deleting (`DELETE …/:id`) needs `iam.errors.delete` (a destructive button in
+    the detail drawer, gated by that permission).
+  - **Testing:** the error-logs page header has a top-right **"Hata fırlat"**
+    dropdown that throws genuine client errors (TypeError / unhandled rejection)
+    and calls `GET /api/debug/error/{runtime,http,db}` (`modules/debug`,
+    authenticated, real errors) — safe to delete the menu + controller.
+- **Reuse:** the `AuditTrail` UI primitive (`components/ui/audit-trail.tsx`) renders
+  a timeline of `AuditLogDto[]`; `EntityAuditTrail` (`modules/iam/components`)
+  self-fetches by entity for detail pages.
+
+### 5.3 Hardening (security, validation, observability)
+- **Rate limiting:** global `ThrottlerGuard` (`@nestjs/throttler`,
+  `THROTTLE_TTL`/`THROTTLE_LIMIT`, default 300/min/IP, in-memory — use a shared
+  store for multi-instance). Tighter per-route via `@Throttle(...)`: login 10/min,
+  public client-error report 30/min.
+- **Headers/CORS:** `helmet` (CSP off — tune before prod); CORS from
+  `CORS_ORIGINS` (open in dev, same-origin in prod unless an allowlist is set).
+- **Config safety:** `assertProductionConfig()` (main.ts) refuses to boot in
+  production while JWT secrets / seed admin password are the dev defaults.
+  `app.enableShutdownHooks()` for graceful shutdown.
+- **Validation:** global `ValidationPipe({ whitelist, forbidNonWhitelisted,
+  transform })` — unknown body/query fields → 400. List filters use validated
+  query DTOs (`*-query.dto.ts`).
+- **Refresh-token reuse detection:** presenting an already-rotated (revoked)
+  refresh token revokes the user's whole active token family (`auth.service.ts`).
+- **Docs:** OpenAPI at **`/api/docs`** (JSON `/api/docs-json`); the
+  `@nestjs/swagger` CLI plugin (`nest-cli.json`) derives schemas from DTOs.
+- **Observability:** per-request correlation id (`X-Request-Id`, in
+  `RequestContext`), one HTTP log line per request (`LoggingInterceptor`).
+- **Conventions:** entities should extend `common/entities/base.entity.ts`
+  (`BaseEntity`: uuid id + created/updated). Paginated list endpoints return the
+  shared `Page<T>` with a validated `PageQuery` (see audit/error logs); use this
+  for any list that can grow (small bounded lists like roles may stay arrays).
 
 ---
 
@@ -319,19 +432,24 @@ three layers. Read this before touching anything auth-related.
 - **User ↔ Role ↔ Permission** (many-to-many, in PostgreSQL). A user has roles; a
   role has permissions and **belongs to a module** (`RoleDto.module`).
 - **Permission key:** `<module>.<resource>.<action>` — e.g. `iam.users.read`,
-  `iam.users.write`. Convention: reads require `.read`, mutations `.write`.
+  `iam.users.write`. Convention: reads require `.read`, mutations `.write`. Keys
+  are **typed constants in shared** (`<module>.permissions.ts`, e.g.
+  `IamPermissions.usersWrite`); backend and frontend import them — never hardcode
+  the string.
 - **Effective permissions** = the union of all the user's roles' permissions.
 
 ### Who owns what (the three layers)
 | Layer | Role in RBAC | Where |
 | ----- | ------------ | ----- |
-| **shared** (`@turbohesap/shared`) | only the **contracts** that carry roles/permissions: `RoleDto`, `PermissionDto`, `CurrentUser.roles`, and `IAuthService.permissions()`. No logic. | `shared/src/modules/iam`, `…/auth` |
+| **shared** (`@turbohesap/shared`) | the **permission key constants** (`<Mod>Permissions`) + the contracts that carry roles/permissions (`RoleDto`, `PermissionDto`, `CurrentUser.roles`, `IAuthService.permissions()`). No logic. | `shared/src/modules/iam`, `…/auth` |
 | **backend** (`@turbohesap/backend`) | the **source of truth**: permission catalog, RBAC entities, resolution, and enforcement. | `backend/src/...` (below) |
 | **frontend / mobile** | a **UX layer**: fetch the permission list and show/hide accordingly. Never the security boundary. | `frontend/src/lib/auth/...` |
 
 ### Backend — declared, seeded, resolved, enforced
-1. **Declare per module:** `backend/src/modules/<module>/<module>.permissions.ts`
-   exports a `PermissionDef[]`; aggregate every module's list in
+1. **Declare per module:** the **keys** are typed constants in
+   `shared/src/modules/<module>/<module>.permissions.ts` (`<Mod>Permissions`); the
+   backend's `backend/src/modules/<module>/<module>.permissions.ts` pairs each
+   shared key with a Turkish description (`PermissionDef[]`), aggregated in
    `backend/src/permissions.catalog.ts` (`PERMISSION_CATALOG`, `ALL_PERMISSION_KEYS`).
 2. **Auto-seed on boot:** `SeedService.seedPermissions()` upserts the catalog into
    the `permissions` table — **missing keys are inserted automatically** (logs
@@ -347,7 +465,7 @@ three layers. Read this before touching anything auth-related.
    and calls `AccessService` **per request**. To protect a route, **just add the
    decorator** — no per-controller `@UseGuards`:
    ```ts
-   @RequirePermissions('inventory.products.write')   // ALL listed keys required
+   @RequirePermissions(InventoryPermissions.productsWrite)   // ALL listed keys required
    @Post()
    create(@Body() dto: CreateProductDto) { … }
    ```
@@ -374,13 +492,16 @@ three layers. Read this before touching anything auth-related.
   `403`. Always use the **identical key** on the button and the controller.
 
 ### Add a permission end-to-end (checklist)
-1. **Backend:** add the key to the module's `<module>.permissions.ts` (auto-seeds;
-   admin gets it) and put `@RequirePermissions('<module>.<resource>.<action>')` on
-   the route. Restart so it seeds.
-2. **Frontend:** gate the matching UI with the **same key** — `hasPermission` /
-   `<Can>` for actions, `permission` on the nav item, `<PermissionRequired>` +
-   query `enabled` for the page.
-3. **Assign** the permission to a role via `/iam/roles` (the role's module +
+1. **Shared:** add the key constant to `shared/src/modules/<module>/<module>.permissions.ts`
+   (`<Mod>Permissions`). Rebuild shared.
+2. **Backend:** add a `PermissionDef` (the shared key + Turkish description) in the
+   backend's `<module>.permissions.ts` (auto-seeds; admin gets it) and put
+   `@RequirePermissions(<Mod>Permissions.<resource>Write)` on the route. Restart so
+   it seeds.
+3. **Frontend:** gate the matching UI with the **same constant** —
+   `hasPermission(<Mod>Permissions.…)` / `<Can>` for actions, `permission` on the
+   nav item, `<PermissionRequired>` + query `enabled` for the page.
+4. **Assign** the permission to a role via `/iam/roles` (the role's module +
    permission checklist). Users with that role get it on their next request.
 
 ---
@@ -401,8 +522,21 @@ Driven from the root **`Makefile`** (`make help`):
 | `make run`           | build shared + frontend, run the NestJS backend serving them     |
 | `make run-prod`      | build everything, run the compiled server                        |
 | `make lint`          | eslint (frontend) + `tsc --noEmit` (backend)                     |
+| `make test`          | backend unit tests (jest)                                        |
+| `make test-e2e`      | backend e2e (boots the app; needs Postgres, uses `turbohesap_test`) |
 
 Mobile: `pnpm --filter @turbohesap/mobile start`.
+
+**Testing (backend):** Jest. **Unit** specs sit next to sources (`*.spec.ts`,
+`jest.config.cjs`) — pure logic, no DB. **e2e** (`test/*.e2e-spec.ts`,
+`jest-e2e.config.cjs`) boots the real app via `@nestjs/testing`+`supertest`
+against a throwaway `turbohesap_test` DB (migrations + seed run on init). Run with
+`make test` / `make test-e2e`.
+
+**CI:** `.github/workflows/ci.yml` runs on every push/PR — `build` job (install,
+build shared, lint frontend, typecheck backend + mobile, build frontend + backend,
+**backend unit tests**) and an `e2e` job (Postgres service → backend e2e). Keep it
+green; it's the safety net against cross-workspace drift.
 
 > **Dev login works through Vite's proxy** (`vite.config.ts` proxies `/api` →
 > `:5800`), so the SPA on `:5173` talks to the backend exactly like the built
@@ -424,7 +558,7 @@ recipes). Mobile is separate (`mobile/.env`, `EXPO_PUBLIC_*`).
 | `APP_ENV`              | `development` | `development` \| `production`               |
 | `STATIC_CACHE_MAX_AGE` | `3600`  | max-age (s) for static assets                    |
 | `DATABASE_URL`         | `postgres://postgres:postgres@localhost:5432/turbohesap` | PostgreSQL DSN |
-| `DB_SYNCHRONIZE`       | `true` (dev) | TypeORM auto-create tables (off in prod)    |
+| `DB_MIGRATIONS_RUN`    | `true`  | run pending migrations on boot (off for multi-instance) |
 | `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` | dev placeholders | JWT signing secrets — change in prod |
 | `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL` | `15m` / `7d` | token lifetimes (seconds or ms-string) |
 | `SEED_ADMIN_USERNAME/PASSWORD/EMAIL` | `admin` / `Admin123!` / `admin@turbohesap.local` | first-boot admin |
@@ -472,8 +606,10 @@ recipes). Mobile is separate (`mobile/.env`, `EXPO_PUBLIC_*`).
 
 - More ERP feature modules (each mirrored across `shared/` + `backend/` +
   `frontend/`, communicating only through `@turbohesap/shared`).
-- Production hardening: TypeORM migrations, rate limiting, refresh-token reuse
-  detection, audit logging.
 - Full mobile auth screens + secure token storage.
-- CI: lint + typecheck + build across all workspaces.
-```
+- Grow the test suite (more unit + e2e coverage as modules land); frontend tests.
+
+> **Done (don't re-litigate):** monorepo + contract-first shared, modular UI +
+> rail, local JWT auth, DB-resolved RBAC with typed permission keys, per-module
+> auto-seeded permission catalog, nested `api.<module>.<resource>`, shared
+> `ApiError` contract, and CI.

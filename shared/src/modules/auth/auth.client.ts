@@ -1,7 +1,11 @@
 import type { AxiosInstance } from 'axios'
 
 import type { CurrentUser } from '../iam/user.dto'
-import type { AuthTokens, LoginResponse } from './auth.dto'
+import type {
+  AuthTokens,
+  LoginResponse,
+  VerifyPasswordResponse,
+} from './auth.dto'
 import type { IAuthService } from './auth.service'
 
 // axios-backed implementation of IAuthService → /api/auth/*.
@@ -34,6 +38,14 @@ export class AuthApiClient implements IAuthService {
 
   async permissions(): Promise<string[]> {
     const { data } = await this.http.get<string[]>('/auth/permissions')
+    return data
+  }
+
+  async verifyPassword(password: string): Promise<VerifyPasswordResponse> {
+    const { data } = await this.http.post<VerifyPasswordResponse>(
+      '/auth/verify-password',
+      { password },
+    )
     return data
   }
 }

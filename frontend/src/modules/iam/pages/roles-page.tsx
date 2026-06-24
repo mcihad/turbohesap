@@ -1,9 +1,10 @@
 import * as React from 'react'
+import { Link } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { MODULES, type RoleDto } from '@turbohesap/shared'
+import { IamPermissions, MODULES, toApiError, type RoleDto } from '@turbohesap/shared'
 
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth/auth-context'
@@ -59,17 +60,17 @@ const EMPTY: FormState = {
 export function RolesPage() {
   const qc = useQueryClient()
   const { hasPermission } = useAuth()
-  const canRead = hasPermission('iam.roles.read')
-  const canWrite = hasPermission('iam.roles.write')
+  const canRead = hasPermission(IamPermissions.rolesRead)
+  const canWrite = hasPermission(IamPermissions.rolesWrite)
 
   const rolesQuery = useQuery({
     queryKey: ['iam', 'roles'],
-    queryFn: () => api.roles.list(),
+    queryFn: () => api.iam.roles.list(),
     enabled: canRead,
   })
   const permsQuery = useQuery({
     queryKey: ['iam', 'permissions'],
-    queryFn: () => api.permissions.list(),
+    queryFn: () => api.iam.permissions.list(),
     enabled: canRead,
   })
 
@@ -101,14 +102,14 @@ export function RolesPage() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (editing) {
-        await api.roles.update(editing.id, {
+        await api.iam.roles.update(editing.id, {
           name: form.name,
           module: form.module,
           description: form.description,
           permissionKeys: form.permissionKeys,
         })
       } else {
-        await api.roles.create({
+        await api.iam.roles.create({
           name: form.name,
           module: form.module,
           description: form.description,
@@ -121,11 +122,12 @@ export function RolesPage() {
       setOpen(false)
       void invalidate()
     },
-    onError: () => toast.error('İşlem başarısız'),
+    onError: (e) =>
+      toast.error('İşlem başarısız', { description: toApiError(e).message }),
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.roles.remove(id),
+    mutationFn: (id: string) => api.iam.roles.remove(id),
     onSuccess: () => {
       toast.success('Rol silindi')
       void invalidate()
@@ -137,7 +139,7 @@ export function RolesPage() {
   const perms = permsQuery.data ?? []
 
   return (
-    <PermissionRequired permission="iam.roles.read">
+    <PermissionRequired permission={IamPermissions.rolesRead}>
     <PageWrapper>
       <PageHeader
         title="Roller"
@@ -167,7 +169,15 @@ export function RolesPage() {
           <TableBody>
             {roles.map((r) => (
               <TableRow key={r.id}>
-                <TableCell className="font-medium">{r.name}</TableCell>
+                <TableCell>
+                  <Link
+                    to="/iam/roles/$id"
+                    params={{ id: r.id }}
+                    className="font-medium text-primary hover:underline"
+                  >
+                    {r.name}
+                  </Link>
+                </TableCell>
                 <TableCell>
                   <Badge variant="secondary">{moduleLabel(r.module)}</Badge>
                 </TableCell>

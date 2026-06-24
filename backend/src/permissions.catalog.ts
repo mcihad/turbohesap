@@ -1,5 +1,7 @@
+import { ComponentsPermissions } from '@turbohesap/shared'
+
 import type { PermissionDef } from './common/permission.types'
-import { IAM_PERMISSIONS } from './modules/iam/iam.permissions'
+import { IAM_PERMISSION_DEFS } from './modules/iam/iam.permissions'
 
 // The aggregated permission catalog: the union of every module's declared
 // permissions. On startup `SeedService` upserts these into the `permissions`
@@ -12,7 +14,10 @@ import { IAM_PERMISSIONS } from './modules/iam/iam.permissions'
 //   ...INVENTORY_PERMISSIONS,
 //   ...
 export const PERMISSION_CATALOG: PermissionDef[] = [
-  ...IAM_PERMISSIONS,
+  ...IAM_PERMISSION_DEFS,
+  // components: frontend-only gallery module (no backend resource), gated by a
+  // single read permission.
+  { key: ComponentsPermissions.read, description: 'Bileşen galerisini görüntüleme', group: 'components' },
 
   // Smoke-test entry: proves that a newly-declared permission is auto-created on
   // boot. Safe to remove — it is not used to guard any route.

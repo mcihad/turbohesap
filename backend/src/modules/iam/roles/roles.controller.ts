@@ -9,7 +9,7 @@ import {
   Post,
 } from '@nestjs/common'
 
-import type { RoleDto } from '@turbohesap/shared'
+import { IamPermissions, type RoleDto } from '@turbohesap/shared'
 
 import { RequirePermissions } from '../../../common/decorators/permissions.decorator'
 import { CreateRoleDto } from './dto/create-role.dto'
@@ -23,32 +23,32 @@ export class RolesController {
   constructor(private readonly roles: RolesService) {}
 
   @Get()
-  @RequirePermissions('iam.roles.read')
+  @RequirePermissions(IamPermissions.rolesRead)
   list(): Promise<RoleDto[]> {
     return this.roles.list()
   }
 
   @Get(':id')
-  @RequirePermissions('iam.roles.read')
+  @RequirePermissions(IamPermissions.rolesRead)
   get(@Param('id') id: string): Promise<RoleDto> {
     return this.roles.get(id)
   }
 
   @Post()
-  @RequirePermissions('iam.roles.write')
+  @RequirePermissions(IamPermissions.rolesWrite)
   create(@Body() dto: CreateRoleDto): Promise<RoleDto> {
     return this.roles.create(dto)
   }
 
   @Patch(':id')
-  @RequirePermissions('iam.roles.write')
+  @RequirePermissions(IamPermissions.rolesWrite)
   update(@Param('id') id: string, @Body() dto: UpdateRoleDto): Promise<RoleDto> {
     return this.roles.update(id, dto)
   }
 
   @Delete(':id')
   @HttpCode(204)
-  @RequirePermissions('iam.roles.write')
+  @RequirePermissions(IamPermissions.rolesWrite)
   async remove(@Param('id') id: string): Promise<void> {
     await this.roles.remove(id)
   }

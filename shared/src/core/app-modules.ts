@@ -22,6 +22,11 @@ export const MODULES: AppModuleInfo[] = [
     label: 'Yönetim',
     description: 'Kullanıcı, rol ve izin yönetimi',
   },
+  {
+    key: 'components',
+    label: 'Bileşenler',
+    description: 'Arayüz bileşeni önizlemeleri',
+  },
 ]
 
 export const MODULE_KEYS: string[] = MODULES.map((m) => m.key)

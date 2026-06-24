@@ -108,6 +108,11 @@ or `popover.tsx` (Root/Trigger/Portal/Content + `data-slot` on each).
   state via `useLayout()` (`@/lib/layout/use-layout`) — don't add new global state.
 - **Update the catalog:** add a row for the new component to
   `frontend/src/components/components.md` so the next person finds it.
+- **Add a showcase (for reusable primitives):** add an entry to
+  `frontend/src/modules/components/showcases.tsx` — a `{ slug, title, category,
+  description, Demo }` where `Demo` renders a few example states/variants. It
+  appears automatically in the **Bileşenler** module (sidebar grouped by
+  `category`, page at `/components/<slug>`). No route/registry edits needed.
 
 ## 5. Verify (required, must pass)
 ```bash
@@ -119,6 +124,7 @@ pnpm build            # succeeds (emits into ../backend/static)
 Note: strict TS (`noUnusedLocals`/`noUnusedParameters`) — remove unused imports.
 
 ## 6. Keep the docs true
-- Always add/refresh the entry in **`components.md`**.
+- Always add/refresh the entry in **`components.md`** and (for reusable
+  primitives) the showcase in `frontend/src/modules/components/showcases.tsx`.
 - If you added a **reusable primitive** or a new pattern, also add a short entry
   to **DESIGN.md §14** (and the file map / stack table if you added a dependency).

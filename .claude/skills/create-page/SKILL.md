@@ -14,8 +14,11 @@ primitives and the permission gate so layout and authorization stay consistent.
    permissions)** — required for gating; plus **`DESIGN.md`** §6/§11/§12 (layout,
    page primitives, footer).
 2. **`frontend/src/components/components.md`** — reuse existing components.
-3. An existing template:
-   - Module page → `frontend/src/modules/iam/pages/users-page.tsx`.
+3. **`agy.md`** §9 (DataGrid + dialogs) + §11 (frontend rules) — binding.
+4. An existing template:
+   - **List page (DataGrid)** → `frontend/src/modules/org/pages/branches-page.tsx`;
+     tree list → `…/inventory/pages/categories-page.tsx`.
+   - **Detail page** → `frontend/src/modules/inventory/pages/category-detail-page.tsx`.
    - Simple page → `frontend/src/modules/genel/...` / `routes/_authed/genel/dashboard.tsx`.
 
 ## 1. Where things go (modular layout)
@@ -33,17 +36,29 @@ Route id includes `/_authed/` and the module segment; the URL is
 `/<module>/<resource>`:
 - `/iam/customers` → `routes/_authed/iam/customers.tsx` → id `/_authed/iam/customers`
 
-**Page component skeleton** (`modules/<module>/pages/<name>-page.tsx`):
+**List page skeleton** (`modules/<module>/pages/<name>-page.tsx`) — DataGrid, no
+PageHeader band, actions on the grid toolbar:
 ```tsx
-import { PageHeader, PageWrapper } from '@/components/layout/page'
+import { PageWrapper } from '@/components/layout/page'
 import { PermissionRequired } from '@/lib/auth/permission-gate'
+import { DataGrid, type ColumnDef } from '@/components/data-grid'
 
 export function CustomersPage() {
+  const columns: ColumnDef<CustomerDto>[] = [/* …; action col stopPropagation */]
   return (
-    <PermissionRequired permission="<module>.customers.read">
+    <PermissionRequired permission={ModPermissions.customersRead}>
       <PageWrapper>
-        <PageHeader title="Müşteriler" description="Açıklama." />
-        {/* body built from components/ui/* and api.<resource>.* */}
+        <DataGrid
+          gridId="<module>.customers"
+          data={rows}
+          columns={columns}
+          getRowId={(c) => c.id}
+          loading={query.isLoading}
+          onRowClick={(c) => navigate({ to: '/<module>/customers/$id', params: { id: c.id } })}
+          emptyText="Kayıt yok."
+          toolbar={canWrite ? <Button onClick={openCreate}><Plus />Yeni</Button> : null}
+        />
+        {/* <CustomerDialog> — saves only on submit, then invalidate() */}
       </PageWrapper>
     </PermissionRequired>
   )
@@ -60,10 +75,23 @@ export const Route = createFileRoute('/_authed/<module>/customers')({
 })
 ```
 
-## 2. Layout rules (DESIGN.md §11)
+## 2. Layout rules (DESIGN.md §11, agy.md §9/§11)
 - Wrap content in **`<PageWrapper>`** (full width, tight gutters). Edge-to-edge:
   `<PageWrapper padded={false}>`; capped/centered: `<PageWrapper className="max-w-3xl">`.
-- Heading band via **`<PageHeader title description actions />`** (actions right-aligned).
+- **List/grid pages: NO `<PageHeader>` band.** The title is in the breadcrumb;
+  put all actions + search on the **DataGrid** toolbar (`toolbar` prop). Use
+  `<PageHeader title description audit actions />` only on **detail** pages.
+- **Every list/table is the `<DataGrid>`** (`@/components/data-grid`) — never a raw
+  `<table>`. Pass a unique `gridId`, `columns` (`ColumnDef<T>[]`), `data`,
+  `getRowId`, `loading`, `onRowClick` (→ detail), `emptyText`, and `toolbar`
+  (New button). Tree: `getSubRows` + `treeColumnId` + `defaultExpanded` +
+  `pagination={false}`. Use `search` (page-controlled), `fillHeight`,
+  `rowClassName` as needed. See agy.md §9.
+- **Create/edit in a `Dialog` that saves only on submit** (no auto-create on open);
+  on success close + toast + `invalidate` the query. Template:
+  `modules/inventory/components/category-dialog.tsx`.
+- **Files/images:** `<FileManager entityType entityId kind="image"|"file"
+  canWrite>` — no backend work per entity (agy.md §8).
 - Build the body from `@/components/ui/*`. **Tokens only** — no hardcoded
   colors/px/shadows.
 - Optional contextual footer: **`<PageFooter>`** with `<PageFooterStat>` items.

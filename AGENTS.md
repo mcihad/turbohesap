@@ -6,6 +6,12 @@ run, and extend it.** For the frontend *design system* (tokens, components,
 layout) the authoritative document is **`DESIGN.md`**; this file covers the
 **whole system** — the shared contract layer + NestJS backend + frontend + mobile.
 
+> **How you must operate is in `agy.md`** — a strict, example-driven operating
+> manual (contracts-first workflow, build-after-every-step, permission gating,
+> migrations, and the **mandatory HTTP endpoint-testing-with-a-real-token**
+> protocol). `AGENTS.md` = system facts; `agy.md` = the binding way of working.
+> Read `agy.md` before writing code.
+
 > Status: TurboHesap is an ERP under active development. The architecture below
 > is the foundation; expect more feature modules (under `src/modules/<module>`
 > in both `shared/` and `backend/`) to be added over time.
@@ -403,6 +409,34 @@ UI under **Yönetim → İzleme**: `/iam/audit-logs`, `/iam/error-logs`).
   shared `Page<T>` with a validated `PageQuery` (see audit/error logs); use this
   for any list that can grow (small bounded lists like roles may stay arrays).
 
+### 5.4 Platform subsystems (files, settings, lookups)
+Three cross-cutting subsystems are already built. **Reuse them — never reinvent.**
+
+- **File management** (`backend/src/modules/files/` → `/api/files`). Polymorphic
+  attachments for **any** entity: bytes are stored under a **random** `storedName`,
+  the `files` table (`@Index(['entityType','entityId'])`) keeps `originalName` +
+  metadata. Two backends chosen by `.env` (`FILE_STORAGE=local|s3`) behind a
+  `StorageDriver` interface (`LocalStorageDriver` / `S3StorageDriver`, injected via
+  the `STORAGE_DRIVER` token). Permissions `FilesPermissions.read|write`. Routes:
+  `POST /api/files` (multipart `files[]` + `entityType,entityId,kind,sortOrder`,
+  write), `GET /api/files?entityType=&entityId=` (read), `PATCH/DELETE /api/files/:id`
+  (write), and `GET /api/files/raw/:storedName` (**`@Public()`** — the unguessable
+  name is the capability, so it works directly in `<img>`). Shared client:
+  `api.files` (incl. `rawUrl(storedName)`). **To attach files/images to a new
+  entity, write zero backend code** — render `<FileManager>` (web) /
+  `<ImageManager>` (mobile) with that `entityType` + row id. See `agy.md` §8.
+- **Settings** (`backend/src/modules/settings/` → `/api/settings`). Per-user jsonb
+  key/value store with an in-memory **read-through/write-through cache**
+  (`user_settings`, unique `(userId, type)`). `GET/PUT/DELETE /api/settings/:type`
+  (authenticated, no extra permission). Shared: `api.settings.get/set/remove`. The
+  DataGrid uses it to persist each grid's layout per user (`grid:<gridId>`).
+- **Lookups** (`backend/src/modules/lookups/` → `/api/lookups`). Generic
+  user-managed key/value reference lists (units, colours…). Use this for **any**
+  small enumerated list instead of a bespoke table/module. `GET /items` (`?list=`),
+  `GET /lists`, `GET /items/:id`, `POST/PATCH/DELETE /items[/:id]`
+  (`LookupsPermissions.read|write`). Web/mobile `LookupSelect` and category
+  `lookup` fields consume them.
+
 ---
 
 ## 6. Frontend & mobile
@@ -417,6 +451,24 @@ UI under **Yönetim → İzleme**: `/iam/audit-logs`, `/iam/error-logs`).
   under `src/routes/_authed/<module>/`.
 - **All API access goes through `src/lib/api.ts`** (`createTurbohesapApi`,
   baseUrl `/api`, token from `lib/auth/tokens.ts`).
+- **Every web list/table is the DataGrid** (`src/components/data-grid/`) — the
+  single table primitive. TanStack-Table based, it gives search, per-column
+  filters, sorting, grouping, drag column reorder, a scrollable column chooser,
+  pin left/right, row selection, row-click → detail, pagination, and **tree mode**
+  (`getSubRows` + `treeColumnId` + `defaultExpanded`). Its layout is **persisted
+  per user** via the settings API (`gridId` → `grid:<gridId>`). Pass a unique
+  `gridId`, `columns`, `data`, `getRowId`, and put actions in the `toolbar` prop;
+  use `search` to avoid a second search box, `fillHeight` for full-height pages,
+  `rowClassName` for a just-saved highlight. **List/grid pages carry no
+  `<PageHeader>` band** (the title is in the breadcrumb) — actions live on the grid
+  toolbar; `PageHeader` is for **detail** pages (title + `audit` + actions).
+  Create/edit happen in a `Dialog` that **saves only on submit**, then
+  `invalidate`s the query (in-place refresh, no reload). Examples:
+  `modules/org/pages/branches-page.tsx` (basic), `…/inventory/pages/categories-page.tsx`
+  (tree), `…/inventory/pages/products-page.tsx` (advanced filter + `fillHeight`).
+- **Files/images:** render `<FileManager entityType entityId kind="image"|"file"
+  canWrite>` (`src/modules/files/components/file-manager.tsx`) — it talks to the
+  files API; images use `api.files.rawUrl(storedName)`. No per-entity backend work.
 - **Auth:** `lib/auth/` — `tokens.ts` (localStorage: tokens, current user, and a
   separately-cached permission list), `auth-provider.tsx` / `auth-context.ts`
   (`login(username,password)`, `logout`, `refresh`, role + permission checks:
@@ -460,6 +512,14 @@ UI under **Yönetim → İzleme**: `/iam/audit-logs`, `/iam/error-logs`).
   logs). Add a module/screen by following `mobile_design.md` §6 (build the screen,
   register its key in `navigation/screens.tsx`, add a permission-gated nav item in
   `modules/registry.ts`).
+- **Images:** the reusable `src/components/image/` module mirrors the web
+  FileManager — `<ImageManager entityType entityId canWrite layout>` (gallery, add
+  via camera/library → edit → upload, reorder/cover/delete, tap → fullscreen),
+  `<QuickImageAdd>` (compact strip), and `<ImageEditor>` (crop/rotate/flip + Skia
+  colour-matrix bake). It uses the same `/api/files` endpoints. Its native deps
+  (`@shopify/react-native-skia`, `expo-image-picker`, `expo-image-manipulator`,
+  `expo-image`, `expo-file-system`) need `npx expo prebuild` + a dev build (not
+  plain Expo Go).
 
 ---
 
@@ -612,6 +672,12 @@ recipes). Mobile is separate (`mobile/.env`, `EXPO_PUBLIC_*`).
   come from the `permissions` endpoint.
 - `/api/iam/users`, `/api/iam/roles`, `/api/iam/permissions` — IAM CRUD,
   permission-protected.
+- `/api/inventory/{categories,products}` — category tree (+ jsonb custom field
+  schema) and products/stock.
+- `/api/sales/channels`, `/api/org/branches`, `/api/lookups` — sales channels,
+  branches (per-branch user authz), generic reference lists.
+- `/api/files` — polymorphic uploads (`raw/:storedName` is `@Public()`);
+  `/api/settings/:type` — per-user jsonb state (DataGrid layouts). See §5.4.
 
 ---
 
@@ -636,6 +702,14 @@ recipes). Mobile is separate (`mobile/.env`, `EXPO_PUBLIC_*`).
   backend route (`@RequirePermissions`, the enforced check).
 - **Frontend:** follow `DESIGN.md` and the `*-component` / `*-page` skills; verify
   with `tsc -b` + a build.
+- **Reuse the platform subsystems (§5.4):** web tables → **DataGrid**; files/images
+  → **files API + FileManager/ImageManager**; small enumerated lists → **lookups**;
+  per-user UI state → **settings**. Never hand-roll a `<table>`, an uploader, or a
+  reference-list table.
+- **Test endpoints over HTTP with a real token** (`agy.md` §13) before calling
+  backend work done: login via `POST /api/auth/login` (`admin`/`Admin123!` in dev),
+  then `curl` every new/changed route incl. 401 (no token) and 400 (bad body)
+  negative checks. A green build is not a test.
 - **Never break the static contract:** `backend/static/` must always contain a
   self-contained `index.html` (the tracked placeholder).
 - Update **this file**, **`DESIGN.md`**, and the **skills** when structure,

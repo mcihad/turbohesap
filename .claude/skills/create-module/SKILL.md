@@ -20,10 +20,13 @@ frontend/src/modules/<mod>/    → UI (module.config + pages) + routes under rou
 - **Mobile** consumes the shared contract automatically — no per-module code unless
   you add a screen.
 
-> **Read first:** `AGENTS.md` §3 (API convention), §4 (shared layer), §7 (roles &
-> permissions), and `frontend/src/components/components.md`. The **canonical
-> reference implementation is the `iam` module** (full CRUD across all layers) and
-> `genel` (a nav-only module). Copy their shape.
+> **Read first:** `agy.md` (the binding operating manual — workflow, gating,
+> migrations, and the mandatory HTTP token-testing protocol), then `AGENTS.md` §3
+> (API convention), §4 (shared layer), §5.4 (files/settings/lookups subsystems),
+> §7 (roles & permissions), and `frontend/src/components/components.md`. The
+> **canonical reference implementation is the `iam` module** (full CRUD across all
+> layers) and `genel` (a nav-only module); for grid pages copy
+> `org`/`inventory`. Copy their shape.
 >
 > Paths below are relative to the repo root. Replace `<mod>` (module key, e.g.
 > `inventory`), `<res>` (plural resource, e.g. `products`), `<Res>` (PascalCase
@@ -218,13 +221,27 @@ export const <mod>Module: AppModule = {
     component: () => <ModuleDashboard module={<mod>Module} stats={<<Mod>Stats />} />,
   })
   ```
-- **Page** `pages/<res>-page.tsx`: data via `import { api } from '@/lib/api'` →
+- **List page** `pages/<res>-page.tsx`: data via `import { api } from '@/lib/api'` →
   `api.<mod>.<res>.list()/...` (TanStack Query,
   `enabled: hasPermission(<Mod>Permissions.<res>Read)`); wrap the return in
   `<PermissionRequired permission={<Mod>Permissions.<res>Read}>`; gate write buttons
   with `useAuth().hasPermission(<Mod>Permissions.<res>Write)` or `<Can>`; surface
-  server errors with `toApiError(e).message`. **Reuse `components.md` primitives**
-  (Table, Dialog, Button…). Copy `modules/iam/pages/users-page.tsx`.
+  server errors with `toApiError(e).message`.
+  - **Render the list with `<DataGrid>`** (`@/components/data-grid`) — never a raw
+    `<table>`. Unique `gridId="<mod>.<res>"`, `columns`, `getRowId`, `onRowClick` →
+    detail, actions in the `toolbar` prop. **No `<PageHeader>` band on list pages**
+    (title is in the breadcrumb). Tree data → `getSubRows`+`treeColumnId`+
+    `defaultExpanded`+`pagination={false}`. Copy
+    `modules/org/pages/branches-page.tsx` (or `…/inventory/pages/categories-page.tsx`
+    for a tree). See `agy.md` §9.
+  - **Create/edit:** a `Dialog` that **saves only on submit**, then closes + toasts
+    + `invalidate`s the query. Copy `modules/inventory/components/category-dialog.tsx`.
+  - **Detail page** (`pages/<res>-detail-page.tsx`, route `<res>.$id.tsx`): use
+    `<PageHeader title audit actions />` + `Tabs`/`Card`. Copy
+    `modules/inventory/pages/category-detail-page.tsx`.
+  - **Files/images** on the entity → `<FileManager entityType="<Res>" entityId kind
+    canWrite>` (no backend work). Small enumerated fields → **lookups** /
+    `<LookupSelect>`. See `agy.md` §8/§10.
 - **Route (thin)** `frontend/src/routes/_authed/<mod>/<res>.index.tsx`:
   ```tsx
   import { createFileRoute } from '@tanstack/react-router'
@@ -288,9 +305,13 @@ curl -s -o /dev/null -w "%{http_code}\n" -X POST $B/<mod>/<res> \
 curl -s -H "Authorization: Bearer $A" $B/<mod>/<res>               # the created row
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:5800/<mod>/<res>   # 200 (SPA deep-link)
 ```
+Also run the **negative checks** (agy.md §13): no token → `401`; malformed body →
+`400` (`ApiError`); GET/PATCH/DELETE the created row; delete then GET → `404`.
+
 Expected: new permissions auto-seeded (boot logs "N yeni izin veritabanına
 eklendi"), `201` on create, list returns the row, and a user **without** the
-permission gets `403`. The module icon appears in the left rail.
+permission gets `403`. The module icon appears in the left rail. **Report the
+commands run + status codes seen** — a green build is not a substitute for §13.
 
 ---
 

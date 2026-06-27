@@ -1,0 +1,579 @@
+# agy.md — TurboHesap Agent Operating Manual (STRICT)
+
+> **This is a binding contract, not a tutorial.** If you are an AI agent working
+> in this repository, you MUST follow every rule here, in order, for every task.
+> Deviation is a defect. When this file and your own instinct disagree, **this
+> file wins**. When this file and `AGENTS.md` / `DESIGN.md` / `mobile_design.md`
+> overlap, treat them as layers: `AGENTS.md` = system facts, `DESIGN.md` /
+> `mobile_design.md` = visual system, **`agy.md` = how you must operate**.
+
+This manual exists because work on TurboHesap is done in many short sessions by
+different agents. The product only stays coherent if **every** agent works the
+**exact same way**: contracts-first, mirrored across layers, permission-gated,
+built after every step, and **every endpoint tested over HTTP with a real token**
+before it is called "done".
+
+Read this whole file before touching code. Then keep it open.
+
+---
+
+## 0. The product in one paragraph
+
+TurboHesap is a **pnpm monorepo** ERP. One **NestJS** process (PostgreSQL +
+TypeORM) serves a **React (Vite)** SPA and a JSON API at `/api/<module>/<resource>`;
+an **Expo** mobile app consumes the same API. A typed **`@turbohesap/shared`**
+package is the single source of truth for every wire shape (DTOs), service
+interface, axios client, and permission key. Auth is local JWT + DB-resolved
+RBAC enforced by two global guards. The schema is owned by **migrations**
+(`synchronize` is OFF). Everything user-facing is **Turkish**; all code, types,
+and comments are **English**.
+
+Packages: `@turbohesap/shared`, `@turbohesap/backend`, `@turbohesap/frontend`,
+`@turbohesap/mobile`.
+
+---
+
+## 1. THE HARD RULES (non-negotiable)
+
+1. **Contracts first.** Any API change starts in `shared/src/modules/<mod>/`
+   (DTO → service interface → axios client), is registered in
+   `shared/src/core/api.ts` + `shared/src/index.ts`, and **`shared` is rebuilt**
+   before backend/frontend/mobile consume it. Never inline a wire shape in the
+   backend or a client.
+2. **The 3-mirror rule.** A module lives in exactly three places with the same
+   name: `shared/src/modules/<mod>`, `backend/src/modules/<mod>`,
+   `frontend/src/modules/<mod>`. Endpoints are **always** `/api/<mod>/<resource>`.
+   Modules talk to each other **only** through `@turbohesap/shared` DTOs.
+3. **Build after every step.** After each layer you touch, run that layer's build
+   /typecheck (see §4) and fix every error before moving on. Never stack unbuilt
+   changes. "It looks right" is not "it builds".
+4. **Permission-gate everything.** Every mutating route and every non-public read
+   gets `@RequirePermissions(<Mod>Permissions.<res><Action>)`. The frontend mirrors
+   the **same key constant** for UX. The server is the only real boundary.
+5. **Migrations, never `synchronize`.** After any entity change, generate and apply
+   a migration (`make migration-generate NAME=…` → `make migrate`) and review the
+   SQL. No schema change ships without a committed migration.
+6. **Test every endpoint over HTTP with a real token.** Before declaring any
+   backend work done, acquire a JWT via `POST /api/auth/login` and exercise
+   **every** new/changed route with `curl` (see §13). Reading the code is not a
+   test. A green build is not a test. You must see real HTTP responses.
+7. **English code, Turkish UX.** Identifiers, comments, commit messages → English.
+   User-visible strings, seed data, permission descriptions → Turkish.
+8. **camelCase JSON, snake_case DB.** DTOs and JSON are camelCase; the
+   `SnakeNamingStrategy` maps DB columns. Never add `@Column({ name: … })`.
+9. **Reuse the platform primitives.** Web tables → the **DataGrid** (§9). Files /
+   images → the **files API + FileManager / ImageManager** (§8). Reference lists →
+   **lookups** (§10). Per-user UI state → the **settings** API (§9). Do not
+   re-implement these.
+10. **Leave the docs true.** If you change structure, conventions, or the build
+    pipeline, update `AGENTS.md`, the relevant skill, and this file in the same
+    change.
+
+> If you cannot satisfy a rule, **stop and report why** — do not silently skip it.
+
+---
+
+## 2. The per-task workflow (follow in order, every time)
+
+For any feature/bugfix that touches the API or UI:
+
+```
+(1) shared   → DTO + service interface + axios client + register in core/api.ts + index.ts
+              → pnpm --filter @turbohesap/shared build           [MUST pass]
+(2) backend  → entity + dto/ (class-validator) + service + controller + permissions + module
+              → make migration-generate NAME=… && make migrate    [if entity changed]
+              → pnpm --filter @turbohesap/backend build           [MUST pass]
+              → pnpm --filter @turbohesap/backend test            [MUST pass]
+(3) TEST     → login for a token, curl EVERY new/changed endpoint  [§13, MUST pass]
+(4) frontend → module.config + pages (DataGrid/dialogs) + routes, same permission keys
+              → pnpm --filter @turbohesap/frontend exec tsc -b
+              → pnpm --filter @turbohesap/frontend exec vite build [MUST pass]
+(5) mobile   → screens if needed (theme + primitives + permission gating)
+              → pnpm --filter @turbohesap/mobile typecheck         [MUST pass]
+              → CI=1 npx expo export --platform ios                [if RN deps/imports changed]
+(6) docs     → update AGENTS.md / skill / agy.md if conventions changed
+```
+
+You do not advance to the next numbered step until the current one's build/test is
+green. Step (3) is mandatory and is the most-skipped step — **do not skip it**.
+
+---
+
+## 3. Architecture facts you must not violate
+
+- **Two global guards** run on every route (`backend/src/app.module.ts`):
+  `JwtAuthGuard` (authn; opt out with `@Public()`) → `PermissionsGuard` (authz;
+  reads `@RequirePermissions`, resolves the caller's permissions **from the DB
+  per request**, not from the token).
+- **Token = roles only.** Permissions are fetched separately via
+  `GET /api/auth/permissions`. Editing a role takes effect on the next request, no
+  re-login.
+- **`BaseEntity`** (`backend/src/common/entities/base.entity.ts`): uuid `id` +
+  `createdAt` + `updatedAt`. Every entity extends it.
+- **`Page<T>` + `PageQuery`** for any list that can grow large; small bounded lists
+  may return arrays.
+- **Audit**: a global subscriber records insert/update/delete of tracked entities.
+  When you add an audited entity, register it in
+  `backend/src/modules/iam/audit/audited-entities.ts` (`ENTITY_MODULE_MAP`); add
+  high-churn/noise entities to `IGNORED_AUDIT_ENTITIES`.
+- **Dual build of shared**: ESM (bundlers) + CJS (Nest `require`). Never collapse it.
+
+---
+
+## 4. Build & verify commands (memorize these)
+
+Run from repo root. **These are the only acceptable "is it green?" checks.**
+
+| Layer | Build / verify command |
+| ----- | ---------------------- |
+| shared | `pnpm --filter @turbohesap/shared build` |
+| backend | `pnpm --filter @turbohesap/backend build` |
+| backend tests | `pnpm --filter @turbohesap/backend test` |
+| frontend | `pnpm --filter @turbohesap/frontend exec vite build` **then** `pnpm --filter @turbohesap/frontend exec tsc -b` |
+| mobile | `pnpm --filter @turbohesap/mobile typecheck` |
+| mobile bundle | `CI=1 npx expo export --platform ios` (run inside `mobile/`; do for android too if native deps changed) |
+| DB migration | `make migration-generate NAME=AddThing` → `make migrate` (revert: `make migration-revert`) |
+| run the API for testing | `make dev-backend` (NestJS watch on `:5800`) — needed for §13 |
+
+Rules:
+- `noUnusedLocals` is ON in frontend and mobile — an unused import is a build
+  failure. Remove imports you stop using.
+- The frontend compiles into `backend/static/`; the route tree
+  (`routeTree.gen.ts`) is regenerated by the vite build — always run the vite
+  build after adding a route file.
+- Never commit unless explicitly asked. When you do, branch off `main` first.
+
+---
+
+## 5. Authorization — the exact recipe (do this for EVERY resource)
+
+**Step A — shared key constant** (`shared/src/modules/<mod>/<mod>.permissions.ts`):
+```ts
+export const InventoryPermissions = {
+  productsRead: 'inventory.products.read',
+  productsWrite: 'inventory.products.write',
+} as const
+```
+**Step B — backend description + catalog** (`backend/src/modules/<mod>/<mod>.permissions.ts`):
+```ts
+import { InventoryPermissions } from '@turbohesap/shared'
+import type { PermissionDef } from '../../common/permission.types'
+export const INVENTORY_PERMISSION_DEFS: PermissionDef[] = [
+  { key: InventoryPermissions.productsRead,  description: 'Ürünleri görüntüle', group: 'Envanter' },
+  { key: InventoryPermissions.productsWrite, description: 'Ürünleri düzenle',   group: 'Envanter' },
+]
+```
+Add `...INVENTORY_PERMISSION_DEFS` to `backend/src/permissions.catalog.ts`. They
+**auto-seed on boot** (admin gets every key). No migration for permissions.
+
+**Step C — guard the route** (controller):
+```ts
+@RequirePermissions(InventoryPermissions.productsWrite)  // ALL listed keys required
+@Post()
+create(@Body() dto: CreateProductDto, @CurrentUser() user: AuthUser) { … }
+```
+Read routes → `.read`; mutations → `.write`. No `@RequirePermissions` → any valid
+token. `@Public()` → no token (use ONLY for login/refresh/logout, health, the
+public file-raw route, the public client-error report).
+
+**Step D — mirror the SAME key on the UI** (frontend & mobile):
+```tsx
+const canWrite = hasPermission(InventoryPermissions.productsWrite)
+// nav item: { permission: InventoryPermissions.productsRead }
+// query:   useQuery({ enabled: hasPermission(InventoryPermissions.productsRead), … })
+// <Can permission={InventoryPermissions.productsWrite}> … </Can>
+// <PermissionRequired permission={InventoryPermissions.productsRead}> … </PermissionRequired>
+```
+
+`@CurrentUser()` returns `AuthUser { sub, username, roles }`; `sub` is the userId.
+
+---
+
+## 6. Shared contracts — the exact shape
+
+For a resource `<Res>` in module `<mod>`, create in `shared/src/modules/<mod>/`:
+
+```ts
+// <res>.dto.ts — pure interfaces. No React, Nest, TypeORM, or I/O.
+export interface ProductDto { id: string; name: string; /* … */ createdAt: string; updatedAt: string }
+export interface CreateProductRequest { name: string /* … */ }
+export type UpdateProductRequest = Partial<CreateProductRequest>
+```
+```ts
+// products.service.ts — the contract.
+import type { ProductDto, CreateProductRequest, UpdateProductRequest } from './product.dto'
+export interface IProductsService {
+  list(): Promise<ProductDto[]>
+  get(id: string): Promise<ProductDto>
+  create(input: CreateProductRequest): Promise<ProductDto>
+  update(id: string, input: UpdateProductRequest): Promise<ProductDto>
+  remove(id: string): Promise<void>
+}
+```
+```ts
+// products.client.ts — axios implementation of the interface.
+import type { AxiosInstance } from 'axios'
+export class ProductsApiClient implements IProductsService {
+  constructor(private readonly http: AxiosInstance) {}
+  async list() { return (await this.http.get<ProductDto[]>('/inventory/products')).data }
+  // … one method per interface member, hitting /inventory/products/<id>
+}
+```
+Then:
+- `shared/src/modules/<mod>/index.ts` re-exports everything.
+- `shared/src/index.ts` re-exports the module folder.
+- `shared/src/core/api.ts`: add to the `TurbohesapApi` type (grouped per module:
+  `inventory: { products: IProductsService }`) and construct it in the factory.
+- `pnpm --filter @turbohesap/shared build`.
+
+**Pure domain helpers** shared by web AND mobile go in `<name>.helpers.ts` —
+pure functions only, operating on DTOs (e.g. `category.helpers.ts`,
+`product-filters.ts`). No platform code.
+
+---
+
+## 7. Backend module — the exact shape
+
+`backend/src/modules/<mod>/`:
+- `entities/<res>.entity.ts` — `@Entity('<res_plural>')` extends `BaseEntity`;
+  jsonb columns where appropriate; `@Index([...])` for polymorphic/lookup columns.
+- `dto/create-<res>.dto.ts` / `update-…` — classes with `class-validator`
+  decorators that `implements` the shared request interface.
+- `<res>.service.ts` — `@Injectable()`, `@InjectRepository`, maps **entity → shared
+  DTO** in a `to<Res>Dto()` function (JSON stays camelCase).
+- `<res>.controller.ts` — `@Controller('<mod>/<res>')`, returns shared DTO types,
+  `@RequirePermissions(...)` per route, `@CurrentUser()` where needed.
+- `<mod>.permissions.ts` — the `PermissionDef[]` (§5B).
+- `<mod>.module.ts` — `TypeOrmModule.forFeature([...])` + providers + controllers.
+- Register the module in `backend/src/app.module.ts`.
+- If you added an audited entity, register it in `audited-entities.ts`.
+- Generate + apply a migration. Build. Test. **Then §13.**
+
+---
+
+## 8. File management system (images & files) — USE IT, don't reinvent
+
+Files of any kind attach to **any entity** via a **polymorphic FK**. Bytes are
+stored under a **random** `storedName`; the DB row keeps the meaningful
+`originalName` + metadata. Two backends, chosen by `.env` (`FILE_STORAGE=local|s3`).
+
+### Backend (already built — do not duplicate)
+- `backend/src/modules/files/` — `FileEntity` (`files` table,
+  `@Index(['entityType','entityId'])`), `StorageDriver` interface +
+  `LocalStorageDriver` + `S3StorageDriver` (chosen via the `STORAGE_DRIVER` DI
+  token from `configuration().files.driver`), `FilesService`, `FilesController`.
+- Config (`.env`): `FILE_STORAGE`, `FILE_LOCAL_DIR`, `FILE_MAX_SIZE_MB`,
+  `S3_*` (see `.env.example`).
+- Permissions: `FilesPermissions.read` / `FilesPermissions.write`.
+
+### Endpoints (`/api/files`)
+| Method | Path | Guard | Purpose |
+| ------ | ---- | ----- | ------- |
+| `POST` | `/api/files` | `files.write` | multipart upload (`files[]` + `entityType`, `entityId`, `kind`, `sortOrder`) |
+| `GET` | `/api/files?entityType=&entityId=` | `files.read` | list an entity's files |
+| `GET` | `/api/files/raw/:storedName` | **`@Public()`** | serve raw bytes (unguessable name = capability; works in `<img>`) |
+| `GET` | `/api/files/:id` | `files.read` | one file row |
+| `PATCH` | `/api/files/:id` | `files.write` | update metadata (e.g. `sortOrder` for reorder) |
+| `DELETE` | `/api/files/:id` | `files.write` | delete row + bytes |
+
+### Shared client
+`api.files.{ list(entityType,entityId), get(id), upload(FormData), update(id,patch),
+remove(id), rawUrl(storedName) }`. **Use `api.files.rawUrl(storedName)` for `<img src>`.**
+
+### Web UI — `FileManager`
+`frontend/src/modules/files/components/file-manager.tsx`:
+```tsx
+<FileManager entityType="Product" entityId={product.id} kind="image" canWrite={canFiles} />
+// kind="image" → thumbnail gallery (drag-reorder, set-cover, delete)
+// kind="file"  → list with download + delete
+```
+`canFiles = hasPermission(FilesPermissions.write)`. The upload FormData fields are
+exactly: `files`, `entityType`, `entityId`, `kind`, `sortOrder`.
+
+### Mobile UI — `mobile/src/components/image/` (modular, reusable)
+- `<ImageManager entityType entityId canWrite layout="grid"|"strip" />` — gallery +
+  add (camera/library) → **edit** → upload, set-cover/reorder/delete, tap →
+  fullscreen `ImageViewer`.
+- `<QuickImageAdd entityType entityId canWrite />` — compact horizontal quick-add.
+- `<ImageEditor />` — crop (aspect) / rotate / flip + colour (Skia colour-matrix
+  bake). `bakeImage()` + `color-matrix.ts` + `pick-image.ts` + `image-files.ts`.
+- RN upload uses `FormData` with `{ uri, name, type }` (see `image-files.ts`).
+- **Native deps** (`@shopify/react-native-skia`, `expo-image-picker`,
+  `expo-image-manipulator`, `expo-image`, `expo-file-system`) require
+  `npx expo prebuild` + a dev build — they do NOT run in plain Expo Go.
+
+**To add images/files to a new entity:** nothing backend-side — just render a
+`FileManager` (web) / `ImageManager` (mobile) with that `entityType` + the row id.
+`entityType` is a free string; use the PascalCase entity name (`'Product'`,
+`'ProductVariant'`, `'Category'`).
+
+---
+
+## 9. Settings + Data Grid (web) — per-user state & every web table
+
+### Settings API (per-user, cached read-through/write-through)
+`backend/src/modules/settings/` — `user_settings` table
+(`@Index(['userId','type'],{unique:true})`, jsonb `data`), in-memory cache +
+DB. Endpoints (`/api/settings`, authenticated, no extra permission):
+`GET/PUT/DELETE /api/settings/:type`. Shared: `api.settings.get(type)` /
+`api.settings.set(type, data)` / `api.settings.remove(type)`. Each grid/page stores
+its own jsonb under a `type` key like `grid:<gridId>`.
+
+### DataGrid — the ONLY web table primitive
+`frontend/src/components/data-grid/`. **Every web list/table uses this.** It is
+TanStack-Table-based and provides: global search, per-column filters, sorting,
+grouping, column reorder (drag), column chooser (scrollable), column pin
+left/right, single/multi/no row selection, row click → detail, pagination, and
+**tree mode**. Its layout state is **persisted per user** via the settings API
+(`gridId` → `grid:<gridId>`), auto-loaded on mount, debounce-saved.
+
+```tsx
+import { DataGrid, type ColumnDef } from '@/components/data-grid'
+
+const columns: ColumnDef<ProductDto>[] = [
+  { id: 'code', accessorKey: 'code', header: 'Kod', size: 120,
+    cell: ({ row }) => <span className="font-mono text-xs">{row.original.code}</span> },
+  { id: 'category', accessorFn: (p) => p.category?.name ?? '', header: 'Kategori',
+    enableGrouping: true, cell: ({ row }) => <Badge>{row.original.category?.name ?? '—'}</Badge> },
+  // action column: enableSorting:false, enableHiding:false, enableColumnFilter:false,
+  // enableGrouping:false; buttons call e.stopPropagation() so row-click still works.
+]
+
+<DataGrid
+  gridId="inventory.products"     // unique, stable — the persistence key
+  data={rows}
+  columns={columns}
+  getRowId={(r) => r.id}
+  loading={query.isLoading}
+  onRowClick={(r) => navigate({ to: '/inventory/products/$id', params: { id: r.id } })}
+  emptyText="Kayıt yok."
+  toolbar={canWrite ? <Button onClick={openCreate}><Plus />Yeni</Button> : null}
+/>
+```
+
+**Key props:** `gridId` (required, unique), `data`, `columns`, `getRowId`,
+`loading`, `onRowClick`, `toolbar` (right-aligned actions), `emptyText`,
+`selection` (`'none'|'single'|'multi'`) + `onSelectionChange`, `rowClassName`
+(transient row highlight), `search` (page-controlled override — use it instead of
+a second search box), `hideSearch`, `fillHeight` (toolbar fixed, body scrolls).
+
+**Tree tables** (e.g. categories): provide `getSubRows`, `treeColumnId`,
+`defaultExpanded`, and usually `pagination={false}`. The grid renders indentation
+rails + an animated chevron. (Gotcha already handled in the component: the
+pagination row model is always included because TanStack only flattens expanded
+children there.) Build nested data yourself (parent → `children`) and pass roots.
+
+```tsx
+<DataGrid gridId="inventory.categories" data={roots} columns={cols}
+  getSubRows={(c) => c.children} treeColumnId="name" defaultExpanded pagination={false} … />
+```
+
+**Page-layout rule (consistency):** list/grid pages do **NOT** render a
+`<PageHeader>` title band — the page title is in the app breadcrumb. Put all
+actions + search on the grid toolbar line. (`PageHeader` stays for **detail**
+pages, where it carries title + `audit` + actions.) Detail pages use `Tabs` +
+`Card` (see `product-detail-page.tsx` / `category-detail-page.tsx`).
+
+**Dialogs:** create/edit happen in a `Dialog` that **saves only on the
+Save/Kaydet button** (never auto-create on open). After save: close, toast,
+`invalidate` the query (React Query refetches in place — no page reload). See
+`category-dialog.tsx` and the `rowClassName` highlight in `categories-page.tsx`.
+
+---
+
+## 10. Lookups — generic reference lists
+
+Reusable key/value reference data (units, colours, etc.) lives in the **lookups**
+module instead of bespoke tables. `backend/src/modules/lookups/`,
+permissions `LookupsPermissions.read|write`.
+
+Endpoints (`/api/lookups`): `GET /items` (optionally `?list=`), `GET /lists`,
+`GET /items/:id`, `POST /items` (write), `PATCH /items/:id` (write),
+`DELETE /items/:id` (write). Shared: `api.lookups.{ list(), … }`.
+
+- A `LookupItemDto` has `list` (the list name), `key`, `value`, `sortOrder`,
+  `isActive`. Resolve a key to a label via the list map (see
+  `products-page.tsx` `lookupLabels`).
+- **Web:** the lookups page renders one **DataGrid per list** inside an accordion.
+- **Frontend/mobile pickers** consume lookups (web `LookupSelect`, mobile
+  `LookupSelect`) — bind a `select`/`lookup` field to a `lookupList`.
+- A category custom field of type `lookup` references a `lookupList`; the product
+  form renders the picker from it.
+
+**Use lookups** for any small, user-managed enumerated list. Do not create a new
+table + module for "a list of X values".
+
+---
+
+## 11. Frontend UI rules
+
+- Stack: React 19, Vite, Tailwind v4, shadcn/ui, TanStack Router (file routes) +
+  Query. Follow `DESIGN.md` and the component/page skills.
+- All API access via `frontend/src/lib/api.ts` (`api.<mod>.<res>.<method>()`).
+- Routes: thin files under `src/routes/_authed/<mod>/`; a list at
+  `<res>.index.tsx`, a detail at `<res>.$id.tsx`. The vite build regenerates
+  `routeTree.gen.ts`.
+- Nav: `src/modules/<mod>/module.config.ts` (icon + items with a `permission`),
+  registered in `src/modules/registry.ts`.
+- Tables → DataGrid (§9). Files → FileManager (§8). Lists → lookups (§10).
+- Gate every page with `<PermissionRequired>`, every query with `enabled:
+  hasPermission(...)`, every action with the same key. Verify: `vite build` +
+  `tsc -b`.
+
+---
+
+## 12. Mobile rules
+
+- Expo (RN 0.85 / React 19), same `@turbohesap/shared`. Read `mobile_design.md`
+  before any mobile UI.
+- Theme tokens: `src/theme/tokens.ts` + `theme-context.tsx` (`useTheme()`),
+  never hardcode colours. Primitives in `src/components/*` (Feather icons via
+  `Icon`, `Button`, `Card`, `Text`, `Input`, `SegmentedControl`, `Slider`, …).
+- API via `src/lib/api.ts`; data via `useAsync`. Same RBAC surface (`useAuth()`,
+  `<Can>`, `<PermissionRequired>`, `useAsync(…, { enabled })`).
+- Images → the `components/image/` module (§8). Navigation is the
+  dependency-free registry in `src/navigation/*`.
+- Verify: `pnpm --filter @turbohesap/mobile typecheck`; if you changed RN
+  deps/imports, also `CI=1 npx expo export --platform ios`.
+
+---
+
+## 13. ENDPOINT TESTING PROTOCOL (mandatory, with a real token)
+
+**You must run this for every new/changed endpoint before calling work done.**
+A passing build proves types; it does not prove the route authenticates,
+authorizes, validates, persists, and returns the right shape. Only HTTP does.
+
+### Setup
+1. Ensure Postgres is up and the backend is running: `make dev-backend` (`:5800`).
+2. Base URL: `http://localhost:5800/api`. Seed admin: `admin` / `Admin123!`
+   (`.env` `SEED_ADMIN_*`).
+
+### Acquire a token
+```bash
+BASE=http://localhost:5800/api
+TOKEN=$(curl -s -X POST "$BASE/auth/login" \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"Admin123!"}' | jq -r '.accessToken')
+echo "${TOKEN:0:20}…"   # sanity: non-empty
+AUTH="Authorization: Bearer $TOKEN"
+```
+`LoginResponse` is `AuthTokens & { user }`, so the token is `.accessToken`.
+
+### Exercise the resource (example: inventory/products)
+```bash
+# CREATE (write) — expect 201 + the created DTO
+curl -s -X POST "$BASE/inventory/products" -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"name":"Test ürün","code":"TST-1"}' | jq .
+
+# LIST (read) — expect 200 + array (or Page<T>)
+curl -s "$BASE/inventory/products" -H "$AUTH" | jq 'length'
+
+# GET one
+ID=$(curl -s "$BASE/inventory/products" -H "$AUTH" | jq -r '.[0].id')
+curl -s "$BASE/inventory/products/$ID" -H "$AUTH" | jq .
+
+# UPDATE (write)
+curl -s -X PATCH "$BASE/inventory/products/$ID" -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"name":"Güncellendi"}' | jq .
+
+# DELETE (write) — expect 204
+curl -s -o /dev/null -w '%{http_code}\n' -X DELETE "$BASE/inventory/products/$ID" -H "$AUTH"
+```
+
+### Prove the guards actually guard (do this too)
+```bash
+# No token → 401
+curl -s -o /dev/null -w '%{http_code}\n' "$BASE/inventory/products"          # expect 401
+# Bad body → 400 (ValidationPipe)
+curl -s -X POST "$BASE/inventory/products" -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"bogus":true}' | jq .                                                   # expect 400 ApiError
+```
+
+### File upload (multipart) test
+```bash
+curl -s -X POST "$BASE/files" -H "$AUTH" \
+  -F 'files=@/path/to/image.png' \
+  -F 'entityType=Product' -F "entityId=$ID" -F 'kind=image' -F 'sortOrder=0' | jq .
+# then the public raw URL works without a token:
+SN=$(curl -s "$BASE/files?entityType=Product&entityId=$ID" -H "$AUTH" | jq -r '.[0].storedName')
+curl -s -o /dev/null -w '%{http_code} %{content_type}\n' "$BASE/files/raw/$SN"  # expect 200 image/png
+```
+
+### What "tested" means (all must hold)
+- Authn: no/invalid token → **401**.
+- Authz: a token lacking the permission → **403** (test with a non-admin role if
+  the route is permission-gated and you can create one; at minimum confirm the
+  decorator is present and admin succeeds).
+- Validation: malformed body → **400** with the `ApiError` shape.
+- Happy path: correct status (200/201/204) and the **exact shared DTO shape**.
+- Side effects: a create then list/get reflects it; a delete then get → **404**.
+
+Record (in your final message) the commands you ran and the status codes you saw.
+If you could not run them, say so explicitly and why — do not imply you did.
+
+---
+
+## 14. Migration protocol
+
+- Change entities → `make migration-generate NAME=AddX` (diffs entities ↔ the
+  **current** DB, so keep your local DB migrated first) → **review the SQL** →
+  `make migrate`. Commit the migration file.
+- Never enable `synchronize`. Never hand-edit applied migrations; add a new one.
+- A permission is NOT a schema change — it auto-seeds (§5). No migration for it.
+
+---
+
+## 15. Definition of Done (tick every box)
+
+- [ ] `shared` built; `core/api.ts` + `index.ts` updated; no inline wire shapes.
+- [ ] Backend builds **and** unit tests pass.
+- [ ] Entity changes have a committed, reviewed migration; `make migrate` ran.
+- [ ] Every route has the right `@RequirePermissions` (or `@Public()`); the same
+      key is mirrored in the UI.
+- [ ] **Every new/changed endpoint exercised over HTTP with a real token** (§13),
+      including 401/400 negative checks; results reported.
+- [ ] Frontend `vite build` + `tsc -b` pass; tables use DataGrid; list pages have
+      no redundant header band; dialogs save-on-submit.
+- [ ] Mobile `typecheck` passes (+ `expo export` if RN deps/imports changed).
+- [ ] `AGENTS.md` / skills / `agy.md` updated if conventions changed.
+
+If any box is unchecked, the task is **not done** — say what remains.
+
+---
+
+## 16. Forbidden (do not do these)
+
+- ❌ Inline a DTO / wire shape in backend or a client instead of `shared`.
+- ❌ Add a route without a permission decision (`@RequirePermissions` or `@Public()`).
+- ❌ Change schema via `synchronize` or without a migration.
+- ❌ Build a bespoke HTML `<table>` for a web list — use DataGrid.
+- ❌ Roll your own upload/storage — use the files API + FileManager/ImageManager.
+- ❌ Create a new table for a small enumerated list — use lookups.
+- ❌ Claim "done" without the §13 HTTP token tests.
+- ❌ Leave a build/typecheck red and move on.
+- ❌ Hardcode permission strings, colours (mobile), or `@Column({ name })`.
+- ❌ Commit/push unless explicitly asked.
+
+---
+
+## 17. Canonical references (copy these shapes)
+
+| You want to… | Read / copy |
+| ------------ | ----------- |
+| add a module end-to-end | skill `create-module`; the **`iam`** module (full CRUD) |
+| shared contract shape | `shared/src/modules/iam/*`, `shared/src/core/api.ts` |
+| backend module shape | `backend/src/modules/inventory/*` |
+| permissions | `shared/src/modules/*/**.permissions.ts`, `backend/src/permissions.catalog.ts`, `backend/src/common/` guards |
+| a web grid page | `frontend/src/modules/org/pages/branches-page.tsx`; tree: `…/inventory/pages/categories-page.tsx`; advanced: `…/inventory/pages/products-page.tsx` |
+| a web detail page | `frontend/src/modules/inventory/pages/{product,category}-detail-page.tsx` |
+| a create/edit dialog | `frontend/src/modules/inventory/components/category-dialog.tsx` |
+| the DataGrid | `frontend/src/components/data-grid/*` |
+| files / images (web) | `frontend/src/modules/files/components/file-manager.tsx`; backend `backend/src/modules/files/*` |
+| files / images (mobile) | `mobile/src/components/image/*` |
+| settings (per-user state) | `backend/src/modules/settings/*`, `frontend/src/components/data-grid/use-grid-state.ts` |
+| lookups | `backend/src/modules/lookups/*`, `shared/src/modules/lookups/*` |
+| mobile screen | `mobile/src/modules/inventory/*`, `mobile_design.md` |
+
+> Work like the agent before you and the agent after you will read your diff and
+> have to extend it. Same shapes, same gates, same tests. Every time.

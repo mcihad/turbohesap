@@ -44,6 +44,7 @@ Import: `@/components/ui/<dosya>`.
 | `dropdown-menu` | `DropdownMenu`, `DropdownMenuTrigger`, `DropdownMenuContent`, `DropdownMenuItem`, `DropdownMenuLabel`, `DropdownMenuSeparator`, `DropdownMenuGroup`, `DropdownMenuShortcut` | Açılır menü (kullanıcı menüsü vb.) |
 | `filter-bar` | `FilterBar` (`activeCount`, `onClear`, `defaultOpen`, `headerClassName`), `FilterField` (`label`) | Liste/tablo filtreleri için katlanır, şık kapsayıcı (varsayılan kapalı; aktif filtre sayısı + Temizle) |
 | `input` | `Input` | Tek satır metin/şifre/email girişi |
+| `iban-input` | `IbanInput` | Otomatik formatlı TR IBAN giriş alanı (TRxx xxxx...) |
 | `kbd` | `Kbd` | Klavye kısayolu rozeti |
 | `label` | `Label` | Form alanı etiketi (`htmlFor`) |
 | `popover` | `Popover`, `PopoverTrigger`, `PopoverContent` | Konumlu açılır içerik |

@@ -1,48 +1,48 @@
 import * as React from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { FolderTree, Plus } from 'lucide-react'
+import { FolderPlus, Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-import {
-  InventoryPermissions,
-  toApiError,
-  type CategoryDto,
-} from '@turbohesap/shared'
+import { InventoryPermissions, toApiError, type CategoryDto } from '@turbohesap/shared'
 
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth/auth-context'
 import { PermissionRequired } from '@/lib/auth/permission-gate'
-import { PageHeader, PageWrapper } from '@/components/layout/page'
+import { PageWrapper } from '@/components/layout/page'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Tree, type TreeNode } from '@/components/ui/tree'
-import { CategoryEditor } from '../components/category-editor'
+import { DataGrid, type ColumnDef } from '@/components/data-grid'
+import { CategoryDialog } from '../components/category-dialog'
 
-function buildTree(cats: CategoryDto[]): TreeNode[] {
+interface CatNode extends CategoryDto {
+  children: CatNode[]
+}
+
+function buildNested(cats: CategoryDto[]): CatNode[] {
   const byParent = new Map<string | null, CategoryDto[]>()
   for (const c of cats) {
     const arr = byParent.get(c.parentId) ?? []
     arr.push(c)
     byParent.set(c.parentId, arr)
   }
-  const make = (parentId: string | null): TreeNode[] =>
+  const make = (parentId: string | null): CatNode[] =>
     (byParent.get(parentId) ?? [])
-      .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
-      .map((c) => ({
-        id: c.id,
-        label: c.name,
-        icon: FolderTree,
-        badge: c.fieldDefs.length ? `${c.fieldDefs.length} alan` : undefined,
-        children: make(c.id),
-      }))
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'tr'))
+      .map((c) => ({ ...c, children: make(c.id) }))
   return make(null)
 }
 
 export function CategoriesPage() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const { hasPermission } = useAuth()
   const canWrite = hasPermission(InventoryPermissions.categoriesWrite)
-  const [selectedId, setSelectedId] = React.useState<string | null>(null)
+
+  // Dialog state: { mode } drives create-root / create-child / edit.
+  const [dialog, setDialog] = React.useState<
+    { editing: CategoryDto | null; parentId: string | null } | null
+  >(null)
 
   const catsQuery = useQuery({
     queryKey: ['inventory', 'categories'],
@@ -52,75 +52,65 @@ export function CategoriesPage() {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['inventory', 'categories'] })
 
-  const createMutation = useMutation({
-    mutationFn: (parentId: string | null) =>
-      api.inventory.categories.create({ name: 'Yeni kategori', parentId }),
-    onSuccess: (cat) => {
-      toast.success('Kategori oluşturuldu')
-      void invalidate()
-      setSelectedId(cat.id)
-    },
-    onError: (e) => toast.error('Oluşturulamadı', { description: toApiError(e).message }),
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.inventory.categories.remove(id),
+    onSuccess: () => { toast.success('Kategori silindi'); void invalidate() },
+    onError: (e) => toast.error('Silinemedi', { description: toApiError(e).message }),
   })
 
   const cats = catsQuery.data ?? []
-  const tree = React.useMemo(() => buildTree(cats), [cats])
-  const expandedIds = React.useMemo(() => cats.map((c) => c.id), [cats])
+  const roots = React.useMemo(() => buildNested(cats), [cats])
+
+  const columns: ColumnDef<CatNode>[] = [
+    { id: 'name', accessorKey: 'name', header: 'Kategori', size: 280, cell: ({ row }) => <span className="font-medium">{row.original.name}</span> },
+    { id: 'code', accessorKey: 'code', header: 'Kod', size: 120, cell: ({ row }) => <span className="font-mono text-xs text-muted-foreground">{row.original.code || '—'}</span> },
+    { id: 'productCount', accessorKey: 'productCount', header: 'Ürün', size: 90, cell: ({ row }) => <Badge variant="secondary">{row.original.productCount}</Badge> },
+    { id: 'fields', header: 'Özel alan', size: 100, accessorFn: (c) => c.fieldDefs.length, cell: ({ row }) => <span className="tabular-nums text-muted-foreground">{row.original.fieldDefs.length}</span> },
+    { id: 'isActive', accessorKey: 'isActive', header: 'Durum', size: 100, enableGrouping: true, cell: ({ row }) => <Badge variant={row.original.isActive ? 'success' : 'outline'}>{row.original.isActive ? 'Aktif' : 'Pasif'}</Badge> },
+    ...(canWrite
+      ? [{
+          id: 'actions', header: '', size: 130, enableSorting: false, enableHiding: false, enableColumnFilter: false, enableGrouping: false,
+          cell: ({ row }) => (
+            <div className="flex justify-end gap-1">
+              <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); setDialog({ editing: null, parentId: row.original.id }) }} title="Alt kategori ekle"><FolderPlus className="size-4" /></Button>
+              <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); setDialog({ editing: row.original, parentId: null }) }} title="Düzenle"><Pencil className="size-4" /></Button>
+              <Button variant="ghost" size="icon-sm" onClick={(e) => {
+                e.stopPropagation()
+                if (row.original.children.length) { toast.error('Alt kategorileri olan kategori silinemez'); return }
+                if (confirm(`"${row.original.name}" silinsin mi?`)) deleteMutation.mutate(row.original.id)
+              }} title="Sil"><Trash2 className="size-4 text-destructive" /></Button>
+            </div>
+          ),
+        } as ColumnDef<CatNode>]
+      : []),
+  ]
 
   return (
     <PermissionRequired permission={InventoryPermissions.categoriesRead}>
       <PageWrapper>
-        <PageHeader
-          title="Kategoriler"
-          description="Ürün kategorilerini ağaç yapısında yönetin; her kategoriye özel ürün alanları tanımlayın."
-          actions={
-            canWrite ? (
-              <Button onClick={() => createMutation.mutate(null)} disabled={createMutation.isPending}>
-                <Plus />
-                Yeni kök kategori
-              </Button>
-            ) : null
-          }
+        <DataGrid
+          gridId="inventory.categories"
+          data={roots}
+          columns={columns}
+          getRowId={(c) => c.id}
+          getSubRows={(c) => c.children}
+          treeColumnId="name"
+          defaultExpanded
+          pagination={false}
+          loading={catsQuery.isLoading}
+          onRowClick={(c) => navigate({ to: '/inventory/categories/$id', params: { id: c.id } })}
+          emptyText="Henüz kategori yok."
+          toolbar={canWrite ? <Button onClick={() => setDialog({ editing: null, parentId: null })}><Plus />Yeni kök kategori</Button> : null}
         />
 
-        <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-          {/* Tree */}
-          <Card className="h-fit p-2">
-            {cats.length === 0 ? (
-              <p className="p-4 text-center text-sm text-muted-foreground">
-                {catsQuery.isLoading ? 'Yükleniyor…' : 'Henüz kategori yok.'}
-              </p>
-            ) : (
-              <Tree
-                key={expandedIds.join(',')}
-                data={tree}
-                defaultExpanded={expandedIds}
-                defaultSelected={selectedId}
-                onSelect={(node) => setSelectedId(node.id)}
-              />
-            )}
-          </Card>
-
-          {/* Editor */}
-          {selectedId ? (
-            <CategoryEditor
-              key={selectedId}
-              categoryId={selectedId}
-              canWrite={canWrite}
-              onChanged={invalidate}
-              onAddChild={(parentId) => createMutation.mutate(parentId)}
-              onDeleted={() => {
-                setSelectedId(null)
-                void invalidate()
-              }}
-            />
-          ) : (
-            <Card className="flex flex-col items-center justify-center gap-2 py-20 text-center text-muted-foreground">
-              <FolderTree className="size-10" />
-              <p className="text-sm">Düzenlemek için soldan bir kategori seçin.</p>
-            </Card>
-          )}
-        </div>
+        <CategoryDialog
+          open={dialog !== null}
+          onOpenChange={(o) => { if (!o) setDialog(null) }}
+          editing={dialog?.editing ?? null}
+          defaultParentId={dialog?.parentId ?? null}
+          categories={cats}
+          onSaved={invalidate}
+        />
       </PageWrapper>
     </PermissionRequired>
   )

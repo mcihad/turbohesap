@@ -18,6 +18,10 @@ import { BranchesApiClient } from '../modules/org/branches.client'
 import type { IBranchesService } from '../modules/org/branches.service'
 import { LookupsApiClient } from '../modules/lookups/lookups.client'
 import type { ILookupsService } from '../modules/lookups/lookups.service'
+import { FilesApiClient } from '../modules/files/files.client'
+import type { IFilesService } from '../modules/files/files.service'
+import { SettingsApiClient } from '../modules/settings/settings.client'
+import type { ISettingsService } from '../modules/settings/settings.service'
 import { CategoriesApiClient } from '../modules/inventory/categories.client'
 import type { ICategoriesService } from '../modules/inventory/categories.service'
 import { ProductsApiClient } from '../modules/inventory/products.client'
@@ -62,6 +66,10 @@ export interface TurbohesapApi {
   inventory: InventoryApi
   /** Generic key/value reference-data lists. */
   lookups: ILookupsService
+  /** Generic file uploads/attachments (images + files for any entity). */
+  files: IFilesService
+  /** Per-user settings store (UI prefs, data-grid state, …). */
+  settings: ISettingsService
   health: IHealthService
   /** The underlying axios instance, for app-specific calls. */
   http: AxiosInstance
@@ -97,6 +105,8 @@ export function createTurbohesapApi(
       products: new ProductsApiClient(http),
     },
     lookups: new LookupsApiClient(http),
+    files: new FilesApiClient(http),
+    settings: new SettingsApiClient(http),
     health: new HealthApiClient(http),
   }
 }

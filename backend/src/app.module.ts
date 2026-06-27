@@ -19,6 +19,8 @@ import { SalesModule } from './modules/sales/sales.module'
 import { OrgModule } from './modules/org/org.module'
 import { LookupsModule } from './modules/lookups/lookups.module'
 import { InventoryModule } from './modules/inventory/inventory.module'
+import { FilesModule } from './modules/files/files.module'
+import { SettingsModule } from './modules/settings/settings.module'
 
 @Module({
   imports: [
@@ -44,6 +46,8 @@ import { InventoryModule } from './modules/inventory/inventory.module'
     OrgModule,
     LookupsModule,
     InventoryModule,
+    FilesModule,
+    SettingsModule,
   ],
   controllers: [HealthController, DebugController],
   providers: [

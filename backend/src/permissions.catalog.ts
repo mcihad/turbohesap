@@ -6,6 +6,7 @@ import { SALES_PERMISSION_DEFS } from './modules/sales/sales.permissions'
 import { ORG_PERMISSION_DEFS } from './modules/org/org.permissions'
 import { LOOKUPS_PERMISSION_DEFS } from './modules/lookups/lookups.permissions'
 import { INVENTORY_PERMISSION_DEFS } from './modules/inventory/inventory.permissions'
+import { FILES_PERMISSION_DEFS } from './modules/files/files.permissions'
 
 // The aggregated permission catalog: the union of every module's declared
 // permissions. On startup `SeedService` upserts these into the `permissions`
@@ -23,6 +24,7 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   ...ORG_PERMISSION_DEFS,
   ...LOOKUPS_PERMISSION_DEFS,
   ...INVENTORY_PERMISSION_DEFS,
+  ...FILES_PERMISSION_DEFS,
   // components: frontend-only gallery module (no backend resource), gated by a
   // single read permission.
   { key: ComponentsPermissions.read, description: 'Bileşen galerisini görüntüleme', group: 'components' },

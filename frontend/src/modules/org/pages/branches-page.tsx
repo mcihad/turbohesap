@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Link } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -15,7 +15,7 @@ import {
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth/auth-context'
 import { PermissionRequired } from '@/lib/auth/permission-gate'
-import { PageHeader, PageWrapper } from '@/components/layout/page'
+import { PageWrapper } from '@/components/layout/page'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -37,14 +37,7 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { DataGrid, type ColumnDef } from '@/components/data-grid'
 import { BRANCH_TYPE_LABELS, branchTypeLabel } from '../labels'
 
 interface FormState {
@@ -169,6 +162,7 @@ export function BranchesPage() {
   const { hasPermission } = useAuth()
   const canRead = hasPermission(OrgPermissions.branchesRead)
   const canWrite = hasPermission(OrgPermissions.branchesWrite)
+  const navigate = useNavigate()
 
   const branchesQuery = useQuery({
     queryKey: ['org', 'branches'],
@@ -222,102 +216,39 @@ export function BranchesPage() {
 
   const branches = branchesQuery.data ?? []
 
+  const columns: ColumnDef<BranchDto>[] = [
+    { id: 'code', accessorKey: 'code', header: 'Kod', size: 120, cell: ({ row }) => <span className="font-mono text-xs">{row.original.code}</span> },
+    { id: 'name', accessorKey: 'name', header: 'Ad', size: 220, cell: ({ row }) => <span className="font-medium">{row.original.name}</span> },
+    { id: 'type', accessorKey: 'type', header: 'Tür', size: 130, enableGrouping: true, cell: ({ row }) => <Badge variant="secondary">{branchTypeLabel(row.original.type)}</Badge> },
+    { id: 'city', accessorKey: 'city', header: 'Şehir', size: 140, enableGrouping: true, cell: ({ row }) => <span className="text-muted-foreground">{row.original.city || '—'}</span> },
+    { id: 'managerName', accessorKey: 'managerName', header: 'Yetkili', size: 160, cell: ({ row }) => <span className="text-muted-foreground">{row.original.managerName || '—'}</span> },
+    { id: 'isActive', accessorKey: 'isActive', header: 'Durum', size: 110, enableGrouping: true, cell: ({ row }) => <Badge variant={row.original.isActive ? 'success' : 'outline'}>{row.original.isActive ? 'Aktif' : 'Pasif'}</Badge> },
+    ...(canWrite
+      ? [{
+          id: 'actions', header: '', size: 90, enableSorting: false, enableHiding: false, enableColumnFilter: false, enableGrouping: false,
+          cell: ({ row }) => (
+            <div className="flex justify-end gap-1">
+              <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); openEdit(row.original) }} aria-label="Düzenle"><Pencil className="size-4" /></Button>
+              <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); if (confirm(`"${row.original.name}" şubesi silinsin mi?`)) deleteMutation.mutate(row.original.id) }} aria-label="Sil"><Trash2 className="size-4 text-destructive" /></Button>
+            </div>
+          ),
+        } as ColumnDef<BranchDto>]
+      : []),
+  ]
+
   return (
     <PermissionRequired permission={OrgPermissions.branchesRead}>
       <PageWrapper>
-        <PageHeader
-          title="Şubeler"
-          description="Organizasyonun lokasyonlarını yönetin (merkez, şube, depo, mağaza…)."
-          actions={
-            canWrite ? (
-              <Button onClick={openCreate}>
-                <Plus />
-                Yeni şube
-              </Button>
-            ) : null
-          }
+        <DataGrid
+          gridId="org.branches"
+          data={branches}
+          columns={columns}
+          getRowId={(b) => b.id}
+          loading={branchesQuery.isLoading}
+          onRowClick={(b) => navigate({ to: '/org/branches/$id', params: { id: b.id } })}
+          emptyText="Şube yok."
+          toolbar={canWrite ? <Button onClick={openCreate}><Plus />Yeni şube</Button> : null}
         />
-
-        <div className="rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Kod</TableHead>
-                <TableHead>Ad</TableHead>
-                <TableHead>Tür</TableHead>
-                <TableHead>Şehir</TableHead>
-                <TableHead>Yetkili</TableHead>
-                <TableHead>Durum</TableHead>
-                {canWrite ? (
-                  <TableHead className="w-24 text-right">İşlem</TableHead>
-                ) : null}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {branches.map((b) => (
-                <TableRow key={b.id}>
-                  <TableCell className="font-mono text-xs">
-                    <Link
-                      to="/org/branches/$id"
-                      params={{ id: b.id }}
-                      className="font-medium text-primary hover:underline"
-                    >
-                      {b.code}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="font-medium">{b.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{branchTypeLabel(b.type)}</Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {b.city || '—'}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {b.managerName || '—'}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={b.isActive ? 'success' : 'outline'}>
-                      {b.isActive ? 'Aktif' : 'Pasif'}
-                    </Badge>
-                  </TableCell>
-                  {canWrite ? (
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => openEdit(b)}
-                        aria-label="Düzenle"
-                      >
-                        <Pencil className="size-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => {
-                          if (confirm(`"${b.name}" şubesi silinsin mi?`))
-                            deleteMutation.mutate(b.id)
-                        }}
-                        aria-label="Sil"
-                      >
-                        <Trash2 className="size-4 text-destructive" />
-                      </Button>
-                    </TableCell>
-                  ) : null}
-                </TableRow>
-              ))}
-              {!branchesQuery.isLoading && branches.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="text-center text-muted-foreground"
-                  >
-                    Şube yok.
-                  </TableCell>
-                </TableRow>
-              ) : null}
-            </TableBody>
-          </Table>
-        </div>
 
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="sm:max-w-2xl">

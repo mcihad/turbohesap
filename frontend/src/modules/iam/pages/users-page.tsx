@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Link } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -14,7 +14,7 @@ import {
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth/auth-context'
 import { PermissionRequired } from '@/lib/auth/permission-gate'
-import { PageHeader, PageWrapper } from '@/components/layout/page'
+import { PageWrapper } from '@/components/layout/page'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -29,14 +29,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { DataGrid, type ColumnDef } from '@/components/data-grid'
 
 interface FormState {
   username: string
@@ -67,6 +60,7 @@ export function UsersPage() {
   const canWrite = hasPermission(IamPermissions.usersWrite)
   // Branch assignment needs branch read access (the same key the server enforces).
   const canReadBranches = hasPermission(OrgPermissions.branchesRead)
+  const navigate = useNavigate()
 
   const usersQuery = useQuery({
     queryKey: ['iam', 'users'],
@@ -157,13 +151,105 @@ export function UsersPage() {
   const roles = rolesQuery.data ?? []
   const branches = branchesQuery.data ?? []
 
+  const columns: ColumnDef<UserDto>[] = [
+    {
+      id: 'username',
+      accessorKey: 'username',
+      header: 'Kullanıcı adı',
+      cell: ({ row }) => <span className="font-medium">{row.original.username}</span>,
+    },
+    {
+      id: 'fullName',
+      accessorFn: (u) => `${u.firstName} ${u.lastName}`.trim() || '—',
+      header: 'Ad Soyad',
+      cell: ({ row }) => `${row.original.firstName} ${row.original.lastName}`.trim() || '—',
+    },
+    {
+      id: 'email',
+      accessorKey: 'email',
+      header: 'E-posta',
+      cell: ({ row }) => <span className="text-muted-foreground">{row.original.email}</span>,
+    },
+    {
+      id: 'roles',
+      header: 'Roller',
+      enableSorting: false,
+      enableColumnFilter: false,
+      cell: ({ row }) => (
+        <div className="flex flex-wrap gap-1">
+          {row.original.roles.map((r) => (
+            <Badge key={r.id} variant="secondary">
+              {r.name}
+            </Badge>
+          ))}
+        </div>
+      ),
+    },
+    {
+      id: 'isActive',
+      accessorKey: 'isActive',
+      header: 'Durum',
+      enableGrouping: true,
+      cell: ({ row }) => (
+        <Badge variant={row.original.isActive ? 'success' : 'outline'}>
+          {row.original.isActive ? 'Aktif' : 'Pasif'}
+        </Badge>
+      ),
+    },
+    ...(canWrite
+      ? [
+          {
+            id: 'actions',
+            header: '',
+            size: 90,
+            enableSorting: false,
+            enableHiding: false,
+            enableColumnFilter: false,
+            enableGrouping: false,
+            cell: ({ row }) => (
+              <div className="flex justify-end gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    openEdit(row.original)
+                  }}
+                  aria-label="Düzenle"
+                >
+                  <Pencil className="size-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (confirm(`"${row.original.username}" kullanıcısı silinsin mi?`))
+                      deleteMutation.mutate(row.original.id)
+                  }}
+                  aria-label="Sil"
+                >
+                  <Trash2 className="size-4 text-destructive" />
+                </Button>
+              </div>
+            ),
+          } as ColumnDef<UserDto>,
+        ]
+      : []),
+  ]
+
   return (
     <PermissionRequired permission={IamPermissions.usersRead}>
     <PageWrapper>
-      <PageHeader
-        title="Kullanıcılar"
-        description="Sistem kullanıcılarını yönetin."
-        actions={
+      <DataGrid
+        gridId="iam.users"
+        data={users}
+        columns={columns}
+        getRowId={(u) => u.id}
+        loading={usersQuery.isLoading}
+        onRowClick={(u) => navigate({ to: '/iam/users/$id', params: { id: u.id } })}
+        emptyText="Kullanıcı yok."
+        toolbar={
           canWrite ? (
             <Button onClick={openCreate}>
               <Plus />
@@ -172,77 +258,6 @@ export function UsersPage() {
           ) : null
         }
       />
-
-      <div className="rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Kullanıcı adı</TableHead>
-              <TableHead>Ad Soyad</TableHead>
-              <TableHead>E-posta</TableHead>
-              <TableHead>Roller</TableHead>
-              <TableHead>Durum</TableHead>
-              {canWrite ? <TableHead className="w-24 text-right">İşlem</TableHead> : null}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.map((u) => (
-              <TableRow key={u.id}>
-                <TableCell>
-                  <Link
-                    to="/iam/users/$id"
-                    params={{ id: u.id }}
-                    className="font-medium text-primary hover:underline"
-                  >
-                    {u.username}
-                  </Link>
-                </TableCell>
-                <TableCell>{`${u.firstName} ${u.lastName}`.trim() || '—'}</TableCell>
-                <TableCell className="text-muted-foreground">{u.email}</TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {u.roles.map((r) => (
-                      <Badge key={r.id} variant="secondary">
-                        {r.name}
-                      </Badge>
-                    ))}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={u.isActive ? 'success' : 'outline'}>
-                    {u.isActive ? 'Aktif' : 'Pasif'}
-                  </Badge>
-                </TableCell>
-                {canWrite ? (
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon-sm" onClick={() => openEdit(u)} aria-label="Düzenle">
-                      <Pencil className="size-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => {
-                        if (confirm(`"${u.username}" kullanıcısı silinsin mi?`))
-                          deleteMutation.mutate(u.id)
-                      }}
-                      aria-label="Sil"
-                    >
-                      <Trash2 className="size-4 text-destructive" />
-                    </Button>
-                  </TableCell>
-                ) : null}
-              </TableRow>
-            ))}
-            {!usersQuery.isLoading && users.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  Kullanıcı yok.
-                </TableCell>
-              </TableRow>
-            ) : null}
-          </TableBody>
-        </Table>
-      </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

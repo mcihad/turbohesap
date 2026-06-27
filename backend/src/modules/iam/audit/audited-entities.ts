@@ -5,6 +5,8 @@ export const IGNORED_AUDIT_ENTITIES = new Set<string>([
   'AuditLog',
   'ErrorLog',
   'RefreshToken',
+  // Per-user UI prefs / grid state — high-churn noise, not business data.
+  'UserSetting',
 ])
 
 // Column names whose values are redacted in the recorded diff.
@@ -34,6 +36,7 @@ export const ENTITY_MODULE_MAP: Record<string, string> = {
   ProductPackaging: 'inventory',
   ProductStock: 'inventory',
   ProductChannelPrice: 'inventory',
+  FileEntity: 'files',
 }
 
 export function moduleForEntity(entityName: string): string | null {

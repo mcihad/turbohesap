@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Pencil } from 'lucide-react'
 
 import {
+  FilesPermissions,
   InventoryPermissions,
   effectiveFieldDefsWithSource,
   type CategoryFieldDef,
@@ -27,6 +28,7 @@ import { VariantsTab } from '../components/product-detail/variants-tab'
 import { StockTab } from '../components/product-detail/stock-tab'
 import { ChannelPricesTab } from '../components/product-detail/channel-prices-tab'
 import { PackagingsTab } from '../components/product-detail/packagings-tab'
+import { FileManager } from '@/modules/files/components/file-manager'
 import { money, productTypeLabel } from '../labels'
 
 const ROUTE = '/_authed/inventory/products/$id'
@@ -38,6 +40,7 @@ export function ProductDetailPage() {
   const canRead = hasPermission(InventoryPermissions.productsRead)
   const canWrite = hasPermission(InventoryPermissions.productsWrite)
   const canStock = hasPermission(InventoryPermissions.productsStock)
+  const canFiles = hasPermission(FilesPermissions.write)
 
   const query = useQuery({
     queryKey: ['inventory', 'products', id],
@@ -107,6 +110,7 @@ export function ProductDetailPage() {
               dynamicFields={dynamicFields}
               canWrite={canWrite}
               canStock={canStock}
+              canFiles={canFiles}
               refetch={refetch}
             />
 
@@ -129,16 +133,19 @@ function ProductTabs({
   dynamicFields,
   canWrite,
   canStock,
+  canFiles,
   refetch,
 }: {
   product: ProductDto
   dynamicFields: SourcedFieldDef[]
   canWrite: boolean
   canStock: boolean
+  canFiles: boolean
   refetch: () => void
 }) {
   const tabs = [
     { value: 'genel', label: 'Genel' },
+    { value: 'medya', label: 'Medya' },
     ...(dynamicFields.length ? [{ value: 'ozellikler', label: 'Özellikler' }] : []),
     ...(product.hasVariants ? [{ value: 'varyantlar', label: `Varyantlar (${product.variantCount})` }] : []),
     ...(product.trackStock ? [{ value: 'stok', label: 'Stok' }] : []),
@@ -156,6 +163,23 @@ function ProductTabs({
 
       <TabsContent value="genel">
         <Overview product={product} />
+      </TabsContent>
+
+      <TabsContent value="medya">
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader><CardTitle className="text-sm">Görseller</CardTitle></CardHeader>
+            <CardContent>
+              <FileManager entityType="Product" entityId={product.id} kind="image" canWrite={canFiles} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle className="text-sm">Dosyalar</CardTitle></CardHeader>
+            <CardContent>
+              <FileManager entityType="Product" entityId={product.id} kind="file" canWrite={canFiles} />
+            </CardContent>
+          </Card>
+        </div>
       </TabsContent>
 
       {dynamicFields.length ? (

@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Link } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -15,7 +15,7 @@ import {
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth/auth-context'
 import { PermissionRequired } from '@/lib/auth/permission-gate'
-import { PageHeader, PageWrapper } from '@/components/layout/page'
+import { PageWrapper } from '@/components/layout/page'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -37,14 +37,7 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { DataGrid, type ColumnDef } from '@/components/data-grid'
 import { SALES_CHANNEL_TYPE_LABELS, salesChannelTypeLabel } from '../labels'
 
 interface FormState {
@@ -145,6 +138,7 @@ export function SalesChannelsPage() {
   const { hasPermission } = useAuth()
   const canRead = hasPermission(SalesPermissions.channelsRead)
   const canWrite = hasPermission(SalesPermissions.channelsWrite)
+  const navigate = useNavigate()
 
   const channelsQuery = useQuery({
     queryKey: ['sales', 'channels'],
@@ -199,109 +193,47 @@ export function SalesChannelsPage() {
 
   const channels = channelsQuery.data ?? []
 
+  const columns: ColumnDef<SalesChannelDto>[] = [
+    { id: 'code', accessorKey: 'code', header: 'Kod', size: 120, cell: ({ row }) => <span className="font-mono text-xs">{row.original.code}</span> },
+    {
+      id: 'name', accessorKey: 'name', header: 'Ad', size: 220,
+      cell: ({ row }) => (
+        <span className="font-medium">
+          {row.original.name}
+          {row.original.isDefault ? <Badge variant="info" className="ml-2">Varsayılan</Badge> : null}
+        </span>
+      ),
+    },
+    { id: 'type', accessorKey: 'type', header: 'Tür', size: 140, enableGrouping: true, cell: ({ row }) => <Badge variant="secondary">{salesChannelTypeLabel(row.original.type)}</Badge> },
+    { id: 'contactName', accessorKey: 'contactName', header: 'Yetkili', size: 160, cell: ({ row }) => <span className="text-muted-foreground">{row.original.contactName || '—'}</span> },
+    { id: 'commissionRate', accessorKey: 'commissionRate', header: 'Komisyon', size: 120, cell: ({ row }) => <span className="tabular-nums">{row.original.commissionRate == null ? '—' : `%${row.original.commissionRate}`}</span> },
+    { id: 'isActive', accessorKey: 'isActive', header: 'Durum', size: 110, enableGrouping: true, cell: ({ row }) => <Badge variant={row.original.isActive ? 'success' : 'outline'}>{row.original.isActive ? 'Aktif' : 'Pasif'}</Badge> },
+    ...(canWrite
+      ? [{
+          id: 'actions', header: '', size: 90, enableSorting: false, enableHiding: false, enableColumnFilter: false, enableGrouping: false,
+          cell: ({ row }) => (
+            <div className="flex justify-end gap-1">
+              <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); openEdit(row.original) }} aria-label="Düzenle"><Pencil className="size-4" /></Button>
+              <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); if (confirm(`"${row.original.name}" kanalı silinsin mi?`)) deleteMutation.mutate(row.original.id) }} aria-label="Sil"><Trash2 className="size-4 text-destructive" /></Button>
+            </div>
+          ),
+        } as ColumnDef<SalesChannelDto>]
+      : []),
+  ]
+
   return (
     <PermissionRequired permission={SalesPermissions.channelsRead}>
       <PageWrapper>
-        <PageHeader
-          title="Satış Kanalları"
-          description="Ürünlerin satıldığı kanalları yönetin (perakende, online, pazaryeri…)."
-          actions={
-            canWrite ? (
-              <Button onClick={openCreate}>
-                <Plus />
-                Yeni kanal
-              </Button>
-            ) : null
-          }
+        <DataGrid
+          gridId="sales.channels"
+          data={channels}
+          columns={columns}
+          getRowId={(c) => c.id}
+          loading={channelsQuery.isLoading}
+          onRowClick={(c) => navigate({ to: '/sales/channels/$id', params: { id: c.id } })}
+          emptyText="Satış kanalı yok."
+          toolbar={canWrite ? <Button onClick={openCreate}><Plus />Yeni kanal</Button> : null}
         />
-
-        <div className="rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Kod</TableHead>
-                <TableHead>Ad</TableHead>
-                <TableHead>Tür</TableHead>
-                <TableHead>Yetkili</TableHead>
-                <TableHead>Komisyon</TableHead>
-                <TableHead>Durum</TableHead>
-                {canWrite ? (
-                  <TableHead className="w-24 text-right">İşlem</TableHead>
-                ) : null}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {channels.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell className="font-mono text-xs">
-                    <Link
-                      to="/sales/channels/$id"
-                      params={{ id: c.id }}
-                      className="font-medium text-primary hover:underline"
-                    >
-                      {c.code}
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-medium">{c.name}</span>
-                    {c.isDefault ? (
-                      <Badge variant="info" className="ml-2">
-                        Varsayılan
-                      </Badge>
-                    ) : null}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{salesChannelTypeLabel(c.type)}</Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {c.contactName || '—'}
-                  </TableCell>
-                  <TableCell className="tabular-nums">
-                    {c.commissionRate == null ? '—' : `%${c.commissionRate}`}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={c.isActive ? 'success' : 'outline'}>
-                      {c.isActive ? 'Aktif' : 'Pasif'}
-                    </Badge>
-                  </TableCell>
-                  {canWrite ? (
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => openEdit(c)}
-                        aria-label="Düzenle"
-                      >
-                        <Pencil className="size-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => {
-                          if (confirm(`"${c.name}" kanalı silinsin mi?`))
-                            deleteMutation.mutate(c.id)
-                        }}
-                        aria-label="Sil"
-                      >
-                        <Trash2 className="size-4 text-destructive" />
-                      </Button>
-                    </TableCell>
-                  ) : null}
-                </TableRow>
-              ))}
-              {!channelsQuery.isLoading && channels.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="text-center text-muted-foreground"
-                  >
-                    Satış kanalı yok.
-                  </TableCell>
-                </TableRow>
-              ) : null}
-            </TableBody>
-          </Table>
-        </div>
 
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="sm:max-w-2xl">

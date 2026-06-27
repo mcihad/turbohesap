@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Link } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -9,7 +9,7 @@ import { IamPermissions, MODULES, toApiError, type RoleDto } from '@turbohesap/s
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth/auth-context'
 import { PermissionRequired } from '@/lib/auth/permission-gate'
-import { PageHeader, PageWrapper } from '@/components/layout/page'
+import { PageWrapper } from '@/components/layout/page'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -30,14 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { DataGrid, type ColumnDef } from '@/components/data-grid'
 
 function moduleLabel(key: string): string {
   return MODULES.find((m) => m.key === key)?.label ?? (key || '—')
@@ -62,6 +55,7 @@ export function RolesPage() {
   const { hasPermission } = useAuth()
   const canRead = hasPermission(IamPermissions.rolesRead)
   const canWrite = hasPermission(IamPermissions.rolesWrite)
+  const navigate = useNavigate()
 
   const rolesQuery = useQuery({
     queryKey: ['iam', 'roles'],
@@ -138,13 +132,107 @@ export function RolesPage() {
   const roles = rolesQuery.data ?? []
   const perms = permsQuery.data ?? []
 
+  const columns: ColumnDef<RoleDto>[] = [
+    {
+      id: 'name',
+      accessorKey: 'name',
+      header: 'Ad',
+      cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
+    },
+    {
+      id: 'module',
+      accessorFn: (r) => moduleLabel(r.module),
+      header: 'Modül',
+      enableGrouping: true,
+      cell: ({ row }) => (
+        <Badge variant="secondary">{moduleLabel(row.original.module)}</Badge>
+      ),
+    },
+    {
+      id: 'description',
+      accessorKey: 'description',
+      header: 'Açıklama',
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">
+          {row.original.description || '—'}
+        </span>
+      ),
+    },
+    {
+      id: 'permissions',
+      accessorFn: (r) => r.permissions.length,
+      header: 'İzin',
+      cell: ({ row }) => (
+        <span className="tabular-nums">{row.original.permissions.length}</span>
+      ),
+    },
+    {
+      id: 'type',
+      accessorFn: (r) => (r.isSystem ? 'Sistem' : 'Özel'),
+      header: 'Tür',
+      enableGrouping: true,
+      cell: ({ row }) =>
+        row.original.isSystem ? (
+          <Badge variant="outline">Sistem</Badge>
+        ) : (
+          <Badge variant="info">Özel</Badge>
+        ),
+    },
+    ...(canWrite
+      ? [
+          {
+            id: 'actions',
+            header: '',
+            size: 90,
+            enableSorting: false,
+            enableHiding: false,
+            enableColumnFilter: false,
+            enableGrouping: false,
+            cell: ({ row }) => (
+              <div className="flex justify-end gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    openEdit(row.original)
+                  }}
+                  aria-label="Düzenle"
+                >
+                  <Pencil className="size-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  disabled={row.original.isSystem}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (confirm(`"${row.original.name}" rolü silinsin mi?`))
+                      deleteMutation.mutate(row.original.id)
+                  }}
+                  aria-label="Sil"
+                >
+                  <Trash2 className="size-4 text-destructive" />
+                </Button>
+              </div>
+            ),
+          } as ColumnDef<RoleDto>,
+        ]
+      : []),
+  ]
+
   return (
     <PermissionRequired permission={IamPermissions.rolesRead}>
     <PageWrapper>
-      <PageHeader
-        title="Roller"
-        description="Rolleri ve izinlerini yönetin. Her rol bir modüle aittir."
-        actions={
+      <DataGrid
+        gridId="iam.roles"
+        data={roles}
+        columns={columns}
+        getRowId={(r) => r.id}
+        loading={rolesQuery.isLoading}
+        onRowClick={(r) => navigate({ to: '/iam/roles/$id', params: { id: r.id } })}
+        emptyText="Rol yok."
+        toolbar={
           canWrite ? (
             <Button onClick={openCreate}>
               <Plus />
@@ -153,76 +241,6 @@ export function RolesPage() {
           ) : null
         }
       />
-
-      <div className="rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Ad</TableHead>
-              <TableHead>Modül</TableHead>
-              <TableHead>Açıklama</TableHead>
-              <TableHead>İzin</TableHead>
-              <TableHead>Tür</TableHead>
-              {canWrite ? <TableHead className="w-24 text-right">İşlem</TableHead> : null}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {roles.map((r) => (
-              <TableRow key={r.id}>
-                <TableCell>
-                  <Link
-                    to="/iam/roles/$id"
-                    params={{ id: r.id }}
-                    className="font-medium text-primary hover:underline"
-                  >
-                    {r.name}
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary">{moduleLabel(r.module)}</Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {r.description || '—'}
-                </TableCell>
-                <TableCell>{r.permissions.length}</TableCell>
-                <TableCell>
-                  {r.isSystem ? (
-                    <Badge variant="outline">Sistem</Badge>
-                  ) : (
-                    <Badge variant="info">Özel</Badge>
-                  )}
-                </TableCell>
-                {canWrite ? (
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon-sm" onClick={() => openEdit(r)} aria-label="Düzenle">
-                      <Pencil className="size-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      disabled={r.isSystem}
-                      onClick={() => {
-                        if (confirm(`"${r.name}" rolü silinsin mi?`))
-                          deleteMutation.mutate(r.id)
-                      }}
-                      aria-label="Sil"
-                    >
-                      <Trash2 className="size-4 text-destructive" />
-                    </Button>
-                  </TableCell>
-                ) : null}
-              </TableRow>
-            ))}
-            {!rolesQuery.isLoading && roles.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  Rol yok.
-                </TableCell>
-              </TableRow>
-            ) : null}
-          </TableBody>
-        </Table>
-      </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

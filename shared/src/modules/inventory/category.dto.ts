@@ -84,6 +84,8 @@ export interface CategoryDto {
   sortOrder: number
   /** The product-attribute schema for this category. */
   fieldDefs: CategoryFieldDef[]
+  /** Number of products assigned directly to this category (list/get). */
+  productCount: number
   createdAt: string
   updatedAt: string
 }

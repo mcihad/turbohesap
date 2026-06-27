@@ -29,6 +29,23 @@ export interface AppConfig {
     ttl: number
     limit: number
   }
+  /** File storage — local directory or S3 (selected by FILE_STORAGE). */
+  files: {
+    driver: 'local' | 's3'
+    /** Directory for local storage (relative to backend cwd, or absolute). */
+    localDir: string
+    /** Max upload size per file, in megabytes. */
+    maxSizeMb: number
+    s3: {
+      bucket: string
+      region: string
+      accessKeyId: string
+      secretAccessKey: string
+      /** Custom endpoint for S3-compatible stores (MinIO, R2…); empty for AWS. */
+      endpoint?: string
+      forcePathStyle: boolean
+    }
+  }
 }
 
 const DEFAULT_ACCESS_SECRET = 'dev-access-secret-change-me'
@@ -77,6 +94,19 @@ export function configuration(): AppConfig {
     throttle: {
       ttl: int(process.env.THROTTLE_TTL, 60_000),
       limit: int(process.env.THROTTLE_LIMIT, 300),
+    },
+    files: {
+      driver: process.env.FILE_STORAGE === 's3' ? 's3' : 'local',
+      localDir: process.env.FILE_LOCAL_DIR || 'storage/uploads',
+      maxSizeMb: int(process.env.FILE_MAX_SIZE_MB, 25),
+      s3: {
+        bucket: process.env.S3_BUCKET || '',
+        region: process.env.S3_REGION || 'us-east-1',
+        accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
+        secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
+        endpoint: process.env.S3_ENDPOINT || undefined,
+        forcePathStyle: bool(process.env.S3_FORCE_PATH_STYLE, false),
+      },
     },
   }
 }

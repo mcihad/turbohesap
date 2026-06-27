@@ -4,7 +4,9 @@ packages:
   - backend
   - mobile
 # @scarf/scarf is telemetry; never run its install script. unrs-resolver needs
-# its native binding built.
+# its native binding built. react-native-skia builds its native bindings during
+# the iOS/Android prebuild (used by the image editor's colour pipeline).
 allowBuilds:
   '@scarf/scarf': false
+  '@shopify/react-native-skia': true
   unrs-resolver: true

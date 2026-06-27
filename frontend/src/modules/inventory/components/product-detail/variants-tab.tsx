@@ -3,9 +3,11 @@ import { useMutation } from '@tanstack/react-query'
 import { Pencil, Sparkles, Tag, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { toApiError, type ProductDto, type ProductVariantDto } from '@turbohesap/shared'
+import { FilesPermissions, toApiError, type ProductDto, type ProductVariantDto } from '@turbohesap/shared'
 
 import { api } from '@/lib/api'
+import { useAuth } from '@/lib/auth/auth-context'
+import { FileManager } from '@/modules/files/components/file-manager'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -185,6 +187,8 @@ function VariantEditDialog({
   const [salePrice, setSalePrice] = React.useState(variant.salePrice == null ? '' : String(variant.salePrice))
   const [purchasePrice, setPurchasePrice] = React.useState(variant.purchasePrice == null ? '' : String(variant.purchasePrice))
   const [isActive, setIsActive] = React.useState(variant.isActive)
+  const { hasPermission } = useAuth()
+  const canFiles = hasPermission(FilesPermissions.write)
 
   const save = useMutation({
     mutationFn: () => {
@@ -203,11 +207,11 @@ function VariantEditDialog({
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose() }}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{variant.label || variant.code}</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-3 px-1 py-1">
+        <div className="grid max-h-[70vh] gap-3 overflow-y-auto px-1 py-1">
           <Row label="Barkod">
             <Input value={barcode} onChange={(e) => setBarcode(e.target.value)} className="font-mono" />
           </Row>
@@ -226,6 +230,10 @@ function VariantEditDialog({
             <Switch checked={isActive} onCheckedChange={setIsActive} />
             Aktif
           </label>
+          <div className="space-y-1.5 border-t pt-3">
+            <Label>Varyant görselleri</Label>
+            <FileManager entityType="ProductVariant" entityId={variant.id} kind="image" canWrite={canFiles} />
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>İptal</Button>

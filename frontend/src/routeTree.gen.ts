@@ -38,6 +38,7 @@ import { Route as AuthedIamPermissionsIndexRouteImport } from './routes/_authed/
 import { Route as AuthedSalesChannelsIdRouteImport } from './routes/_authed/sales/channels.$id'
 import { Route as AuthedOrgBranchesIdRouteImport } from './routes/_authed/org/branches.$id'
 import { Route as AuthedInventoryProductsIdRouteImport } from './routes/_authed/inventory/products.$id'
+import { Route as AuthedInventoryCategoriesIdRouteImport } from './routes/_authed/inventory/categories.$id'
 import { Route as AuthedIamUsersIdRouteImport } from './routes/_authed/iam/users.$id'
 import { Route as AuthedIamRolesIdRouteImport } from './routes/_authed/iam/roles.$id'
 import { Route as AuthedIamPermissionsKeyRouteImport } from './routes/_authed/iam/permissions.$key'
@@ -191,6 +192,12 @@ const AuthedInventoryProductsIdRoute =
     path: '/inventory/products/$id',
     getParentRoute: () => AuthedRoute,
   } as any)
+const AuthedInventoryCategoriesIdRoute =
+  AuthedInventoryCategoriesIdRouteImport.update({
+    id: '/inventory/categories/$id',
+    path: '/inventory/categories/$id',
+    getParentRoute: () => AuthedRoute,
+  } as any)
 const AuthedIamUsersIdRoute = AuthedIamUsersIdRouteImport.update({
   id: '/iam/users/$id',
   path: '/iam/users/$id',
@@ -228,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/iam/permissions/$key': typeof AuthedIamPermissionsKeyRoute
   '/iam/roles/$id': typeof AuthedIamRolesIdRoute
   '/iam/users/$id': typeof AuthedIamUsersIdRoute
+  '/inventory/categories/$id': typeof AuthedInventoryCategoriesIdRoute
   '/inventory/products/$id': typeof AuthedInventoryProductsIdRoute
   '/org/branches/$id': typeof AuthedOrgBranchesIdRoute
   '/sales/channels/$id': typeof AuthedSalesChannelsIdRoute
@@ -261,6 +269,7 @@ export interface FileRoutesByTo {
   '/iam/permissions/$key': typeof AuthedIamPermissionsKeyRoute
   '/iam/roles/$id': typeof AuthedIamRolesIdRoute
   '/iam/users/$id': typeof AuthedIamUsersIdRoute
+  '/inventory/categories/$id': typeof AuthedInventoryCategoriesIdRoute
   '/inventory/products/$id': typeof AuthedInventoryProductsIdRoute
   '/org/branches/$id': typeof AuthedOrgBranchesIdRoute
   '/sales/channels/$id': typeof AuthedSalesChannelsIdRoute
@@ -296,6 +305,7 @@ export interface FileRoutesById {
   '/_authed/iam/permissions/$key': typeof AuthedIamPermissionsKeyRoute
   '/_authed/iam/roles/$id': typeof AuthedIamRolesIdRoute
   '/_authed/iam/users/$id': typeof AuthedIamUsersIdRoute
+  '/_authed/inventory/categories/$id': typeof AuthedInventoryCategoriesIdRoute
   '/_authed/inventory/products/$id': typeof AuthedInventoryProductsIdRoute
   '/_authed/org/branches/$id': typeof AuthedOrgBranchesIdRoute
   '/_authed/sales/channels/$id': typeof AuthedSalesChannelsIdRoute
@@ -331,6 +341,7 @@ export interface FileRouteTypes {
     | '/iam/permissions/$key'
     | '/iam/roles/$id'
     | '/iam/users/$id'
+    | '/inventory/categories/$id'
     | '/inventory/products/$id'
     | '/org/branches/$id'
     | '/sales/channels/$id'
@@ -364,6 +375,7 @@ export interface FileRouteTypes {
     | '/iam/permissions/$key'
     | '/iam/roles/$id'
     | '/iam/users/$id'
+    | '/inventory/categories/$id'
     | '/inventory/products/$id'
     | '/org/branches/$id'
     | '/sales/channels/$id'
@@ -398,6 +410,7 @@ export interface FileRouteTypes {
     | '/_authed/iam/permissions/$key'
     | '/_authed/iam/roles/$id'
     | '/_authed/iam/users/$id'
+    | '/_authed/inventory/categories/$id'
     | '/_authed/inventory/products/$id'
     | '/_authed/org/branches/$id'
     | '/_authed/sales/channels/$id'
@@ -621,6 +634,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedInventoryProductsIdRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/inventory/categories/$id': {
+      id: '/_authed/inventory/categories/$id'
+      path: '/inventory/categories/$id'
+      fullPath: '/inventory/categories/$id'
+      preLoaderRoute: typeof AuthedInventoryCategoriesIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/iam/users/$id': {
       id: '/_authed/iam/users/$id'
       path: '/iam/users/$id'
@@ -665,6 +685,7 @@ interface AuthedRouteChildren {
   AuthedIamPermissionsKeyRoute: typeof AuthedIamPermissionsKeyRoute
   AuthedIamRolesIdRoute: typeof AuthedIamRolesIdRoute
   AuthedIamUsersIdRoute: typeof AuthedIamUsersIdRoute
+  AuthedInventoryCategoriesIdRoute: typeof AuthedInventoryCategoriesIdRoute
   AuthedInventoryProductsIdRoute: typeof AuthedInventoryProductsIdRoute
   AuthedOrgBranchesIdRoute: typeof AuthedOrgBranchesIdRoute
   AuthedSalesChannelsIdRoute: typeof AuthedSalesChannelsIdRoute
@@ -698,6 +719,7 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedIamPermissionsKeyRoute: AuthedIamPermissionsKeyRoute,
   AuthedIamRolesIdRoute: AuthedIamRolesIdRoute,
   AuthedIamUsersIdRoute: AuthedIamUsersIdRoute,
+  AuthedInventoryCategoriesIdRoute: AuthedInventoryCategoriesIdRoute,
   AuthedInventoryProductsIdRoute: AuthedInventoryProductsIdRoute,
   AuthedOrgBranchesIdRoute: AuthedOrgBranchesIdRoute,
   AuthedSalesChannelsIdRoute: AuthedSalesChannelsIdRoute,

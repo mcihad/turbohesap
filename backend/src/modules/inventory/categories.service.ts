@@ -28,11 +28,27 @@ export class CategoriesService {
     const rows = await this.categories.find({
       order: { sortOrder: 'ASC', name: 'ASC' },
     })
-    return rows.map(toCategoryDto)
+    const counts = await this.productCounts()
+    return rows.map((r) => toCategoryDto(r, counts.get(r.id) ?? 0))
   }
 
   async get(id: string): Promise<CategoryDto> {
-    return toCategoryDto(await this.findOrFail(id))
+    const c = await this.findOrFail(id)
+    return toCategoryDto(c, await this.products.count({ where: { categoryId: id } }))
+  }
+
+  // Direct product count per category (one grouped query).
+  private async productCounts(): Promise<Map<string, number>> {
+    const rows = await this.products
+      .createQueryBuilder('p')
+      .select('p.categoryId', 'cid')
+      .addSelect('COUNT(*)', 'cnt')
+      .where('p.categoryId IS NOT NULL')
+      .groupBy('p.categoryId')
+      .getRawMany<{ cid: string; cnt: string }>()
+    const m = new Map<string, number>()
+    for (const r of rows) m.set(r.cid, Number(r.cnt))
+    return m
   }
 
   async create(dto: CreateCategoryDto): Promise<CategoryDto> {
@@ -79,7 +95,8 @@ export class CategoriesService {
       category.fieldDefs = normalizeFieldDefs(dto.fieldDefs)
     }
 
-    return toCategoryDto(await this.categories.save(category))
+    const saved = await this.categories.save(category)
+    return toCategoryDto(saved, await this.products.count({ where: { categoryId: id } }))
   }
 
   async remove(id: string): Promise<void> {
@@ -132,7 +149,7 @@ function normalizeFieldDefs(defs?: CategoryFieldDef[]): CategoryFieldDef[] {
   }))
 }
 
-export function toCategoryDto(c: Category): CategoryDto {
+export function toCategoryDto(c: Category, productCount = 0): CategoryDto {
   return {
     id: c.id,
     parentId: c.parentId,
@@ -142,6 +159,7 @@ export function toCategoryDto(c: Category): CategoryDto {
     imageUrl: c.imageUrl,
     isActive: c.isActive,
     sortOrder: c.sortOrder,
+    productCount,
     fieldDefs: (c.fieldDefs ?? []).slice().sort(
       (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0),
     ),

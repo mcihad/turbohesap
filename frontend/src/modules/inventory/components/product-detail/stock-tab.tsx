@@ -7,6 +7,7 @@ import { OrgPermissions, toApiError, type ProductDto } from '@turbohesap/shared'
 
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth/auth-context'
+import { formatDateTime } from '@/lib/datetime'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,14 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { DataGrid, type ColumnDef } from '@/components/data-grid'
+import type { ProductStockDto } from '@turbohesap/shared'
 
 const NONE = '__none__'
 
@@ -70,6 +65,76 @@ export function StockTab({
   const rows = product.stock ?? []
   const total = rows.length ? rows.reduce((s, r) => s + r.quantity, 0) : product.quantity
 
+  const columns: ColumnDef<ProductStockDto>[] = [
+    {
+      id: 'variant',
+      header: 'Varyant',
+      size: 200,
+      enableGrouping: true,
+      accessorFn: (s) => s.variantLabel ?? 'Tüm ürün',
+      cell: ({ row }) =>
+        row.original.variantLabel ? (
+          <span className="font-medium">{row.original.variantLabel}</span>
+        ) : (
+          <span className="text-muted-foreground">Tüm ürün</span>
+        ),
+    },
+    {
+      id: 'branch',
+      header: 'Şube',
+      size: 180,
+      enableGrouping: true,
+      accessorFn: (s) => s.branch?.name ?? 'Genel',
+      cell: ({ row }) =>
+        row.original.branch?.name ?? <span className="text-muted-foreground">Genel</span>,
+    },
+    {
+      id: 'branchCode',
+      header: 'Şube kodu',
+      size: 120,
+      accessorFn: (s) => s.branch?.code ?? '',
+      cell: ({ row }) =>
+        row.original.branch?.code ? (
+          <span className="font-mono text-xs text-muted-foreground">{row.original.branch.code}</span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
+      id: 'quantity',
+      accessorKey: 'quantity',
+      header: 'Miktar',
+      size: 120,
+      cell: ({ row }) => (
+        <span className="tabular-nums">
+          {row.original.quantity}
+          {product.unit ? <span className="ml-1 text-xs text-muted-foreground">{product.unit}</span> : null}
+        </span>
+      ),
+    },
+    {
+      id: 'updatedAt',
+      accessorKey: 'updatedAt',
+      header: 'Güncellenme',
+      size: 160,
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground">{formatDateTime(row.original.updatedAt)}</span>
+      ),
+    },
+    ...(canStock
+      ? [{
+          id: 'actions', header: '', size: 60, enableSorting: false, enableHiding: false, enableColumnFilter: false, enableGrouping: false,
+          cell: ({ row }) => (
+            <div className="flex justify-end">
+              <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); remove.mutate(row.original.id) }} aria-label="Sil">
+                <Trash2 className="size-4 text-destructive" />
+              </Button>
+            </div>
+          ),
+        } as ColumnDef<ProductStockDto>]
+      : []),
+  ]
+
   return (
     <div className="space-y-4">
       {canStock ? (
@@ -105,44 +170,14 @@ export function StockTab({
         </div>
       ) : null}
 
-      <div className="rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Varyant</TableHead>
-              <TableHead>Şube</TableHead>
-              <TableHead className="text-right">Miktar</TableHead>
-              {canStock ? <TableHead className="w-14 text-right">İşlem</TableHead> : null}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((s) => (
-              <TableRow key={s.id}>
-                <TableCell className="font-medium">{s.variantLabel || <span className="text-muted-foreground">Tüm ürün</span>}</TableCell>
-                <TableCell>{s.branch?.name || <span className="text-muted-foreground">Genel</span>}</TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {s.quantity}
-                  {product.unit ? <span className="ml-1 text-xs text-muted-foreground">{product.unit}</span> : null}
-                </TableCell>
-                {canStock ? (
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon-sm" onClick={() => remove.mutate(s.id)} aria-label="Sil">
-                      <Trash2 className="size-4 text-destructive" />
-                    </Button>
-                  </TableCell>
-                ) : null}
-              </TableRow>
-            ))}
-            {rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={canStock ? 4 : 3} className="text-center text-muted-foreground">
-                  Henüz stok kaydı yok.
-                </TableCell>
-              </TableRow>
-            ) : null}
-          </TableBody>
-        </Table>
-      </div>
+      <DataGrid
+        gridId="inventory.stock"
+        data={rows}
+        columns={columns}
+        getRowId={(s) => s.id}
+        emptyText="Henüz stok kaydı yok."
+        pageSize={25}
+      />
 
       <p className="text-right text-sm text-muted-foreground">
         Toplam stok: <span className="font-medium text-foreground tabular-nums">{total}</span>

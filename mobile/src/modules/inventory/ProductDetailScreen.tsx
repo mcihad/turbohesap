@@ -5,6 +5,7 @@ import * as React from 'react'
 import { View } from 'react-native'
 
 import {
+  FilesPermissions,
   InventoryPermissions,
   IamPermissions,
   type CategoryFieldDef,
@@ -25,6 +26,7 @@ import {
   Section,
   Skeleton,
 } from '../../components'
+import { ImageManager, QuickImageAdd } from '../../components/image'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
 import { formatDate, formatDateTime } from '../../lib/datetime'
@@ -47,6 +49,7 @@ export function ProductDetailScreen() {
   const canWrite = hasPermission(InventoryPermissions.productsWrite)
   const canDelete = hasPermission(InventoryPermissions.productsDelete)
   const canAudit = hasPermission(IamPermissions.auditRead)
+  const canFiles = hasPermission(FilesPermissions.write)
   const id = String(nav.current.params?.id ?? '')
   const product = useAsync(() => api.inventory.products.get(id), [id], {
     enabled: hasPermission(InventoryPermissions.productsRead) && !!id,
@@ -125,6 +128,7 @@ export function ProductDetailScreen() {
           // the web product detail tabs.
           const tabs: DetailTab[] = [
             { value: 'genel', label: 'Genel', icon: 'info' },
+            { value: 'medya', label: 'Medya', icon: 'image' },
             ...(attrGroups.length ? [{ value: 'ozellikler', label: 'Özellikler', icon: 'list' } as DetailTab] : []),
             ...(p.hasVariants ? [{ value: 'varyantlar', label: `Varyantlar (${p.variantCount})`, icon: 'layers' } as DetailTab] : []),
             ...(p.trackStock ? [{ value: 'stok', label: 'Stok', icon: 'archive' } as DetailTab] : []),
@@ -139,6 +143,10 @@ export function ProductDetailScreen() {
 
               {active === 'genel' ? (
                 <>
+                  <Card style={{ marginBottom: t.spacing[3] }}>
+                    <QuickImageAdd entityType="Product" entityId={p.id} canWrite={canFiles} />
+                  </Card>
+
                   <Section title="Genel">
                     <Card style={{ gap: t.spacing[4] }}>
                       <View style={{ flexDirection: 'row', gap: t.spacing[1.5] }}>
@@ -198,6 +206,31 @@ export function ProductDetailScreen() {
                     />
                   ) : null}
                 </>
+              ) : null}
+
+              {active === 'medya' ? (
+                <Section title="Görseller">
+                  <Card>
+                    <ImageManager
+                      entityType="Product"
+                      entityId={p.id}
+                      canWrite={canFiles}
+                      title="Ürün görselleri"
+                    />
+                  </Card>
+                  {p.hasVariants
+                    ? (p.variants ?? []).map((v) => (
+                        <Card key={v.id} style={{ marginTop: t.spacing[3] }}>
+                          <ImageManager
+                            entityType="ProductVariant"
+                            entityId={v.id}
+                            canWrite={canFiles}
+                            title={`Varyant · ${v.label || v.code}`}
+                          />
+                        </Card>
+                      ))
+                    : null}
+                </Section>
               ) : null}
 
               {active === 'ozellikler' ? (

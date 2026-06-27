@@ -1,7 +1,7 @@
 import * as React from 'react'
-import { Link } from '@tanstack/react-router'
+import { useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Boxes, Layers, Pencil, Plus, Search, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { Layers, Pencil, Plus, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -25,18 +25,10 @@ import { PermissionRequired } from '@/lib/auth/permission-gate'
 import { PageWrapper } from '@/components/layout/page'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { DataGrid, type ColumnDef } from '@/components/data-grid'
 import { ProductFormDialog } from '../components/product-form-dialog'
 import { AdvancedFilterPanel } from '../components/advanced-filter-panel'
-import { money } from '../labels'
+import { money, productTypeLabel } from '../labels'
 
 const PANEL_DEFAULT = 340
 const PANEL_MIN = 280
@@ -44,6 +36,7 @@ const PANEL_MAX = 560
 
 export function ProductsPage() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
   const { hasPermission } = useAuth()
   const canWrite = hasPermission(InventoryPermissions.productsWrite)
   const canDelete = hasPermission(InventoryPermissions.productsDelete)
@@ -143,125 +136,87 @@ export function ProductsPage() {
 
   const advCount = advancedFilterCount(filters)
   const anyFilter = !!filters.search.trim() || advCount > 0
-  const colSpan = canWrite || canDelete ? 7 : 6
+
+  // All stock-card fields as grid columns (users hide/reorder/pin/persist).
+  const columns: ColumnDef<ProductDto>[] = [
+    { id: 'code', accessorKey: 'code', header: 'Kod', size: 120, cell: ({ row }) => <span className="font-mono text-xs">{row.original.code}</span> },
+    {
+      id: 'name', accessorKey: 'name', header: 'Ad', size: 240,
+      cell: ({ row }) => (
+        <span className="inline-flex items-center gap-1.5 font-medium">
+          {row.original.name}
+          {row.original.hasVariants ? <Badge variant="outline" className="gap-1 px-1.5 py-0 text-2xs font-normal"><Layers className="size-3" />{row.original.variantCount}</Badge> : null}
+        </span>
+      ),
+    },
+    { id: 'category', accessorFn: (p) => p.category?.name ?? '', header: 'Kategori', size: 160, enableGrouping: true, cell: ({ row }) => row.original.category ? <Badge variant="secondary">{row.original.category.name}</Badge> : <span className="text-muted-foreground">—</span> },
+    { id: 'type', accessorKey: 'type', header: 'Tür', size: 120, enableGrouping: true, cell: ({ row }) => productTypeLabel(row.original.type) },
+    { id: 'brand', accessorKey: 'brand', header: 'Marka', size: 130, enableGrouping: true, cell: ({ row }) => row.original.brand || '—' },
+    { id: 'barcode', accessorKey: 'barcode', header: 'Barkod', size: 140, cell: ({ row }) => <span className="font-mono text-xs text-muted-foreground">{row.original.barcode || '—'}</span> },
+    { id: 'unit', accessorKey: 'unit', header: 'Birim', size: 90, cell: ({ row }) => row.original.unit || '—' },
+    { id: 'salePrice', accessorKey: 'salePrice', header: 'Satış', size: 120, cell: ({ row }) => <span className="tabular-nums">{money(row.original.salePrice, row.original.currency)}</span> },
+    { id: 'purchasePrice', accessorKey: 'purchasePrice', header: 'Alış', size: 120, cell: ({ row }) => <span className="tabular-nums">{money(row.original.purchasePrice, row.original.currency)}</span> },
+    { id: 'taxRate', accessorKey: 'taxRate', header: 'KDV', size: 80, cell: ({ row }) => row.original.taxRate == null ? '—' : `%${row.original.taxRate}` },
+    { id: 'currency', accessorKey: 'currency', header: 'Döviz', size: 80, enableGrouping: true },
+    { id: 'totalStock', accessorKey: 'totalStock', header: 'Stok', size: 110, cell: ({ row }) => row.original.trackStock ? <span className={`tabular-nums ${row.original.totalStock <= row.original.minQuantity ? 'text-destructive' : ''}`}>{row.original.totalStock}{row.original.unit ? ` ${row.original.unit}` : ''}</span> : <span className="text-muted-foreground">—</span> },
+    { id: 'minQuantity', accessorKey: 'minQuantity', header: 'Min', size: 80, cell: ({ row }) => <span className="tabular-nums">{row.original.minQuantity}</span> },
+    { id: 'weight', accessorKey: 'weight', header: 'Ağırlık', size: 100, cell: ({ row }) => row.original.weight == null ? '—' : `${row.original.weight} kg` },
+    { id: 'isActive', accessorKey: 'isActive', header: 'Durum', size: 100, enableGrouping: true, cell: ({ row }) => <Badge variant={row.original.isActive ? 'success' : 'outline'}>{row.original.isActive ? 'Aktif' : 'Pasif'}</Badge> },
+    ...(canWrite || canDelete
+      ? [{
+          id: 'actions', header: '', size: 90, enableSorting: false, enableHiding: false, enableColumnFilter: false, enableGrouping: false,
+          cell: ({ row }) => (
+            <div className="flex justify-end gap-1">
+              {canWrite ? <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); setEditing(row.original); setOpen(true) }} aria-label="Düzenle"><Pencil className="size-4" /></Button> : null}
+              {canDelete ? <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); if (confirm(`"${row.original.name}" silinsin mi?`)) deleteMutation.mutate(row.original.id) }} aria-label="Sil"><Trash2 className="size-4 text-destructive" /></Button> : null}
+            </div>
+          ),
+        } as ColumnDef<ProductDto>]
+      : []),
+  ]
 
   return (
     <PermissionRequired permission={InventoryPermissions.productsRead}>
       <PageWrapper className="flex h-full flex-col gap-3">
-        {/* Toolbar — search only; filtering lives in the side panel */}
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <div className="relative min-w-[200px] flex-1 sm:max-w-md">
-            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={filters.search}
-              onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-              placeholder="Ürün adı, açıklama veya barkod…"
-              className="pl-8"
-            />
-          </div>
-          <div className="ml-auto flex items-center gap-2">
-            <Button variant={panelWidth > 0 ? 'default' : 'outline'} onClick={togglePanel} className="gap-2">
-              <SlidersHorizontal className="size-4" />
-              <span className="hidden sm:inline">Filtrele</span>
-              {advCount ? <Badge variant="secondary" className="px-1.5">{advCount}</Badge> : null}
-            </Button>
-            {canWrite ? (
-              <Button onClick={() => { setEditing(null); setOpen(true) }}>
-                <Plus />
-                <span className="hidden sm:inline">Yeni ürün</span>
-              </Button>
-            ) : null}
-          </div>
-        </div>
-
-        {/* Result meta */}
-        <div className="flex shrink-0 items-center justify-between text-sm text-muted-foreground">
-          <span>
-            {filtered.length} ürün
-            {filtered.length !== products.length ? ` · ${products.length} içinde` : ''}
-          </span>
-          {anyFilter ? (
-            <Button variant="ghost" size="sm" onClick={() => setFilters(EMPTY_PRODUCT_FILTERS)}>
-              Filtreleri temizle
-            </Button>
-          ) : null}
-        </div>
-
-        {/* Body — table (scrolls) + filter panel; both fill down to the footer. */}
+        {/* Body — table (toolbar fixed, body scrolls) + filter panel. */}
         <div className="flex min-h-0 flex-1 items-stretch gap-0">
-          <div className="min-w-0 flex-1 overflow-hidden">
-            <div className="h-full overflow-auto rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Kod</TableHead>
-                    <TableHead>Ad</TableHead>
-                    <TableHead>Kategori</TableHead>
-                    <TableHead className="text-right">Satış</TableHead>
-                    <TableHead className="text-right">Stok</TableHead>
-                    <TableHead>Durum</TableHead>
-                    {canWrite || canDelete ? <TableHead className="w-24 text-right">İşlem</TableHead> : null}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((p) => (
-                    <TableRow key={p.id}>
-                      <TableCell className="font-mono text-xs">{p.code}</TableCell>
-                      <TableCell className="font-medium">
-                        <Link
-                          to="/inventory/products/$id"
-                          params={{ id: p.id }}
-                          className="inline-flex items-center gap-1.5 hover:underline"
-                        >
-                          {p.name}
-                          {p.hasVariants ? (
-                            <Badge variant="outline" className="gap-1 px-1.5 py-0 text-2xs font-normal">
-                              <Layers className="size-3" />
-                              {p.variantCount}
-                            </Badge>
-                          ) : null}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{p.category ? <Badge variant="secondary">{p.category.name}</Badge> : <span className="text-muted-foreground">—</span>}</TableCell>
-                      <TableCell className="text-right tabular-nums">{money(p.salePrice, p.currency)}</TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {p.trackStock ? (
-                          <>
-                            <span className={p.totalStock <= p.minQuantity ? 'text-destructive' : ''}>{p.totalStock}</span>
-                            {p.unit ? <span className="ml-1 text-xs text-muted-foreground">{p.unit}</span> : null}
-                          </>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell><Badge variant={p.isActive ? 'success' : 'outline'}>{p.isActive ? 'Aktif' : 'Pasif'}</Badge></TableCell>
-                      {canWrite || canDelete ? (
-                        <TableCell className="text-right">
-                          {canWrite ? (
-                            <Button variant="ghost" size="icon-sm" onClick={() => { setEditing(p); setOpen(true) }} aria-label="Düzenle">
-                              <Pencil className="size-4" />
-                            </Button>
-                          ) : null}
-                          {canDelete ? (
-                            <Button variant="ghost" size="icon-sm" onClick={() => { if (confirm(`"${p.name}" silinsin mi?`)) deleteMutation.mutate(p.id) }} aria-label="Sil">
-                              <Trash2 className="size-4 text-destructive" />
-                            </Button>
-                          ) : null}
-                        </TableCell>
-                      ) : null}
-                    </TableRow>
-                  ))}
-                  {!productsQuery.isLoading && filtered.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={colSpan} className="py-10 text-center text-muted-foreground">
-                        <Boxes className="mx-auto mb-2 size-6 opacity-40" />
-                        {anyFilter ? 'Filtreyle eşleşen ürün yok.' : 'Ürün yok.'}
-                      </TableCell>
-                    </TableRow>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <DataGrid
+              fillHeight
+              gridId="inventory.products"
+              data={filtered}
+              columns={columns}
+              getRowId={(p) => p.id}
+              loading={productsQuery.isLoading}
+              onRowClick={(p) => navigate({ to: '/inventory/products/$id', params: { id: p.id } })}
+              emptyText={anyFilter ? 'Filtreyle eşleşen ürün yok.' : 'Ürün yok.'}
+              search={{
+                value: filters.search,
+                onChange: (v) => setFilters((f) => ({ ...f, search: v })),
+                placeholder: 'Ürün adı, açıklama veya barkod…',
+              }}
+              toolbar={
+                <>
+                  {anyFilter ? (
+                    <Button variant="ghost" size="sm" onClick={() => setFilters(EMPTY_PRODUCT_FILTERS)} className="gap-1.5">
+                      <X className="size-4" />
+                      <span className="hidden sm:inline">Filtreleri temizle</span>
+                    </Button>
                   ) : null}
-                </TableBody>
-              </Table>
-            </div>
+                  <Button variant={panelWidth > 0 ? 'default' : 'outline'} size="sm" onClick={togglePanel} className="gap-1.5">
+                    <SlidersHorizontal className="size-4" />
+                    <span className="hidden sm:inline">Gelişmiş filtre</span>
+                    {advCount ? <Badge variant="secondary" className="px-1.5">{advCount}</Badge> : null}
+                  </Button>
+                  {canWrite ? (
+                    <Button size="sm" onClick={() => { setEditing(null); setOpen(true) }}>
+                      <Plus />
+                      <span className="hidden sm:inline">Yeni ürün</span>
+                    </Button>
+                  ) : null}
+                </>
+              }
+            />
           </div>
 
           {/* Drag handle (splitter) — drag left to open/grow, right to close. */}

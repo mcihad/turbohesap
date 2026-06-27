@@ -5,7 +5,7 @@
 import * as React from 'react'
 import { Image, Pressable, View } from 'react-native'
 
-import { InventoryPermissions, IamPermissions } from '@turbohesap/shared'
+import { FilesPermissions, InventoryPermissions, IamPermissions } from '@turbohesap/shared'
 
 import {
   Badge,
@@ -22,6 +22,7 @@ import {
   Skeleton,
   Text,
 } from '../../components'
+import { ImageManager } from '../../components/image'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
 import { useAsync } from '../../lib/use-async'
@@ -36,6 +37,7 @@ export function CategoryDetailScreen() {
   const { hasPermission } = useAuth()
   const canWrite = hasPermission(InventoryPermissions.categoriesWrite)
   const canAudit = hasPermission(IamPermissions.auditRead)
+  const canFiles = hasPermission(FilesPermissions.write)
   const id = String(nav.current.params?.id ?? '')
   const category = useAsync(() => api.inventory.categories.get(id), [id], {
     enabled: hasPermission(InventoryPermissions.categoriesRead) && !!id,
@@ -116,6 +118,17 @@ export function CategoryDetailScreen() {
               </FieldGrid>
             ) : null}
           </Card>
+
+          <Section title="Görseller">
+            <Card>
+              <ImageManager
+                entityType="Category"
+                entityId={c.id}
+                canWrite={canFiles}
+                title="Kategori görselleri"
+              />
+            </Card>
+          </Section>
 
           <Section
             title={`Ürün alanları (${c.fieldDefs.length})`}

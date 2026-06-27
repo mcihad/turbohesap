@@ -12,7 +12,7 @@ import {
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth/auth-context'
 import { PermissionRequired } from '@/lib/auth/permission-gate'
-import { PageHeader, PageWrapper } from '@/components/layout/page'
+import { PageWrapper } from '@/components/layout/page'
 import {
   Accordion,
   AccordionContent,
@@ -32,14 +32,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { DataGrid, type ColumnDef } from '@/components/data-grid'
 
 interface ItemForm {
   list: string
@@ -90,21 +83,97 @@ export function LookupsPage() {
     return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]))
   }, [items])
 
+  const columns = React.useMemo<ColumnDef<LookupItemDto, unknown>[]>(
+    () => [
+      {
+        id: 'value',
+        accessorKey: 'value',
+        header: 'Değer',
+        cell: ({ row }) => <span className="font-medium">{row.original.value}</span>,
+      },
+      {
+        id: 'key',
+        accessorKey: 'key',
+        header: 'Anahtar',
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-muted-foreground">{row.original.key}</span>
+        ),
+      },
+      {
+        id: 'sortOrder',
+        accessorKey: 'sortOrder',
+        header: 'Sıra',
+        size: 80,
+        cell: ({ row }) => (
+          <span className="block text-right tabular-nums">{row.original.sortOrder}</span>
+        ),
+      },
+      {
+        id: 'isActive',
+        accessorKey: 'isActive',
+        header: 'Durum',
+        size: 100,
+        cell: ({ row }) => (
+          <Badge variant={row.original.isActive ? 'success' : 'outline'}>
+            {row.original.isActive ? 'Aktif' : 'Pasif'}
+          </Badge>
+        ),
+      },
+      ...(canWrite
+        ? [
+            {
+              id: 'actions',
+              header: '',
+              size: 90,
+              enableSorting: false,
+              enableHiding: false,
+              enableColumnFilter: false,
+              enableGrouping: false,
+              cell: ({ row }) => (
+                <div className="flex justify-end gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setDialog({ mode: 'edit', item: row.original })
+                    }}
+                    aria-label="Düzenle"
+                  >
+                    <Pencil className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (confirm(`"${row.original.value}" silinsin mi?`))
+                        deleteMutation.mutate(row.original.id)
+                    }}
+                    aria-label="Sil"
+                  >
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                </div>
+              ),
+            } as ColumnDef<LookupItemDto, unknown>,
+          ]
+        : []),
+    ],
+    [canWrite, deleteMutation],
+  )
+
   return (
     <PermissionRequired permission={LookupsPermissions.read}>
       <PageWrapper>
-        <PageHeader
-          title="Tanım Listeleri"
-          description="Genel key/value listelerini (birim, renk vb.) topluca yönetin."
-          actions={
-            canWrite ? (
-              <Button onClick={() => setDialog({ mode: 'new-list' })}>
-                <Plus />
-                Yeni liste
-              </Button>
-            ) : null
-          }
-        />
+        <div className="mb-3 flex items-center justify-end gap-2">
+          {canWrite ? (
+            <Button onClick={() => setDialog({ mode: 'new-list' })}>
+              <Plus />
+              Yeni liste
+            </Button>
+          ) : null}
+        </div>
 
         {groups.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-20 text-center text-muted-foreground">
@@ -125,69 +194,31 @@ export function LookupsPage() {
                   </span>
                 </AccordionTrigger>
                 <AccordionContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Değer</TableHead>
-                        <TableHead>Anahtar</TableHead>
-                        <TableHead className="w-16 text-right">Sıra</TableHead>
-                        <TableHead className="w-20">Durum</TableHead>
-                        {canWrite ? (
-                          <TableHead className="w-24 text-right">İşlem</TableHead>
-                        ) : null}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {listItems
-                        .slice()
-                        .sort((a, b) => a.sortOrder - b.sortOrder || a.value.localeCompare(b.value))
-                        .map((item) => (
-                          <TableRow key={item.id}>
-                            <TableCell className="font-medium">{item.value}</TableCell>
-                            <TableCell className="font-mono text-xs text-muted-foreground">
-                              {item.key}
-                            </TableCell>
-                            <TableCell className="text-right tabular-nums">
-                              {item.sortOrder}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant={item.isActive ? 'success' : 'outline'}>
-                                {item.isActive ? 'Aktif' : 'Pasif'}
-                              </Badge>
-                            </TableCell>
-                            {canWrite ? (
-                              <TableCell className="text-right">
-                                <Button variant="ghost" size="icon-sm" onClick={() => setDialog({ mode: 'edit', item })} aria-label="Düzenle">
-                                  <Pencil className="size-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon-sm"
-                                  onClick={() => {
-                                    if (confirm(`"${item.value}" silinsin mi?`))
-                                      deleteMutation.mutate(item.id)
-                                  }}
-                                  aria-label="Sil"
-                                >
-                                  <Trash2 className="size-4 text-destructive" />
-                                </Button>
-                              </TableCell>
-                            ) : null}
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                  {canWrite ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-3"
-                      onClick={() => setDialog({ mode: 'create', list })}
-                    >
-                      <Plus />
-                      Yeni öğe
-                    </Button>
-                  ) : null}
+                  <DataGrid
+                    gridId={`lookups.items.${list}`}
+                    data={listItems
+                      .slice()
+                      .sort(
+                        (a, b) =>
+                          a.sortOrder - b.sortOrder || a.value.localeCompare(b.value),
+                      )}
+                    columns={columns}
+                    getRowId={(row) => row.id}
+                    loading={itemsQuery.isLoading}
+                    emptyText="Öğe yok."
+                    toolbar={
+                      canWrite ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setDialog({ mode: 'create', list })}
+                        >
+                          <Plus />
+                          Yeni öğe
+                        </Button>
+                      ) : null
+                    }
+                  />
                 </AccordionContent>
               </AccordionItem>
             ))}

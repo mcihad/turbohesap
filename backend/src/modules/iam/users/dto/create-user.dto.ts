@@ -39,4 +39,9 @@ export class CreateUserDto implements CreateUserRequest {
   @IsArray()
   @IsUUID('4', { each: true })
   roleIds?: string[]
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  branchIds?: string[]
 }

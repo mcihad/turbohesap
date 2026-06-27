@@ -36,4 +36,9 @@ export class UpdateUserDto implements UpdateUserRequest {
   @IsArray()
   @IsUUID('4', { each: true })
   roleIds?: string[]
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  branchIds?: string[]
 }

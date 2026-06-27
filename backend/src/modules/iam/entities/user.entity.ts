@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm'
 
+import { Branch } from '../../org/entities/branch.entity'
 import { Role } from './role.entity'
 
 // An application user authenticated with a local username + password. Roles
@@ -42,6 +43,12 @@ export class User {
   @ManyToMany(() => Role, { eager: true })
   @JoinTable({ name: 'user_roles' })
   roles!: Role[]
+
+  // Branches this user is authorized for (org module). Eager so the DTO mapper
+  // always has them; the join table is owned here (the user side).
+  @ManyToMany(() => Branch, { eager: true })
+  @JoinTable({ name: 'user_branches' })
+  branches!: Branch[]
 
   @Column({ type: 'timestamptz', nullable: true })
   lastLoginAt!: Date | null

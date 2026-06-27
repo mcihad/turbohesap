@@ -74,7 +74,7 @@ function NavLeaf({
     <Link
       to={item.to}
       onClick={onNavigate}
-      activeOptions={{ exact: item.to === '/' }}
+      activeOptions={{ exact: item.to === '/' || !!item.exact }}
       className={cn(
         'group/leaf flex h-8 items-center gap-2.5 rounded-md px-2 text-sm text-sidebar-foreground/80 transition-colors',
         'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',

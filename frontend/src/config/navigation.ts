@@ -11,6 +11,12 @@ export interface NavItem {
   to?: string
   badge?: string
   children?: NavItem[]
+  /**
+   * Match this link's active state EXACTLY (not by path prefix). Needed for a
+   * module's dashboard link (`/<mod>`), which is otherwise a prefix of every
+   * resource route (`/<mod>/<res>`) and would stay highlighted.
+   */
+  exact?: boolean
   /** Keywords to widen search matching. */
   keywords?: string[]
   /**

@@ -1,114 +1,33 @@
+// App entry — composes the providers and renders the navigator. Mirrors the
+// web's provider stack (theme → auth → app), adapted for React Native:
+//   SafeAreaProvider → ThemeProvider → AuthProvider → RootNavigator
+// All API access flows through @turbohesap/shared (src/lib/api.ts), so this app
+// speaks the exact same contracts — and uses the same permission keys — as the
+// web frontend. See mobile_design.md for the design system.
+
 import { StatusBar } from 'expo-status-bar'
-import { useEffect, useState } from 'react'
-import {
-  Button,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native'
+import * as React from 'react'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
 
-import type { CurrentUser, HealthStatus } from '@turbohesap/shared'
+import { AuthProvider } from './src/lib/auth/auth-provider'
+import { RootNavigator } from './src/navigation/RootNavigator'
+import { ThemeProvider, useTheme } from './src/theme/theme-context'
 
-import { api } from './src/lib/api'
-import { clearTokens, loadTokens, saveTokens } from './src/lib/tokens'
-
-// Minimal demo screen proving the mobile app talks to the backend through the
-// SAME @turbohesap/shared contracts as the web frontend: a health check and a
-// local username/password login. Replace with real navigation as the app grows.
 export default function App() {
-  const [health, setHealth] = useState<HealthStatus | null>(null)
-  const [user, setUser] = useState<CurrentUser | null>(null)
-  const [username, setUsername] = useState('admin')
-  const [password, setPassword] = useState('Admin123!')
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    api.health.getHealth().then(setHealth).catch(() => setHealth(null))
-    loadTokens().then((t) => {
-      if (t) api.auth.me().then(setUser).catch(() => undefined)
-    })
-  }, [])
-
-  async function signIn() {
-    setError(null)
-    try {
-      const res = await api.auth.login(username, password)
-      const { user: u, ...tokens } = res
-      await saveTokens(tokens)
-      setUser(u)
-    } catch {
-      setError('Giriş başarısız')
-    }
-  }
-
-  async function signOut() {
-    const t = await loadTokens()
-    if (t) await api.auth.logout(t.refreshToken).catch(() => undefined)
-    await clearTokens()
-    setUser(null)
-  }
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>TurboHesap Mobile</Text>
-      <Text style={styles.muted}>@turbohesap/shared · same contracts as web</Text>
-
-      <Text style={styles.row}>
-        API: {health ? health.status : 'unreachable'}
-      </Text>
-
-      {user ? (
-        <View style={styles.block}>
-          <Text style={styles.label}>Signed in as {user.username}</Text>
-          <Text style={styles.muted}>roles: {user.roles.join(', ') || '—'}</Text>
-          <Button title="Sign out" onPress={signOut} />
-        </View>
-      ) : (
-        <View style={styles.block}>
-          <TextInput
-            style={styles.input}
-            placeholder="username"
-            autoCapitalize="none"
-            value={username}
-            onChangeText={setUsername}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="password"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-          <Button title="Sign in" onPress={signIn} />
-        </View>
-      )}
-
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <ThemedStatusBar />
+          <RootNavigator />
+        </AuthProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  title: { fontSize: 22, fontWeight: '600' },
-  muted: { color: '#666', marginTop: 4 },
-  row: { marginTop: 16 },
-  block: { marginTop: 20, width: '100%', maxWidth: 320, gap: 10 },
-  label: { fontWeight: '600' },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  error: { color: '#c00' },
-})
+// Status bar icons follow the active scheme (dark icons on light, vice-versa).
+function ThemedStatusBar() {
+  const theme = useTheme()
+  return <StatusBar style={theme.scheme === 'dark' ? 'light' : 'dark'} />
+}

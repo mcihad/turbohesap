@@ -1,16 +1,22 @@
 import type {
   AuditLogChange,
   AuditLogDto,
+  BranchSummary,
   CurrentUser,
   ErrorLogDto,
   RoleDto,
   UserDto,
 } from '@turbohesap/shared'
 
+import type { Branch } from '../org/entities/branch.entity'
 import type { AuditLog } from './entities/audit-log.entity'
 import type { ErrorLog } from './entities/error-log.entity'
 import type { Role } from './entities/role.entity'
 import type { User } from './entities/user.entity'
+
+export function toBranchSummary(b: Branch): BranchSummary {
+  return { id: b.id, code: b.code, name: b.name, city: b.city }
+}
 
 export function toRoleDto(role: Role): RoleDto {
   return {
@@ -34,6 +40,7 @@ export function toUserDto(user: User): UserDto {
     lastName: user.lastName,
     isActive: user.isActive,
     roles: (user.roles ?? []).map(toRoleDto),
+    branches: (user.branches ?? []).map(toBranchSummary),
     lastLoginAt: user.lastLoginAt ? user.lastLoginAt.toISOString() : null,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),

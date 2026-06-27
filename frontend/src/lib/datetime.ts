@@ -5,11 +5,18 @@ const dateTimeFmt = new Intl.DateTimeFormat('tr-TR', {
   timeStyle: 'short',
 })
 
+const dateFmt = new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium' })
+
 const relFmt = new Intl.RelativeTimeFormat('tr', { numeric: 'auto' })
 
 /** Absolute, localized date-time, e.g. "24 Haz 2026 14:32". */
 export function formatDateTime(iso: string | Date): string {
   return dateTimeFmt.format(typeof iso === 'string' ? new Date(iso) : iso)
+}
+
+/** Absolute, localized date (no time), e.g. "24 Haz 2026". */
+export function formatDate(iso: string | Date): string {
+  return dateFmt.format(typeof iso === 'string' ? new Date(iso) : iso)
 }
 
 /** Relative time, e.g. "2 saat önce" — falls back to absolute past ~30 days. */

@@ -9,6 +9,7 @@ import * as bcrypt from 'bcryptjs'
 
 import type { UserDto } from '@turbohesap/shared'
 
+import { Branch } from '../../org/entities/branch.entity'
 import { Role } from '../entities/role.entity'
 import { User } from '../entities/user.entity'
 import { toUserDto } from '../mappers'
@@ -20,6 +21,7 @@ export class UsersService {
   constructor(
     @InjectRepository(User) private readonly users: Repository<User>,
     @InjectRepository(Role) private readonly roles: Repository<Role>,
+    @InjectRepository(Branch) private readonly branches: Repository<Branch>,
   ) {}
 
   async list(): Promise<UserDto[]> {
@@ -45,6 +47,7 @@ export class UsersService {
       lastName: dto.lastName ?? '',
       isActive: dto.isActive ?? true,
       roles: await this.resolveRoles(dto.roleIds),
+      branches: await this.resolveBranches(dto.branchIds),
     })
     const saved = await this.users.save(user)
     return toUserDto(await this.findOrFail(saved.id))
@@ -58,6 +61,7 @@ export class UsersService {
     if (dto.isActive !== undefined) user.isActive = dto.isActive
     if (dto.password) user.passwordHash = hash(dto.password)
     if (dto.roleIds) user.roles = await this.resolveRoles(dto.roleIds)
+    if (dto.branchIds) user.branches = await this.resolveBranches(dto.branchIds)
     await this.users.save(user)
     return toUserDto(await this.findOrFail(id))
   }
@@ -80,6 +84,15 @@ export class UsersService {
       throw new BadRequestException('one or more roleIds are invalid')
     }
     return roles
+  }
+
+  private async resolveBranches(ids?: string[]): Promise<Branch[]> {
+    if (!ids || ids.length === 0) return []
+    const branches = await this.branches.find({ where: { id: In(ids) } })
+    if (branches.length !== ids.length) {
+      throw new BadRequestException('one or more branchIds are invalid')
+    }
+    return branches
   }
 }
 

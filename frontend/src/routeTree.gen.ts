@@ -16,15 +16,28 @@ import { Route as AuthedSettingsRouteImport } from './routes/_authed/settings'
 import { Route as AuthedProfileRouteImport } from './routes/_authed/profile'
 import { Route as AuthedHelpRouteImport } from './routes/_authed/help'
 import { Route as AuthedSplatRouteImport } from './routes/_authed/$'
+import { Route as AuthedSalesIndexRouteImport } from './routes/_authed/sales/index'
+import { Route as AuthedOrgIndexRouteImport } from './routes/_authed/org/index'
+import { Route as AuthedLookupsIndexRouteImport } from './routes/_authed/lookups/index'
+import { Route as AuthedInventoryIndexRouteImport } from './routes/_authed/inventory/index'
+import { Route as AuthedIamIndexRouteImport } from './routes/_authed/iam/index'
 import { Route as AuthedComponentsIndexRouteImport } from './routes/_authed/components/index'
 import { Route as AuthedIamErrorLogsRouteImport } from './routes/_authed/iam/error-logs'
 import { Route as AuthedIamAuditLogsRouteImport } from './routes/_authed/iam/audit-logs'
 import { Route as AuthedGenelDashboardRouteImport } from './routes/_authed/genel/dashboard'
 import { Route as AuthedGenelAnalyticsRouteImport } from './routes/_authed/genel/analytics'
 import { Route as AuthedComponentsSlugRouteImport } from './routes/_authed/components/$slug'
+import { Route as AuthedSalesChannelsIndexRouteImport } from './routes/_authed/sales/channels.index'
+import { Route as AuthedOrgBranchesIndexRouteImport } from './routes/_authed/org/branches.index'
+import { Route as AuthedLookupsItemsIndexRouteImport } from './routes/_authed/lookups/items.index'
+import { Route as AuthedInventoryProductsIndexRouteImport } from './routes/_authed/inventory/products.index'
+import { Route as AuthedInventoryCategoriesIndexRouteImport } from './routes/_authed/inventory/categories.index'
 import { Route as AuthedIamUsersIndexRouteImport } from './routes/_authed/iam/users.index'
 import { Route as AuthedIamRolesIndexRouteImport } from './routes/_authed/iam/roles.index'
 import { Route as AuthedIamPermissionsIndexRouteImport } from './routes/_authed/iam/permissions.index'
+import { Route as AuthedSalesChannelsIdRouteImport } from './routes/_authed/sales/channels.$id'
+import { Route as AuthedOrgBranchesIdRouteImport } from './routes/_authed/org/branches.$id'
+import { Route as AuthedInventoryProductsIdRouteImport } from './routes/_authed/inventory/products.$id'
 import { Route as AuthedIamUsersIdRouteImport } from './routes/_authed/iam/users.$id'
 import { Route as AuthedIamRolesIdRouteImport } from './routes/_authed/iam/roles.$id'
 import { Route as AuthedIamPermissionsKeyRouteImport } from './routes/_authed/iam/permissions.$key'
@@ -63,6 +76,31 @@ const AuthedSplatRoute = AuthedSplatRouteImport.update({
   path: '/$',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedSalesIndexRoute = AuthedSalesIndexRouteImport.update({
+  id: '/sales/',
+  path: '/sales/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedOrgIndexRoute = AuthedOrgIndexRouteImport.update({
+  id: '/org/',
+  path: '/org/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedLookupsIndexRoute = AuthedLookupsIndexRouteImport.update({
+  id: '/lookups/',
+  path: '/lookups/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedInventoryIndexRoute = AuthedInventoryIndexRouteImport.update({
+  id: '/inventory/',
+  path: '/inventory/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedIamIndexRoute = AuthedIamIndexRouteImport.update({
+  id: '/iam/',
+  path: '/iam/',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const AuthedComponentsIndexRoute = AuthedComponentsIndexRouteImport.update({
   id: '/components/',
   path: '/components/',
@@ -93,6 +131,34 @@ const AuthedComponentsSlugRoute = AuthedComponentsSlugRouteImport.update({
   path: '/components/$slug',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedSalesChannelsIndexRoute =
+  AuthedSalesChannelsIndexRouteImport.update({
+    id: '/sales/channels/',
+    path: '/sales/channels/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedOrgBranchesIndexRoute = AuthedOrgBranchesIndexRouteImport.update({
+  id: '/org/branches/',
+  path: '/org/branches/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedLookupsItemsIndexRoute = AuthedLookupsItemsIndexRouteImport.update({
+  id: '/lookups/items/',
+  path: '/lookups/items/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedInventoryProductsIndexRoute =
+  AuthedInventoryProductsIndexRouteImport.update({
+    id: '/inventory/products/',
+    path: '/inventory/products/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedInventoryCategoriesIndexRoute =
+  AuthedInventoryCategoriesIndexRouteImport.update({
+    id: '/inventory/categories/',
+    path: '/inventory/categories/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
 const AuthedIamUsersIndexRoute = AuthedIamUsersIndexRouteImport.update({
   id: '/iam/users/',
   path: '/iam/users/',
@@ -107,6 +173,22 @@ const AuthedIamPermissionsIndexRoute =
   AuthedIamPermissionsIndexRouteImport.update({
     id: '/iam/permissions/',
     path: '/iam/permissions/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedSalesChannelsIdRoute = AuthedSalesChannelsIdRouteImport.update({
+  id: '/sales/channels/$id',
+  path: '/sales/channels/$id',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedOrgBranchesIdRoute = AuthedOrgBranchesIdRouteImport.update({
+  id: '/org/branches/$id',
+  path: '/org/branches/$id',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedInventoryProductsIdRoute =
+  AuthedInventoryProductsIdRouteImport.update({
+    id: '/inventory/products/$id',
+    path: '/inventory/products/$id',
     getParentRoute: () => AuthedRoute,
   } as any)
 const AuthedIamUsersIdRoute = AuthedIamUsersIdRouteImport.update({
@@ -138,12 +220,25 @@ export interface FileRoutesByFullPath {
   '/iam/audit-logs': typeof AuthedIamAuditLogsRoute
   '/iam/error-logs': typeof AuthedIamErrorLogsRoute
   '/components/': typeof AuthedComponentsIndexRoute
+  '/iam/': typeof AuthedIamIndexRoute
+  '/inventory/': typeof AuthedInventoryIndexRoute
+  '/lookups/': typeof AuthedLookupsIndexRoute
+  '/org/': typeof AuthedOrgIndexRoute
+  '/sales/': typeof AuthedSalesIndexRoute
   '/iam/permissions/$key': typeof AuthedIamPermissionsKeyRoute
   '/iam/roles/$id': typeof AuthedIamRolesIdRoute
   '/iam/users/$id': typeof AuthedIamUsersIdRoute
+  '/inventory/products/$id': typeof AuthedInventoryProductsIdRoute
+  '/org/branches/$id': typeof AuthedOrgBranchesIdRoute
+  '/sales/channels/$id': typeof AuthedSalesChannelsIdRoute
   '/iam/permissions/': typeof AuthedIamPermissionsIndexRoute
   '/iam/roles/': typeof AuthedIamRolesIndexRoute
   '/iam/users/': typeof AuthedIamUsersIndexRoute
+  '/inventory/categories/': typeof AuthedInventoryCategoriesIndexRoute
+  '/inventory/products/': typeof AuthedInventoryProductsIndexRoute
+  '/lookups/items/': typeof AuthedLookupsItemsIndexRoute
+  '/org/branches/': typeof AuthedOrgBranchesIndexRoute
+  '/sales/channels/': typeof AuthedSalesChannelsIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -158,12 +253,25 @@ export interface FileRoutesByTo {
   '/iam/audit-logs': typeof AuthedIamAuditLogsRoute
   '/iam/error-logs': typeof AuthedIamErrorLogsRoute
   '/components': typeof AuthedComponentsIndexRoute
+  '/iam': typeof AuthedIamIndexRoute
+  '/inventory': typeof AuthedInventoryIndexRoute
+  '/lookups': typeof AuthedLookupsIndexRoute
+  '/org': typeof AuthedOrgIndexRoute
+  '/sales': typeof AuthedSalesIndexRoute
   '/iam/permissions/$key': typeof AuthedIamPermissionsKeyRoute
   '/iam/roles/$id': typeof AuthedIamRolesIdRoute
   '/iam/users/$id': typeof AuthedIamUsersIdRoute
+  '/inventory/products/$id': typeof AuthedInventoryProductsIdRoute
+  '/org/branches/$id': typeof AuthedOrgBranchesIdRoute
+  '/sales/channels/$id': typeof AuthedSalesChannelsIdRoute
   '/iam/permissions': typeof AuthedIamPermissionsIndexRoute
   '/iam/roles': typeof AuthedIamRolesIndexRoute
   '/iam/users': typeof AuthedIamUsersIndexRoute
+  '/inventory/categories': typeof AuthedInventoryCategoriesIndexRoute
+  '/inventory/products': typeof AuthedInventoryProductsIndexRoute
+  '/lookups/items': typeof AuthedLookupsItemsIndexRoute
+  '/org/branches': typeof AuthedOrgBranchesIndexRoute
+  '/sales/channels': typeof AuthedSalesChannelsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -180,12 +288,25 @@ export interface FileRoutesById {
   '/_authed/iam/audit-logs': typeof AuthedIamAuditLogsRoute
   '/_authed/iam/error-logs': typeof AuthedIamErrorLogsRoute
   '/_authed/components/': typeof AuthedComponentsIndexRoute
+  '/_authed/iam/': typeof AuthedIamIndexRoute
+  '/_authed/inventory/': typeof AuthedInventoryIndexRoute
+  '/_authed/lookups/': typeof AuthedLookupsIndexRoute
+  '/_authed/org/': typeof AuthedOrgIndexRoute
+  '/_authed/sales/': typeof AuthedSalesIndexRoute
   '/_authed/iam/permissions/$key': typeof AuthedIamPermissionsKeyRoute
   '/_authed/iam/roles/$id': typeof AuthedIamRolesIdRoute
   '/_authed/iam/users/$id': typeof AuthedIamUsersIdRoute
+  '/_authed/inventory/products/$id': typeof AuthedInventoryProductsIdRoute
+  '/_authed/org/branches/$id': typeof AuthedOrgBranchesIdRoute
+  '/_authed/sales/channels/$id': typeof AuthedSalesChannelsIdRoute
   '/_authed/iam/permissions/': typeof AuthedIamPermissionsIndexRoute
   '/_authed/iam/roles/': typeof AuthedIamRolesIndexRoute
   '/_authed/iam/users/': typeof AuthedIamUsersIndexRoute
+  '/_authed/inventory/categories/': typeof AuthedInventoryCategoriesIndexRoute
+  '/_authed/inventory/products/': typeof AuthedInventoryProductsIndexRoute
+  '/_authed/lookups/items/': typeof AuthedLookupsItemsIndexRoute
+  '/_authed/org/branches/': typeof AuthedOrgBranchesIndexRoute
+  '/_authed/sales/channels/': typeof AuthedSalesChannelsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -202,12 +323,25 @@ export interface FileRouteTypes {
     | '/iam/audit-logs'
     | '/iam/error-logs'
     | '/components/'
+    | '/iam/'
+    | '/inventory/'
+    | '/lookups/'
+    | '/org/'
+    | '/sales/'
     | '/iam/permissions/$key'
     | '/iam/roles/$id'
     | '/iam/users/$id'
+    | '/inventory/products/$id'
+    | '/org/branches/$id'
+    | '/sales/channels/$id'
     | '/iam/permissions/'
     | '/iam/roles/'
     | '/iam/users/'
+    | '/inventory/categories/'
+    | '/inventory/products/'
+    | '/lookups/items/'
+    | '/org/branches/'
+    | '/sales/channels/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -222,12 +356,25 @@ export interface FileRouteTypes {
     | '/iam/audit-logs'
     | '/iam/error-logs'
     | '/components'
+    | '/iam'
+    | '/inventory'
+    | '/lookups'
+    | '/org'
+    | '/sales'
     | '/iam/permissions/$key'
     | '/iam/roles/$id'
     | '/iam/users/$id'
+    | '/inventory/products/$id'
+    | '/org/branches/$id'
+    | '/sales/channels/$id'
     | '/iam/permissions'
     | '/iam/roles'
     | '/iam/users'
+    | '/inventory/categories'
+    | '/inventory/products'
+    | '/lookups/items'
+    | '/org/branches'
+    | '/sales/channels'
   id:
     | '__root__'
     | '/_authed'
@@ -243,12 +390,25 @@ export interface FileRouteTypes {
     | '/_authed/iam/audit-logs'
     | '/_authed/iam/error-logs'
     | '/_authed/components/'
+    | '/_authed/iam/'
+    | '/_authed/inventory/'
+    | '/_authed/lookups/'
+    | '/_authed/org/'
+    | '/_authed/sales/'
     | '/_authed/iam/permissions/$key'
     | '/_authed/iam/roles/$id'
     | '/_authed/iam/users/$id'
+    | '/_authed/inventory/products/$id'
+    | '/_authed/org/branches/$id'
+    | '/_authed/sales/channels/$id'
     | '/_authed/iam/permissions/'
     | '/_authed/iam/roles/'
     | '/_authed/iam/users/'
+    | '/_authed/inventory/categories/'
+    | '/_authed/inventory/products/'
+    | '/_authed/lookups/items/'
+    | '/_authed/org/branches/'
+    | '/_authed/sales/channels/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -307,6 +467,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedSplatRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/sales/': {
+      id: '/_authed/sales/'
+      path: '/sales'
+      fullPath: '/sales/'
+      preLoaderRoute: typeof AuthedSalesIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/org/': {
+      id: '/_authed/org/'
+      path: '/org'
+      fullPath: '/org/'
+      preLoaderRoute: typeof AuthedOrgIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/lookups/': {
+      id: '/_authed/lookups/'
+      path: '/lookups'
+      fullPath: '/lookups/'
+      preLoaderRoute: typeof AuthedLookupsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/inventory/': {
+      id: '/_authed/inventory/'
+      path: '/inventory'
+      fullPath: '/inventory/'
+      preLoaderRoute: typeof AuthedInventoryIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/iam/': {
+      id: '/_authed/iam/'
+      path: '/iam'
+      fullPath: '/iam/'
+      preLoaderRoute: typeof AuthedIamIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/components/': {
       id: '/_authed/components/'
       path: '/components'
@@ -349,6 +544,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedComponentsSlugRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/sales/channels/': {
+      id: '/_authed/sales/channels/'
+      path: '/sales/channels'
+      fullPath: '/sales/channels/'
+      preLoaderRoute: typeof AuthedSalesChannelsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/org/branches/': {
+      id: '/_authed/org/branches/'
+      path: '/org/branches'
+      fullPath: '/org/branches/'
+      preLoaderRoute: typeof AuthedOrgBranchesIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/lookups/items/': {
+      id: '/_authed/lookups/items/'
+      path: '/lookups/items'
+      fullPath: '/lookups/items/'
+      preLoaderRoute: typeof AuthedLookupsItemsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/inventory/products/': {
+      id: '/_authed/inventory/products/'
+      path: '/inventory/products'
+      fullPath: '/inventory/products/'
+      preLoaderRoute: typeof AuthedInventoryProductsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/inventory/categories/': {
+      id: '/_authed/inventory/categories/'
+      path: '/inventory/categories'
+      fullPath: '/inventory/categories/'
+      preLoaderRoute: typeof AuthedInventoryCategoriesIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/iam/users/': {
       id: '/_authed/iam/users/'
       path: '/iam/users'
@@ -368,6 +598,27 @@ declare module '@tanstack/react-router' {
       path: '/iam/permissions'
       fullPath: '/iam/permissions/'
       preLoaderRoute: typeof AuthedIamPermissionsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/sales/channels/$id': {
+      id: '/_authed/sales/channels/$id'
+      path: '/sales/channels/$id'
+      fullPath: '/sales/channels/$id'
+      preLoaderRoute: typeof AuthedSalesChannelsIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/org/branches/$id': {
+      id: '/_authed/org/branches/$id'
+      path: '/org/branches/$id'
+      fullPath: '/org/branches/$id'
+      preLoaderRoute: typeof AuthedOrgBranchesIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/inventory/products/$id': {
+      id: '/_authed/inventory/products/$id'
+      path: '/inventory/products/$id'
+      fullPath: '/inventory/products/$id'
+      preLoaderRoute: typeof AuthedInventoryProductsIdRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/iam/users/$id': {
@@ -406,12 +657,25 @@ interface AuthedRouteChildren {
   AuthedIamAuditLogsRoute: typeof AuthedIamAuditLogsRoute
   AuthedIamErrorLogsRoute: typeof AuthedIamErrorLogsRoute
   AuthedComponentsIndexRoute: typeof AuthedComponentsIndexRoute
+  AuthedIamIndexRoute: typeof AuthedIamIndexRoute
+  AuthedInventoryIndexRoute: typeof AuthedInventoryIndexRoute
+  AuthedLookupsIndexRoute: typeof AuthedLookupsIndexRoute
+  AuthedOrgIndexRoute: typeof AuthedOrgIndexRoute
+  AuthedSalesIndexRoute: typeof AuthedSalesIndexRoute
   AuthedIamPermissionsKeyRoute: typeof AuthedIamPermissionsKeyRoute
   AuthedIamRolesIdRoute: typeof AuthedIamRolesIdRoute
   AuthedIamUsersIdRoute: typeof AuthedIamUsersIdRoute
+  AuthedInventoryProductsIdRoute: typeof AuthedInventoryProductsIdRoute
+  AuthedOrgBranchesIdRoute: typeof AuthedOrgBranchesIdRoute
+  AuthedSalesChannelsIdRoute: typeof AuthedSalesChannelsIdRoute
   AuthedIamPermissionsIndexRoute: typeof AuthedIamPermissionsIndexRoute
   AuthedIamRolesIndexRoute: typeof AuthedIamRolesIndexRoute
   AuthedIamUsersIndexRoute: typeof AuthedIamUsersIndexRoute
+  AuthedInventoryCategoriesIndexRoute: typeof AuthedInventoryCategoriesIndexRoute
+  AuthedInventoryProductsIndexRoute: typeof AuthedInventoryProductsIndexRoute
+  AuthedLookupsItemsIndexRoute: typeof AuthedLookupsItemsIndexRoute
+  AuthedOrgBranchesIndexRoute: typeof AuthedOrgBranchesIndexRoute
+  AuthedSalesChannelsIndexRoute: typeof AuthedSalesChannelsIndexRoute
 }
 
 const AuthedRouteChildren: AuthedRouteChildren = {
@@ -426,12 +690,25 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedIamAuditLogsRoute: AuthedIamAuditLogsRoute,
   AuthedIamErrorLogsRoute: AuthedIamErrorLogsRoute,
   AuthedComponentsIndexRoute: AuthedComponentsIndexRoute,
+  AuthedIamIndexRoute: AuthedIamIndexRoute,
+  AuthedInventoryIndexRoute: AuthedInventoryIndexRoute,
+  AuthedLookupsIndexRoute: AuthedLookupsIndexRoute,
+  AuthedOrgIndexRoute: AuthedOrgIndexRoute,
+  AuthedSalesIndexRoute: AuthedSalesIndexRoute,
   AuthedIamPermissionsKeyRoute: AuthedIamPermissionsKeyRoute,
   AuthedIamRolesIdRoute: AuthedIamRolesIdRoute,
   AuthedIamUsersIdRoute: AuthedIamUsersIdRoute,
+  AuthedInventoryProductsIdRoute: AuthedInventoryProductsIdRoute,
+  AuthedOrgBranchesIdRoute: AuthedOrgBranchesIdRoute,
+  AuthedSalesChannelsIdRoute: AuthedSalesChannelsIdRoute,
   AuthedIamPermissionsIndexRoute: AuthedIamPermissionsIndexRoute,
   AuthedIamRolesIndexRoute: AuthedIamRolesIndexRoute,
   AuthedIamUsersIndexRoute: AuthedIamUsersIndexRoute,
+  AuthedInventoryCategoriesIndexRoute: AuthedInventoryCategoriesIndexRoute,
+  AuthedInventoryProductsIndexRoute: AuthedInventoryProductsIndexRoute,
+  AuthedLookupsItemsIndexRoute: AuthedLookupsItemsIndexRoute,
+  AuthedOrgBranchesIndexRoute: AuthedOrgBranchesIndexRoute,
+  AuthedSalesChannelsIndexRoute: AuthedSalesChannelsIndexRoute,
 }
 
 const AuthedRouteWithChildren =

@@ -1,3 +1,4 @@
+import type { BranchSummary } from '../org/branch.dto'
 import type { RoleDto } from './role.dto'
 
 // Full user record returned by the IAM users API.
@@ -9,6 +10,8 @@ export interface UserDto {
   lastName: string
   isActive: boolean
   roles: RoleDto[]
+  /** Branches this user is authorized for (org module). */
+  branches: BranchSummary[]
   lastLoginAt: string | null
   createdAt: string
   updatedAt: string
@@ -34,6 +37,8 @@ export interface CreateUserRequest {
   lastName?: string
   isActive?: boolean
   roleIds?: string[]
+  /** IDs of branches the user is authorized for (org module). */
+  branchIds?: string[]
 }
 
 export interface UpdateUserRequest {
@@ -43,4 +48,5 @@ export interface UpdateUserRequest {
   lastName?: string
   isActive?: boolean
   roleIds?: string[]
+  branchIds?: string[]
 }

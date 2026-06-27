@@ -4,6 +4,7 @@ import {
   FileClock,
   IdCard,
   KeyRound,
+  LayoutDashboard,
   ShieldCheck,
   Users,
 } from 'lucide-react'
@@ -17,8 +18,11 @@ export const iamModule: AppModule = {
   key: 'iam',
   label: 'Yönetim',
   icon: ShieldCheck,
-  home: '/iam/users',
+  home: '/iam',
   nav: [
+    {
+      items: [{ title: 'Gösterge Paneli', icon: LayoutDashboard, to: '/iam', exact: true }],
+    },
     {
       label: 'Kimlik ve Yetki',
       icon: IdCard,

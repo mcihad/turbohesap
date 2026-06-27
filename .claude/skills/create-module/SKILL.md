@@ -189,17 +189,35 @@ Review the generated SQL. Without this, the new table never gets created (no
 ## 3. Frontend — the UI (`frontend/src/modules/<mod>/`)
 
 ```ts
-// module.config.ts
-import { <Icon> } from 'lucide-react'
+// module.config.ts — EVERY module's home is its dashboard (/<mod>), and its nav
+// starts with a "Gösterge Paneli" item pointing there.
+import { LayoutDashboard, <Icon> } from 'lucide-react'
 import { <Mod>Permissions } from '@turbohesap/shared'
 import type { AppModule } from '@/modules/types'
 export const <mod>Module: AppModule = {
-  key: '<mod>', label: '<Label>', icon: <Icon>, home: '/<mod>/<res>',
+  key: '<mod>', label: '<Label>', icon: <Icon>, home: '/<mod>',
   nav: [{ items: [
+    { title: 'Gösterge Paneli', icon: LayoutDashboard, to: '/<mod>' },
     { title: '<Res Label>', icon: <Icon>, to: '/<mod>/<res>', permission: <Mod>Permissions.<res>Read },
   ]}],
 }
 ```
+- **Module dashboard (required, "Gösterge Paneli"):** every module's `home` is
+  `/<mod>` — a dashboard with the module's own statistics. Build it from the
+  generic `ModuleDashboard` + a stats component:
+  ```tsx
+  // components/<mod>-stats.tsx — fetch the module's data (gated by read perms) and
+  // render <StatGrid><StatTile icon=… value=… label=… tone=…/>…</StatGrid>.
+  //   (@/components/layout/stat-tile). Copy modules/inventory/components/inventory-stats.tsx.
+  // routes/_authed/<mod>/index.tsx  → path /<mod>
+  import { createFileRoute } from '@tanstack/react-router'
+  import { ModuleDashboard } from '@/components/layout/module-dashboard'
+  import { <mod>Module } from '@/modules/<mod>/module.config'
+  import { <Mod>Stats } from '@/modules/<mod>/components/<mod>-stats'
+  export const Route = createFileRoute('/_authed/<mod>/')({
+    component: () => <ModuleDashboard module={<mod>Module} stats={<<Mod>Stats />} />,
+  })
+  ```
 - **Page** `pages/<res>-page.tsx`: data via `import { api } from '@/lib/api'` →
   `api.<mod>.<res>.list()/...` (TanStack Query,
   `enabled: hasPermission(<Mod>Permissions.<res>Read)`); wrap the return in
@@ -207,12 +225,15 @@ export const <mod>Module: AppModule = {
   with `useAuth().hasPermission(<Mod>Permissions.<res>Write)` or `<Can>`; surface
   server errors with `toApiError(e).message`. **Reuse `components.md` primitives**
   (Table, Dialog, Button…). Copy `modules/iam/pages/users-page.tsx`.
-- **Route (thin)** `frontend/src/routes/_authed/<mod>/<res>.tsx`:
+- **Route (thin)** `frontend/src/routes/_authed/<mod>/<res>.index.tsx`:
   ```tsx
   import { createFileRoute } from '@tanstack/react-router'
   import { <Res>Page } from '@/modules/<mod>/pages/<res>-page'
-  export const Route = createFileRoute('/_authed/<mod>/<res>')({ component: <Res>Page })
+  export const Route = createFileRoute('/_authed/<mod>/<res>/')({ component: <Res>Page })
   ```
+  > **Scrollable dialog bodies:** use `overflow-y-auto px-1 py-2` (the horizontal
+  > `px-1`, not `pr-1` — `overflow-y-auto` also clips the x-axis, hiding inputs'
+  > left focus ring/border). Reusable key/value choices use `<LookupSelect list=…>`.
 
 **Register (1 edit):** `frontend/src/modules/registry.ts` → import `<mod>Module`
 and add it to `APP_MODULES`.
@@ -222,13 +243,27 @@ Regenerate routes + build: `pnpm --filter @turbohesap/frontend exec vite build`
 
 ---
 
-## 4. Mobile
+## 4. Mobile (`@turbohesap/mobile`) — see **`mobile_design.md`**
 
-Nothing module-specific is required: `@turbohesap/mobile` already calls
-`createTurbohesapApi`, so `api.<mod>.<res>.*` is available the moment shared is
-rebuilt. Add a screen under `mobile/src/...` only if the module needs mobile UI
-(use the same `api.<mod>.<res>` calls; gate with the permission list from
-`api.auth.permissions()`).
+The shared client is automatic (`api.<mod>.<res>.*` works once shared is rebuilt).
+For UI, mirror the web module — the mobile nav is a **launcher → module → tabs**
+model (mobile_design.md §6):
+
+1. **`mobile/src/modules/<mod>/module.config.ts`** — a `MobileModule` with
+   `key`, `label`, Feather `icon`, `permission`, and `items` (each resource → a
+   bottom tab, with its `permission`). The launcher tile + the per-module bottom
+   **TabBar** (Panel + resources, max 5 + "…") pick it up automatically. Register
+   it in `mobile/src/modules/registry.ts` (`APP_MODULES`).
+2. **Screens** under `mobile/src/modules/<mod>/` (list / detail / form), each
+   registered by key in `mobile/src/navigation/screens.tsx`. Use `useNav()` to
+   navigate, `useAsync({ enabled: hasPermission(KEY) })` to fetch, the form kit
+   (`FormSelect`, `Checklist`, `LookupSelect`…) and `useSubmit()` to mutate. Copy
+   an existing module (e.g. `modules/inventory` or `modules/org`).
+3. **Dashboard stats (Panel):** the generic `ModuleDashboardScreen` is the Panel
+   tab. Add a `mobile/src/modules/<mod>/<Mod>Stats.tsx` (StatCards from the
+   module's data, gated by read perms) and register it in
+   `navigation/module-stats.tsx` so the same stats as web show on mobile. (A
+   module with a custom dashboard sets `dashboardScreen` on its config instead.)
 
 ---
 
@@ -269,11 +304,16 @@ permission gets `403`. The module icon appears in the left rail.
 | backend | `src/permissions.catalog.ts` | `...<MOD>_PERMISSION_DEFS` |
 | backend | `src/app.module.ts` | `<Mod>Module` in `imports` |
 | backend | `src/migrations/` | a generated migration for the new entity/table |
+| backend | `modules/iam/audit/audited-entities.ts` | `ENTITY_MODULE_MAP` entry per entity |
 | frontend | `src/modules/registry.ts` | `<mod>Module` in `APP_MODULES` |
+| frontend | `routes/_authed/<mod>/index.tsx` | dashboard route (`ModuleDashboard` + `<Mod>Stats`) |
+| mobile | `src/modules/registry.ts` + `navigation/screens.tsx` | `MobileModule` + screen keys |
+| mobile | `navigation/module-stats.tsx` | `<Mod>Stats` for the Panel dashboard |
 
 Miss one and the symptom is: route 404 (app.module), no permissions (catalog),
 client undefined (api.ts), module absent from rail (registry/app-modules),
-**table missing / query fails (no migration)**.
+**table missing / query fails (no migration)**, no dashboard (`<mod>/index` route),
+absent from mobile launcher (mobile registry/screens).
 
 ## 7. Gotchas
 - **Rebuild shared first** after editing contracts (`make build-shared` /

@@ -75,7 +75,11 @@ each other's internals; they communicate only through `@turbohesap/shared`.
 │   │   ├── health/         # GET /api/health
 │   │   └── modules/        # FEATURE MODULES → /api/<module>/<resource>
 │   │       ├── auth/       # local login, JWT access+refresh (rotation), /api/auth/*
-│   │       └── iam/        # users, roles, permissions → /api/iam/<resource>; iam.permissions.ts + seeding
+│   │       ├── iam/        # users, roles, permissions → /api/iam/<resource>; iam.permissions.ts + seeding
+│   │       ├── sales/      # sales channels → /api/sales/channels (master data; later used by products)
+│   │       ├── org/        # branches → /api/org/branches (locations; users are authorized per branch)
+│   │       ├── lookups/    # generic key/value reference lists → /api/lookups (LookupSelect consumes these)
+│   │       └── inventory/  # category TREE (+ per-category custom field schema, jsonb) + products/stock → /api/inventory/{categories,products}
 │   └── static/             # frontend build output, served by NestJS
 │       └── index.html      # tracked placeholder (overwritten by the real build)
 └── mobile/                 # @turbohesap/mobile — Expo app (src/lib/api.ts, tokens.ts)
@@ -175,8 +179,14 @@ alongside). Examples today:
   TypeORM. The backend imports the same DTOs and returns them from controllers,
   so the server and clients can never drift.
 - **Cross-module references go through DTOs** (e.g. `auth`'s `LoginResponse`
-  embeds `iam`'s `CurrentUser`). A module never imports another module's client
-  or backend code.
+  embeds `iam`'s `CurrentUser`; `iam`'s `UserDto.branches` embeds `org`'s
+  `BranchSummary`). A module never imports another module's client or backend
+  service. The one sanctioned exception is a genuine **entity relationship**: the
+  `iam` `User` entity has a `@ManyToMany` to the `org` `Branch` entity (join table
+  `user_branches`) so a user's authorized branches are a real FK, not a loose id
+  list — the backend imports the `Branch` *entity* (a data shape) for the relation
+  and its repository, but still never the `org` *service*. Set a user's branches
+  via `branchIds` on create/update (`/api/iam/users`).
 - **Per-platform config** is all that differs between web and mobile: `baseUrl`
   (`/api` on web, absolute on mobile), `getAccessToken` (localStorage /
   AsyncStorage, may be async), optional `onUnauthorized`.
@@ -417,9 +427,31 @@ UI under **Yönetim → İzleme**: `/iam/audit-logs`, `/iam/error-logs`).
   security; always mirror the key in the controller's `@RequirePermissions`.
 
 ### Mobile (`@turbohesap/mobile`)
-- Expo (React Native), same `@turbohesap/shared` contracts; `src/lib/api.ts`
-  passes an absolute `baseUrl` + AsyncStorage `getAccessToken`. Config via
-  `EXPO_PUBLIC_*` in `mobile/.env`. `metro.config.js` is monorepo-aware.
+- Expo (React Native 0.85 / React 19), same `@turbohesap/shared` contracts;
+  `src/lib/api.ts` passes an absolute `baseUrl` + AsyncStorage `getAccessToken`.
+  Config via `EXPO_PUBLIC_*` in `mobile/.env`. `metro.config.js` is
+  monorepo-aware. Run with `make dev-mobile` (`mobile-ios` / `mobile-android`);
+  type-check with `make mobile-typecheck`.
+- **The mobile design system is documented in `mobile_design.md`** (the RN
+  counterpart of `DESIGN.md`) — read it before touching mobile UI. In brief:
+  a TS **token system** (`src/theme/tokens.ts` + `theme-context.tsx`: palette,
+  spacing, radius, type, elevation, light/dark + system mode), token-driven UI
+  **primitives** (`src/components/*`, Feather icons, no heavy UI lib), and a
+  dependency-free **tab + stack navigator** (`src/navigation/*`: a bottom tab per
+  accessible module + Profil, per-tab stacks, a screen registry).
+- **Same RBAC as the web.** `src/lib/auth/` mirrors the frontend: `auth-provider`
+  stores the session and fetches permissions separately via
+  `GET /api/auth/permissions`; `useAuth()` exposes the identical
+  `hasPermission`/`hasAnyPermission`/`hasAllPermissions`/`hasRole`/… surface.
+  Visibility is gated with the **same `@turbohesap/shared` permission keys**:
+  `access.ts` filters the tab bar + module home, `<Can>` (`can.tsx`) gates inline
+  UI, `<PermissionRequired>` guards whole screens, and `useAsync(…, { enabled })`
+  gates fetches. UX only — the backend re-checks every key.
+- **Modules mirror the web** (`src/modules/<module>`): `genel` (dashboard,
+  analytics) and `iam` (users + detail, roles, permissions, audit logs, error
+  logs). Add a module/screen by following `mobile_design.md` §6 (build the screen,
+  register its key in `navigation/screens.tsx`, add a permission-gated nav item in
+  `modules/registry.ts`).
 
 ---
 
@@ -605,8 +637,10 @@ recipes). Mobile is separate (`mobile/.env`, `EXPO_PUBLIC_*`).
 ## 11. Roadmap
 
 - More ERP feature modules (each mirrored across `shared/` + `backend/` +
-  `frontend/`, communicating only through `@turbohesap/shared`).
-- Full mobile auth screens + secure token storage.
+  `frontend/`, and on mobile per `mobile_design.md`, communicating only through
+  `@turbohesap/shared`).
+- Mobile: secure token storage (`expo-secure-store` instead of AsyncStorage), a
+  `SessionWatcher` equivalent (proactive refresh), and push notifications.
 - Grow the test suite (more unit + e2e coverage as modules land); frontend tests.
 
 > **Done (don't re-litigate):** monorepo + contract-first shared, modular UI +

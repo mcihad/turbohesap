@@ -49,6 +49,18 @@ dev-backend: ## Run the NestJS API in watch mode (:5800)
 dev-shared: ## Recompile @turbohesap/shared on change (watch)
 	$(PNPM) --filter @turbohesap/shared dev
 
+.PHONY: dev-mobile
+dev-mobile: ## Start the Expo dev server for the mobile app (Metro)
+	$(PNPM) --filter @turbohesap/mobile start
+
+.PHONY: mobile-ios
+mobile-ios: ## Open the mobile app in the iOS simulator
+	$(PNPM) --filter @turbohesap/mobile ios
+
+.PHONY: mobile-android
+mobile-android: ## Open the mobile app on Android
+	$(PNPM) --filter @turbohesap/mobile android
+
 .PHONY: stop
 stop: ## Stop running dev/server processes (API + Vite :5173)
 	@for p in $(PORT) 5173; do \
@@ -102,6 +114,10 @@ migration-revert: ## Revert the most recently applied migration
 lint: ## Lint the frontend (eslint) and type-check the backend (tsc)
 	$(PNPM) --filter @turbohesap/frontend lint
 	$(PNPM) --filter @turbohesap/backend typecheck
+
+.PHONY: mobile-typecheck
+mobile-typecheck: build-shared ## Type-check the mobile app (tsc --noEmit)
+	$(PNPM) --filter @turbohesap/mobile typecheck
 
 .PHONY: test
 test: ## Backend unit tests (jest)

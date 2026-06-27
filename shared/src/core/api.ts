@@ -12,6 +12,16 @@ import { AuditLogsApiClient } from '../modules/iam/audit-logs.client'
 import type { IAuditLogsService } from '../modules/iam/audit-logs.service'
 import { ErrorLogsApiClient } from '../modules/iam/error-logs.client'
 import type { IErrorLogsService } from '../modules/iam/error-logs.service'
+import { SalesChannelsApiClient } from '../modules/sales/sales-channels.client'
+import type { ISalesChannelsService } from '../modules/sales/sales-channels.service'
+import { BranchesApiClient } from '../modules/org/branches.client'
+import type { IBranchesService } from '../modules/org/branches.service'
+import { LookupsApiClient } from '../modules/lookups/lookups.client'
+import type { ILookupsService } from '../modules/lookups/lookups.service'
+import { CategoriesApiClient } from '../modules/inventory/categories.client'
+import type { ICategoriesService } from '../modules/inventory/categories.service'
+import { ProductsApiClient } from '../modules/inventory/products.client'
+import type { IProductsService } from '../modules/inventory/products.service'
 import { HealthApiClient } from '../modules/health/health.client'
 import type { IHealthService } from '../modules/health/health.service'
 import { createHttpClient, type HttpClientConfig } from './http'
@@ -28,12 +38,30 @@ export interface IamApi {
   errorLogs: IErrorLogsService
 }
 
+export interface SalesApi {
+  channels: ISalesChannelsService
+}
+
+export interface OrgApi {
+  branches: IBranchesService
+}
+
+export interface InventoryApi {
+  categories: ICategoriesService
+  products: IProductsService
+}
+
 // TurbohesapApi bundles every module's service client behind its interface.
 // Consumers depend on these interfaces, not the concrete axios classes. Add new
 // modules here (a new top-level key, or grouped like `iam`).
 export interface TurbohesapApi {
   auth: IAuthService
   iam: IamApi
+  sales: SalesApi
+  org: OrgApi
+  inventory: InventoryApi
+  /** Generic key/value reference-data lists. */
+  lookups: ILookupsService
   health: IHealthService
   /** The underlying axios instance, for app-specific calls. */
   http: AxiosInstance
@@ -58,6 +86,17 @@ export function createTurbohesapApi(
       auditLogs: new AuditLogsApiClient(http),
       errorLogs: new ErrorLogsApiClient(http),
     },
+    sales: {
+      channels: new SalesChannelsApiClient(http),
+    },
+    org: {
+      branches: new BranchesApiClient(http),
+    },
+    inventory: {
+      categories: new CategoriesApiClient(http),
+      products: new ProductsApiClient(http),
+    },
+    lookups: new LookupsApiClient(http),
     health: new HealthApiClient(http),
   }
 }

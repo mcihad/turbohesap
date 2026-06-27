@@ -91,6 +91,7 @@ Uygulama kabuğu; çoğu yalnızca `AppShell` içinde kullanılır.
 | ------- | ------- |
 | `full-page-loader` | `FullPageLoader` — tam sayfa yükleniyor durumu (auth çözümlenirken) |
 | `theme-customizer` | `ThemeCustomizer` — renk/tipografi/boşluk/gölge ayar paneli |
+| `lookup-select` | `LookupSelect` — verilen `list`'i (örn. "birim") otomatik çeken key/value combobox; `lookups.write` varsa yanında satır-içi "+" ile yeni değer ekler. `<LookupSelect list="birim" value={v} onChange={setV} />` |
 
 ## Yeni bileşen eklerken
 

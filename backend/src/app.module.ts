@@ -15,6 +15,10 @@ import { DebugController } from './modules/debug/debug.controller'
 import { HealthController } from './health/health.controller'
 import { AuthModule } from './modules/auth/auth.module'
 import { IamModule } from './modules/iam/iam.module'
+import { SalesModule } from './modules/sales/sales.module'
+import { OrgModule } from './modules/org/org.module'
+import { LookupsModule } from './modules/lookups/lookups.module'
+import { InventoryModule } from './modules/inventory/inventory.module'
 
 @Module({
   imports: [
@@ -36,6 +40,10 @@ import { IamModule } from './modules/iam/iam.module'
     DatabaseModule,
     IamModule,
     AuthModule,
+    SalesModule,
+    OrgModule,
+    LookupsModule,
+    InventoryModule,
   ],
   controllers: [HealthController, DebugController],
   providers: [

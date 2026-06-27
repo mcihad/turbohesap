@@ -4,7 +4,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { IamPermissions, toApiError, type UserDto } from '@turbohesap/shared'
+import {
+  IamPermissions,
+  OrgPermissions,
+  toApiError,
+  type UserDto,
+} from '@turbohesap/shared'
 
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth/auth-context'
@@ -41,6 +46,7 @@ interface FormState {
   lastName: string
   isActive: boolean
   roleIds: string[]
+  branchIds: string[]
 }
 
 const EMPTY: FormState = {
@@ -51,6 +57,7 @@ const EMPTY: FormState = {
   lastName: '',
   isActive: true,
   roleIds: [],
+  branchIds: [],
 }
 
 export function UsersPage() {
@@ -58,6 +65,8 @@ export function UsersPage() {
   const { hasPermission } = useAuth()
   const canRead = hasPermission(IamPermissions.usersRead)
   const canWrite = hasPermission(IamPermissions.usersWrite)
+  // Branch assignment needs branch read access (the same key the server enforces).
+  const canReadBranches = hasPermission(OrgPermissions.branchesRead)
 
   const usersQuery = useQuery({
     queryKey: ['iam', 'users'],
@@ -68,6 +77,11 @@ export function UsersPage() {
     queryKey: ['iam', 'roles'],
     queryFn: () => api.iam.roles.list(),
     enabled: canRead,
+  })
+  const branchesQuery = useQuery({
+    queryKey: ['org', 'branches'],
+    queryFn: () => api.org.branches.list(),
+    enabled: canRead && canReadBranches,
   })
 
   const [open, setOpen] = React.useState(false)
@@ -89,6 +103,7 @@ export function UsersPage() {
       lastName: u.lastName,
       isActive: u.isActive,
       roleIds: u.roles.map((r) => r.id),
+      branchIds: u.branches.map((b) => b.id),
     })
     setOpen(true)
   }
@@ -104,6 +119,7 @@ export function UsersPage() {
           lastName: form.lastName,
           isActive: form.isActive,
           roleIds: form.roleIds,
+          ...(canReadBranches ? { branchIds: form.branchIds } : {}),
           ...(form.password ? { password: form.password } : {}),
         })
       } else {
@@ -115,6 +131,7 @@ export function UsersPage() {
           lastName: form.lastName,
           isActive: form.isActive,
           roleIds: form.roleIds,
+          ...(canReadBranches ? { branchIds: form.branchIds } : {}),
         })
       }
     },
@@ -138,6 +155,7 @@ export function UsersPage() {
 
   const users = usersQuery.data ?? []
   const roles = rolesQuery.data ?? []
+  const branches = branchesQuery.data ?? []
 
   return (
     <PermissionRequired permission={IamPermissions.usersRead}>
@@ -312,6 +330,46 @@ export function UsersPage() {
                 ) : null}
               </div>
             </div>
+
+            {canReadBranches ? (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label>Yetkili olduğu şubeler</Label>
+                  <span className="text-xs text-muted-foreground">
+                    {form.branchIds.length} seçili
+                  </span>
+                </div>
+                <div className="grid max-h-40 grid-cols-1 gap-2 overflow-auto rounded-md border p-3 sm:grid-cols-2">
+                  {branches.map((b) => {
+                    const checked = form.branchIds.includes(b.id)
+                    return (
+                      <label key={b.id} className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(v) =>
+                            setForm({
+                              ...form,
+                              branchIds: v
+                                ? [...form.branchIds, b.id]
+                                : form.branchIds.filter((id) => id !== b.id),
+                            })
+                          }
+                        />
+                        <span className="truncate">
+                          {b.name}
+                          <span className="ml-1 font-mono text-xs text-muted-foreground">
+                            {b.code}
+                          </span>
+                        </span>
+                      </label>
+                    )
+                  })}
+                  {branches.length === 0 ? (
+                    <span className="text-sm text-muted-foreground">Şube yok</span>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
 
             <div className="flex items-center gap-2">
               <Switch

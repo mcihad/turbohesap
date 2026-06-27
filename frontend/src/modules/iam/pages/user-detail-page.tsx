@@ -192,6 +192,20 @@ function UserInfoCard({ user }: { user: UserDto }) {
               <span className="text-xs text-muted-foreground">Rol atanmamış</span>
             )}
           </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-2xs tracking-wide text-muted-foreground uppercase">
+              Şubeler:
+            </span>
+            {user.branches.length > 0 ? (
+              user.branches.map((b) => (
+                <Badge key={b.id} variant="outline">
+                  {b.name}
+                </Badge>
+              ))
+            ) : (
+              <span className="text-xs text-muted-foreground">Atanmamış</span>
+            )}
+          </div>
         </div>
 
         <dl className="grid shrink-0 grid-cols-2 gap-x-6 gap-y-2 text-xs sm:grid-cols-1">

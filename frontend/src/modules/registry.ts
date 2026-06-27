@@ -1,11 +1,23 @@
 import type { AppModule } from './types'
 import { genelModule } from './genel/module.config'
+import { salesModule } from './sales/module.config'
+import { orgModule } from './org/module.config'
+import { inventoryModule } from './inventory/module.config'
+import { lookupsModule } from './lookups/module.config'
 import { iamModule } from './iam/module.config'
 import { componentsModule } from './components/module.config'
 
 // The ordered list of modules rendered in the left rail. Add a module's config
 // here to make it appear.
-export const APP_MODULES: AppModule[] = [genelModule, iamModule, componentsModule]
+export const APP_MODULES: AppModule[] = [
+  genelModule,
+  salesModule,
+  orgModule,
+  inventoryModule,
+  lookupsModule,
+  iamModule,
+  componentsModule,
+]
 
 export function getModule(key: string): AppModule | undefined {
   return APP_MODULES.find((m) => m.key === key)

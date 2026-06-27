@@ -25,6 +25,15 @@ export const ENTITY_MODULE_MAP: Record<string, string> = {
   User: 'iam',
   Role: 'iam',
   Permission: 'iam',
+  SalesChannel: 'sales',
+  Branch: 'org',
+  LookupItem: 'lookups',
+  Category: 'inventory',
+  Product: 'inventory',
+  ProductVariant: 'inventory',
+  ProductPackaging: 'inventory',
+  ProductStock: 'inventory',
+  ProductChannelPrice: 'inventory',
 }
 
 export function moduleForEntity(entityName: string): string | null {

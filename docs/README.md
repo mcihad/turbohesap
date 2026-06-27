@@ -14,6 +14,9 @@ top-level guides:
   `shared`, the backend, and the clients.
 - **[`auth.md`](./auth.md)** — local authentication (username/password → JWT),
   refresh-token rotation, RBAC (users/roles/permissions), and the guards.
+- **[`lookups.md`](./lookups.md)** — the generic key/value reference-data system
+  (`/api/lookups`) and the reusable **`LookupSelect`** component (web + mobile):
+  data model, API, permissions, usage, and recipes.
 
 ## Planned documents
 

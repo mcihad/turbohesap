@@ -11,7 +11,7 @@ export const genelModule: AppModule = {
   nav: [
     {
       items: [
-        { title: 'Panel', icon: Home, to: '/genel/dashboard' },
+        { title: 'Gösterge Paneli', icon: Home, to: '/genel/dashboard', exact: true },
         {
           title: 'Analiz',
           icon: BarChart3,

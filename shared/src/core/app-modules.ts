@@ -23,6 +23,26 @@ export const MODULES: AppModuleInfo[] = [
     description: 'Kullanıcı, rol ve izin yönetimi',
   },
   {
+    key: 'sales',
+    label: 'Satış',
+    description: 'Satış kanalları ve satış tanımları',
+  },
+  {
+    key: 'org',
+    label: 'Organizasyon',
+    description: 'Şubeler ve organizasyon tanımları',
+  },
+  {
+    key: 'inventory',
+    label: 'Envanter',
+    description: 'Kategoriler ve stok/ürün yönetimi',
+  },
+  {
+    key: 'lookups',
+    label: 'Tanımlar',
+    description: 'Genel tanımlar: key/value listeleri (birim, renk vb.) ve fazlası',
+  },
+  {
     key: 'components',
     label: 'Bileşenler',
     description: 'Arayüz bileşeni önizlemeleri',

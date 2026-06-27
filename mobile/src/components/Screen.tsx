@@ -4,7 +4,14 @@
 // PageWrapper (DESIGN.md §11.1).
 
 import * as React from 'react'
-import { RefreshControl, ScrollView, View, type ViewStyle } from 'react-native'
+import {
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  RefreshControl,
+  ScrollView,
+  View,
+  type ViewStyle,
+} from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useTheme } from '../theme/theme-context'
@@ -19,6 +26,10 @@ interface ScreenProps {
   scroll?: boolean
   onRefresh?: () => void
   refreshing?: boolean
+  /** Fired when the scroll nears the bottom — drives infinite-scroll pagination. */
+  onEndReached?: () => void
+  /** Distance (px) from the bottom at which `onEndReached` fires (default 360). */
+  onEndReachedThreshold?: number
   /** Sticky bottom slot (e.g. a primary action bar). */
   footer?: React.ReactNode
   contentStyle?: ViewStyle
@@ -31,11 +42,32 @@ export function Screen({
   scroll = true,
   onRefresh,
   refreshing = false,
+  onEndReached,
+  onEndReachedThreshold = 360,
   footer,
   contentStyle,
 }: ScreenProps) {
   const t = useTheme()
   const insets = useSafeAreaInsets()
+
+  // Fire onEndReached once on entering the near-bottom zone; re-arm on leaving.
+  const endReached = React.useRef(false)
+  const handleScroll = React.useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      if (!onEndReached) return
+      const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent
+      const fromBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height)
+      if (fromBottom <= onEndReachedThreshold) {
+        if (!endReached.current) {
+          endReached.current = true
+          onEndReached()
+        }
+      } else if (fromBottom > onEndReachedThreshold + 60) {
+        endReached.current = false
+      }
+    },
+    [onEndReached, onEndReachedThreshold],
+  )
 
   const bodyPadding: ViewStyle = {
     paddingHorizontal: padded ? t.spacing[4] : 0,
@@ -49,6 +81,8 @@ export function Screen({
       contentContainerStyle={[bodyPadding, contentStyle]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
+      onScroll={onEndReached ? handleScroll : undefined}
+      scrollEventThrottle={onEndReached ? 32 : undefined}
       refreshControl={
         onRefresh ? (
           <RefreshControl

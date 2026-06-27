@@ -45,7 +45,7 @@ export function StatTile({
 }) {
   const c = TONE[tone]
   return (
-    <div className={cn('relative overflow-hidden rounded-xl border bg-gradient-to-br p-3.5', c.card)}>
+    <div className={cn('relative overflow-hidden rounded-xl border bg-gradient-to-br p-3.5 shadow-sm', c.card)}>
       <div className="flex items-center justify-between">
         <span className={cn('flex size-8 items-center justify-center rounded-lg', c.chip)}>
           <Icon className="size-4" />

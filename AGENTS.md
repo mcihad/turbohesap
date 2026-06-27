@@ -148,6 +148,7 @@ shared/src/
     ├── <module>.permissions.ts # permission KEY constants (e.g. IamPermissions) — typed, shared
     ├── <name>.service.ts       # service INTERFACE (the contract, I<Name>Service)
     ├── <name>.client.ts        # axios implementation of that interface
+    ├── <name>.helpers.ts       # OPTIONAL pure domain helpers shared by web + mobile
     └── index.ts                # re-exports the module's contracts
 ```
 
@@ -178,6 +179,13 @@ alongside). Examples today:
 - **DTOs are framework-agnostic types** — plain interfaces, no React, no Nest, no
   TypeORM. The backend imports the same DTOs and returns them from controllers,
   so the server and clients can never drift.
+- **Pure domain helpers may live in shared too** (`<name>.helpers.ts`) when web
+  **and** mobile need the *same* logic over the DTOs — e.g.
+  `inventory/category.helpers.ts` (`effectiveFieldDefs`) and
+  `inventory/product-filters.ts` (`filterProducts`, client-side faceted search).
+  Same hard rule as DTOs: **pure functions only, no React/Nest/TypeORM, no I/O** —
+  they operate on shared types so both clients stay in lockstep. Anything
+  framework- or platform-specific stays in `frontend/`/`mobile/`, never here.
 - **Cross-module references go through DTOs** (e.g. `auth`'s `LoginResponse`
   embeds `iam`'s `CurrentUser`; `iam`'s `UserDto.branches` embeds `org`'s
   `BranchSummary`). A module never imports another module's client or backend
@@ -612,8 +620,9 @@ recipes). Mobile is separate (`mobile/.env`, `EXPO_PUBLIC_*`).
 - **Contracts first, by module:** when changing the API, edit
   `shared/src/modules/<module>/` (`*.dto.ts` → `*.service.ts` → `*.client.ts`),
   register in `core/api.ts`, and rebuild shared — so backend and clients stay in
-  lockstep. `shared` holds **only** DTOs + service interfaces (+ their axios
-  clients): no React, no Nest, no TypeORM there.
+  lockstep. `shared` holds DTOs + service interfaces (+ their axios clients) and,
+  when web **and** mobile need it, **pure** framework-agnostic domain helpers
+  (`*.helpers.ts`): never any React, Nest, TypeORM, or I/O.
 - **API shape:** keep `/api/<module>/<resource>`; mirror the module across
   `shared/`, `backend/src/modules/`, and `frontend/src/modules/`.
 - **Backend:** keep `pnpm --filter @turbohesap/backend typecheck` clean; protect

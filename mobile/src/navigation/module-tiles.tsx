@@ -29,8 +29,11 @@ export function GridTile({ tile, onPress }: { tile: ModuleTile; onPress: () => v
         style={{
           height: 138,
           justifyContent: 'space-between',
-          borderWidth: tile.selected ? 1.5 : undefined,
-          borderColor: tile.selected ? t.colors.primary : undefined,
+          // Always a concrete border — passing `undefined` here overrides the
+          // Card's default and, with overflow:hidden + borderRadius, blanks the
+          // whole tile on Android.
+          borderWidth: tile.selected ? 1.5 : 1,
+          borderColor: tile.selected ? t.colors.primary : t.colors.border,
         }}
       >
         <View style={{ width: 44, height: 44, borderRadius: t.radius.lg, backgroundColor: boxBg, alignItems: 'center', justifyContent: 'center' }}>
@@ -60,8 +63,8 @@ export function ListTile({ tile, onPress }: { tile: ModuleTile; onPress: () => v
           flexDirection: 'row',
           alignItems: 'center',
           gap: t.spacing[3],
-          borderWidth: tile.selected ? 1.5 : undefined,
-          borderColor: tile.selected ? t.colors.primary : undefined,
+          borderWidth: tile.selected ? 1.5 : 1,
+          borderColor: tile.selected ? t.colors.primary : t.colors.border,
         }}
       >
         <View style={{ width: 44, height: 44, borderRadius: t.radius.lg, backgroundColor: boxBg, alignItems: 'center', justifyContent: 'center' }}>

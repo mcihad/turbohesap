@@ -13,6 +13,7 @@ import {
   EmptyState,
   ListCard,
   ListRow,
+  LoadMoreFooter,
   PermissionRequired,
   Screen,
   SkeletonRows,
@@ -21,7 +22,7 @@ import {
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
 import { formatRelative } from '../../lib/datetime'
-import { useAsync } from '../../lib/use-async'
+import { usePaginated } from '../../lib/use-paginated'
 import { useNav } from '../../navigation/nav-context'
 import { useTheme } from '../../theme/theme-context'
 
@@ -36,23 +37,32 @@ export function AuditLogsScreen() {
   const nav = useNav()
   const { hasPermission } = useAuth()
   const canRead = hasPermission(IamPermissions.auditRead)
-  const logs = useAsync(() => api.iam.auditLogs.list({ pageSize: 50 }), [], { enabled: canRead })
+  const logs = usePaginated(
+    (page) => api.iam.auditLogs.list({ page, pageSize: 30 }),
+    [],
+    { enabled: canRead },
+  )
 
-  const items = logs.data?.items ?? []
+  const items = logs.items
 
   return (
     <PermissionRequired permission={IamPermissions.auditRead} title="Denetim Kayıtları" onBack={nav.canGoBack ? nav.goBack : undefined}>
-      <Screen header={{ title: 'Denetim Kayıtları', onBack: nav.canGoBack ? nav.goBack : undefined }} onRefresh={logs.refetch} refreshing={logs.refreshing}>
+      <Screen
+        header={{ title: 'Denetim Kayıtları', onBack: nav.canGoBack ? nav.goBack : undefined }}
+        onRefresh={logs.refresh}
+        refreshing={logs.refreshing}
+        onEndReached={logs.loadMore}
+      >
         {logs.loading ? (
           <SkeletonRows count={7} />
-        ) : logs.error ? (
-          <EmptyState icon="alert-triangle" tone="destructive" title="Yüklenemedi" description={logs.error} actionLabel="Tekrar dene" onAction={logs.refetch} />
+        ) : logs.error && items.length === 0 ? (
+          <EmptyState icon="alert-triangle" tone="destructive" title="Yüklenemedi" description={logs.error} actionLabel="Tekrar dene" onAction={logs.refresh} />
         ) : items.length === 0 ? (
           <EmptyState icon="file-text" title="Kayıt yok" description="Henüz denetim kaydı bulunmuyor." />
         ) : (
           <>
             <Text variant="overline" tone="muted" style={{ paddingHorizontal: t.spacing[1] }}>
-              Son {items.length} / {logs.data?.total ?? items.length}
+              {items.length} / {logs.total} kayıt
             </Text>
             <ListCard>
               {items.map((log) => {
@@ -74,6 +84,7 @@ export function AuditLogsScreen() {
                 )
               })}
             </ListCard>
+            <LoadMoreFooter loadingMore={logs.loadingMore} hasMore={logs.hasMore} total={logs.total} />
           </>
         )}
       </Screen>

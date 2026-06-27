@@ -147,9 +147,9 @@ export function ProductsPage() {
 
   return (
     <PermissionRequired permission={InventoryPermissions.productsRead}>
-      <PageWrapper>
+      <PageWrapper className="flex h-full flex-col gap-3">
         {/* Toolbar — search only; filtering lives in the side panel */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <div className="relative min-w-[200px] flex-1 sm:max-w-md">
             <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -175,7 +175,7 @@ export function ProductsPage() {
         </div>
 
         {/* Result meta */}
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex shrink-0 items-center justify-between text-sm text-muted-foreground">
           <span>
             {filtered.length} ürün
             {filtered.length !== products.length ? ` · ${products.length} içinde` : ''}
@@ -187,10 +187,10 @@ export function ProductsPage() {
           ) : null}
         </div>
 
-        {/* Body — table + full-height resizable filter panel */}
-        <div className="flex items-start gap-0">
-          <div className="min-w-0 flex-1">
-            <div className="rounded-lg border">
+        {/* Body — table (scrolls) + filter panel; both fill down to the footer. */}
+        <div className="flex min-h-0 flex-1 items-stretch gap-0">
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <div className="h-full overflow-auto rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -270,15 +270,14 @@ export function ProductsPage() {
             onPointerMove={onHandleMove}
             onPointerUp={onHandleUp}
             title="Sürükleyerek aç / boyutlandır"
-            className="group relative w-2 shrink-0 cursor-col-resize self-stretch touch-none"
-            style={{ minHeight: 200 }}
+            className="group flex w-2 shrink-0 cursor-col-resize touch-none items-stretch justify-center self-stretch"
           >
-            <div className={`absolute inset-y-0 left-1/2 w-px -translate-x-1/2 transition-colors ${panelWidth > 0 ? 'bg-border' : 'bg-border/50'} group-hover:bg-primary`} />
+            <div className={`w-px transition-colors ${panelWidth > 0 ? 'bg-border' : 'bg-border/50'} group-hover:bg-primary`} />
           </div>
 
           <aside className="shrink-0 overflow-hidden" style={{ width: panelWidth }}>
             <div
-              className="sticky top-4 h-[calc(100vh-7rem)] overflow-hidden rounded-lg border bg-card"
+              className="h-full overflow-hidden rounded-lg border bg-card"
               style={{ width: Math.max(panelWidth, PANEL_MIN) }}
             >
               <AdvancedFilterPanel

@@ -19,6 +19,13 @@ export interface HttpClientConfig {
 
   /** Called when the backend answers 401 (e.g. to trigger a refresh/logout). */
   onUnauthorized?: () => void
+
+  /**
+   * Per-request timeout in ms (0 = no timeout, the axios default). The mobile app
+   * sets a finite value so an unreachable LAN host fails fast with an error
+   * instead of hanging the UI forever.
+   */
+  timeout?: number
 }
 
 export const DEFAULT_BASE_URL = '/api'
@@ -30,6 +37,7 @@ export function createHttpClient(config: HttpClientConfig = {}): AxiosInstance {
 
   const instance = axios.create({
     baseURL,
+    timeout: config.timeout ?? 0,
     headers: { 'Content-Type': 'application/json' },
   })
 

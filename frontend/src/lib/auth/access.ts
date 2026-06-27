@@ -28,7 +28,34 @@ export function filterNavByPermission(nav: NavGroup[], can: Can): NavGroup[] {
     .filter((g) => g.items.length > 0)
 }
 
-/** Modules the user can see — those with at least one visible nav item. */
+// Every permission key required by a module's *gated* nav items (recursing into
+// children). Permission-less items (e.g. "Gösterge Paneli") contribute nothing.
+function collectGatedPermissions(items: NavItem[]): string[] {
+  const out: string[] = []
+  for (const item of items) {
+    if (item.permission) out.push(item.permission)
+    if (item.children) out.push(...collectGatedPermissions(item.children))
+  }
+  return out
+}
+
+/** Distinct permission keys that gate any of a module's nav items. */
+export function modulePermissionKeys(module: AppModule): string[] {
+  return [...new Set(module.nav.flatMap((g) => collectGatedPermissions(g.items)))]
+}
+
+/**
+ * Whether the user may enter a module. A module with no permission-gated items
+ * (a pure overview like `genel`) is always open; otherwise the user must hold at
+ * least one of its gated permissions. The permission-less dashboard item never
+ * grants access on its own.
+ */
+export function moduleHasAccess(module: AppModule, can: Can): boolean {
+  const keys = modulePermissionKeys(module)
+  return keys.length === 0 || keys.some((k) => can(k))
+}
+
+/** Modules the user can see — those they have access to (see moduleHasAccess). */
 export function accessibleModules(modules: AppModule[], can: Can): AppModule[] {
-  return modules.filter((m) => filterNavByPermission(m.nav, can).length > 0)
+  return modules.filter((m) => moduleHasAccess(m, can))
 }

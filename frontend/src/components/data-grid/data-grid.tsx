@@ -69,6 +69,8 @@ export interface DataGridProps<T> {
   loading?: boolean
   /** Row click (ignored on grouped rows / interactive cells). */
   onRowClick?: (row: T) => void
+  /** Extra per-row class (e.g. a transient highlight for a just-saved row). */
+  rowClassName?: (row: T) => string | undefined
   selection?: 'none' | 'single' | 'multi'
   onSelectionChange?: (rows: T[]) => void
   /** Extra toolbar content on the right (e.g. a "New" button). */
@@ -106,6 +108,7 @@ export function DataGrid<T>({
   getRowId,
   loading = false,
   onRowClick,
+  rowClassName,
   selection = 'none',
   onSelectionChange,
   toolbar,
@@ -320,7 +323,7 @@ export function DataGrid<T>({
                       onDragStart={() => (dragCol.current = col.id)}
                       onDragOver={(e) => { if (dragCol.current) e.preventDefault() }}
                       onDrop={(e) => { e.preventDefault(); reorder(col.id) }}
-                      className="group/th h-10 border-b px-3 text-left align-middle font-medium text-muted-foreground select-none"
+                      className="group/th h-10 border-b px-3 text-left align-middle text-xs font-semibold tracking-wide text-muted-foreground uppercase select-none"
                     >
                       {header.isPlaceholder ? null : (
                         <div className="flex items-center gap-1">
@@ -382,9 +385,10 @@ export function DataGrid<T>({
                     key={row.id}
                     onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                     className={cn(
-                      'border-b transition-colors last:border-0 hover:bg-accent/50',
+                      'border-b transition-colors duration-700 last:border-0 hover:bg-accent/50',
                       row.getIsSelected() && 'bg-primary/5',
                       onRowClick && 'cursor-pointer',
+                      rowClassName?.(row.original),
                     )}
                   >
                     {row.getVisibleCells().map((cell) => {
@@ -392,15 +396,32 @@ export function DataGrid<T>({
                       return (
                         <td key={cell.id} style={{ width: cell.column.getSize(), ...pinStyle(cell.column, false) }} className="px-3 py-2 align-middle">
                           {isTreeCell ? (
-                            <div className="flex items-center gap-1" style={{ paddingLeft: row.depth * 16 }}>
-                              {row.getCanExpand() ? (
-                                <button type="button" onClick={(e) => { e.stopPropagation(); row.toggleExpanded() }} className="grid size-5 shrink-0 place-items-center rounded text-muted-foreground hover:bg-accent" aria-label={row.getIsExpanded() ? 'Daralt' : 'Genişlet'}>
-                                  {row.getIsExpanded() ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
-                                </button>
-                              ) : (
-                                <span className="size-5 shrink-0" />
-                              )}
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            <div className="flex items-stretch -my-2">
+                              {/* indentation guide rails (one per ancestor level) */}
+                              {Array.from({ length: row.depth }).map((_, i) => (
+                                <span key={i} className="relative w-5 shrink-0">
+                                  <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-border/70" />
+                                </span>
+                              ))}
+                              <div className="flex min-w-0 flex-1 items-center gap-1.5 py-2">
+                                {row.getCanExpand() ? (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); row.toggleExpanded() }}
+                                    className="grid size-5 shrink-0 place-items-center rounded-md border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-background hover:text-foreground"
+                                    aria-label={row.getIsExpanded() ? 'Daralt' : 'Genişlet'}
+                                  >
+                                    <ChevronRight className={cn('size-3.5 transition-transform duration-200', row.getIsExpanded() && 'rotate-90')} />
+                                  </button>
+                                ) : (
+                                  <span className="grid size-5 shrink-0 place-items-center" aria-hidden>
+                                    <span className="size-1.5 rounded-full bg-border" />
+                                  </span>
+                                )}
+                                <div className="min-w-0 flex-1 truncate">
+                                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </div>
+                              </div>
                             </div>
                           ) : (
                             flexRender(cell.column.columnDef.cell, cell.getContext())

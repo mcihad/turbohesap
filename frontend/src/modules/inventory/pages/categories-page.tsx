@@ -43,6 +43,15 @@ export function CategoriesPage() {
   const [dialog, setDialog] = React.useState<
     { editing: CategoryDto | null; parentId: string | null } | null
   >(null)
+  // Briefly highlight a just-saved row so the change is obvious in place.
+  const [highlightId, setHighlightId] = React.useState<string | null>(null)
+  const highlightTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  const flash = (id: string) => {
+    setHighlightId(id)
+    if (highlightTimer.current) clearTimeout(highlightTimer.current)
+    highlightTimer.current = setTimeout(() => setHighlightId(null), 1600)
+  }
+  React.useEffect(() => () => { if (highlightTimer.current) clearTimeout(highlightTimer.current) }, [])
 
   const catsQuery = useQuery({
     queryKey: ['inventory', 'categories'],
@@ -99,6 +108,7 @@ export function CategoriesPage() {
           pagination={false}
           loading={catsQuery.isLoading}
           onRowClick={(c) => navigate({ to: '/inventory/categories/$id', params: { id: c.id } })}
+          rowClassName={(c) => (c.id === highlightId ? 'bg-primary/10' : undefined)}
           emptyText="Henüz kategori yok."
           toolbar={canWrite ? <Button onClick={() => setDialog({ editing: null, parentId: null })}><Plus />Yeni kök kategori</Button> : null}
         />
@@ -109,7 +119,7 @@ export function CategoriesPage() {
           editing={dialog?.editing ?? null}
           defaultParentId={dialog?.parentId ?? null}
           categories={cats}
-          onSaved={invalidate}
+          onSaved={(saved) => { void invalidate(); flash(saved.id) }}
         />
       </PageWrapper>
     </PermissionRequired>

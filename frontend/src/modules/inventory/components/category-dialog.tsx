@@ -57,7 +57,7 @@ export function CategoryDialog({
   /** Preset parent for "add child" (ignored when editing). */
   defaultParentId?: string | null
   categories: CategoryDto[]
-  onSaved: () => void
+  onSaved: (saved: CategoryDto) => void
 }) {
   const empty = (): FormState => ({
     name: '',
@@ -102,10 +102,10 @@ export function CategoryDialog({
         ? api.inventory.categories.update(editing.id, payload)
         : api.inventory.categories.create(payload)
     },
-    onSuccess: () => {
+    onSuccess: (saved) => {
       toast.success(editing ? 'Kategori güncellendi' : 'Kategori oluşturuldu')
       onOpenChange(false)
-      onSaved()
+      onSaved(saved)
     },
     onError: (e) => toast.error('İşlem başarısız', { description: toApiError(e).message }),
   })

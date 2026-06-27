@@ -37,6 +37,8 @@ export const ENTITY_MODULE_MAP: Record<string, string> = {
   ProductStock: 'inventory',
   ProductChannelPrice: 'inventory',
   FileEntity: 'files',
+  CashAccount: 'finance',
+  BankAccount: 'finance',
 }
 
 export function moduleForEntity(entityName: string): string | null {

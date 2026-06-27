@@ -21,6 +21,7 @@ import { LookupsModule } from './modules/lookups/lookups.module'
 import { InventoryModule } from './modules/inventory/inventory.module'
 import { FilesModule } from './modules/files/files.module'
 import { SettingsModule } from './modules/settings/settings.module'
+import { FinanceModule } from './modules/finance/finance.module'
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { SettingsModule } from './modules/settings/settings.module'
     InventoryModule,
     FilesModule,
     SettingsModule,
+    FinanceModule,
   ],
   controllers: [HealthController, DebugController],
   providers: [

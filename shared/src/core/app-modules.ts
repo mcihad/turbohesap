@@ -43,6 +43,11 @@ export const MODULES: AppModuleInfo[] = [
     description: 'Genel tanımlar: key/value listeleri (birim, renk vb.) ve fazlası',
   },
   {
+    key: 'finance',
+    label: 'Finans',
+    description: 'Kasa, banka ve finansal işlemler',
+  },
+  {
     key: 'components',
     label: 'Bileşenler',
     description: 'Arayüz bileşeni önizlemeleri',

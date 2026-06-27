@@ -66,6 +66,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
+import { IbanInput } from '@/components/ui/iban-input'
 import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
 import {
@@ -171,6 +172,25 @@ const InputDemo: React.FC = () => (
     <Input aria-invalid placeholder="Geçersiz" />
   </Example>
 )
+
+const IbanInputDemo: React.FC = () => {
+  const [val, setVal] = React.useState('')
+  return (
+    <Example className="max-w-sm flex-col items-stretch space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="d-iban">IBAN (Formatlı Giriş)</Label>
+        <IbanInput id="d-iban" value={val} onChange={setVal} />
+        <p className="text-2xs text-muted-foreground">
+          Temiz Değer (State): <code className="bg-muted px-1 py-0.5 rounded font-mono">{val || '(boş)'}</code>
+        </p>
+      </div>
+      <div className="space-y-2">
+        <Label>Pasif IBAN</Label>
+        <IbanInput value="TR990006200000012345678901" disabled />
+      </div>
+    </Example>
+  )
+}
 
 const TextareaDemo: React.FC = () => (
   <Example className="max-w-sm flex-col items-stretch">
@@ -602,6 +622,7 @@ export const SHOWCASES: Showcase[] = [
   { slug: 'button', title: 'Button', category: 'Form', description: 'Aksiyon düğmeleri; varyant ve boyutlar.', Demo: ButtonDemo },
   { slug: 'button-group', title: 'Button Group', category: 'Form', description: 'Bitişik segment buton grubu.', Demo: ButtonGroupDemo },
   { slug: 'input', title: 'Input', category: 'Form', description: 'Tek satır metin girişi.', Demo: InputDemo },
+  { slug: 'iban-input', title: 'IBAN Input', category: 'Form', description: 'Otomatik formatlı TR IBAN giriş alanı.', Demo: IbanInputDemo },
   { slug: 'textarea', title: 'Textarea', category: 'Form', description: 'Çok satırlı metin girişi.', Demo: TextareaDemo },
   { slug: 'switch', title: 'Switch', category: 'Form', description: 'Aç/kapa anahtarı.', Demo: SwitchDemo },
   { slug: 'checkbox', title: 'Checkbox', category: 'Form', description: 'Onay kutusu.', Demo: CheckboxDemo },

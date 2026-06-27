@@ -28,6 +28,10 @@ import { ProductsApiClient } from '../modules/inventory/products.client'
 import type { IProductsService } from '../modules/inventory/products.service'
 import { HealthApiClient } from '../modules/health/health.client'
 import type { IHealthService } from '../modules/health/health.service'
+import { CashAccountsApiClient } from '../modules/finance/cash-accounts.client'
+import type { ICashAccountsService } from '../modules/finance/cash-accounts.service'
+import { BankAccountsApiClient } from '../modules/finance/bank-accounts.client'
+import type { IBankAccountsService } from '../modules/finance/bank-accounts.service'
 import { createHttpClient, type HttpClientConfig } from './http'
 
 // Resources are grouped by module — `api.<module>.<resource>` — mirroring the
@@ -55,6 +59,11 @@ export interface InventoryApi {
   products: IProductsService
 }
 
+export interface FinanceApi {
+  cashAccounts: ICashAccountsService
+  bankAccounts: IBankAccountsService
+}
+
 // TurbohesapApi bundles every module's service client behind its interface.
 // Consumers depend on these interfaces, not the concrete axios classes. Add new
 // modules here (a new top-level key, or grouped like `iam`).
@@ -64,6 +73,7 @@ export interface TurbohesapApi {
   sales: SalesApi
   org: OrgApi
   inventory: InventoryApi
+  finance: FinanceApi
   /** Generic key/value reference-data lists. */
   lookups: ILookupsService
   /** Generic file uploads/attachments (images + files for any entity). */
@@ -103,6 +113,10 @@ export function createTurbohesapApi(
     inventory: {
       categories: new CategoriesApiClient(http),
       products: new ProductsApiClient(http),
+    },
+    finance: {
+      cashAccounts: new CashAccountsApiClient(http),
+      bankAccounts: new BankAccountsApiClient(http),
     },
     lookups: new LookupsApiClient(http),
     files: new FilesApiClient(http),

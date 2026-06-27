@@ -35,6 +35,8 @@ import { Route as AuthedInventoryCategoriesIndexRouteImport } from './routes/_au
 import { Route as AuthedIamUsersIndexRouteImport } from './routes/_authed/iam/users.index'
 import { Route as AuthedIamRolesIndexRouteImport } from './routes/_authed/iam/roles.index'
 import { Route as AuthedIamPermissionsIndexRouteImport } from './routes/_authed/iam/permissions.index'
+import { Route as AuthedFinanceCashAccountsIndexRouteImport } from './routes/_authed/finance/cash-accounts.index'
+import { Route as AuthedFinanceBankAccountsIndexRouteImport } from './routes/_authed/finance/bank-accounts.index'
 import { Route as AuthedSalesChannelsIdRouteImport } from './routes/_authed/sales/channels.$id'
 import { Route as AuthedOrgBranchesIdRouteImport } from './routes/_authed/org/branches.$id'
 import { Route as AuthedInventoryProductsIdRouteImport } from './routes/_authed/inventory/products.$id'
@@ -176,6 +178,18 @@ const AuthedIamPermissionsIndexRoute =
     path: '/iam/permissions/',
     getParentRoute: () => AuthedRoute,
   } as any)
+const AuthedFinanceCashAccountsIndexRoute =
+  AuthedFinanceCashAccountsIndexRouteImport.update({
+    id: '/finance/cash-accounts/',
+    path: '/finance/cash-accounts/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedFinanceBankAccountsIndexRoute =
+  AuthedFinanceBankAccountsIndexRouteImport.update({
+    id: '/finance/bank-accounts/',
+    path: '/finance/bank-accounts/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
 const AuthedSalesChannelsIdRoute = AuthedSalesChannelsIdRouteImport.update({
   id: '/sales/channels/$id',
   path: '/sales/channels/$id',
@@ -239,6 +253,8 @@ export interface FileRoutesByFullPath {
   '/inventory/products/$id': typeof AuthedInventoryProductsIdRoute
   '/org/branches/$id': typeof AuthedOrgBranchesIdRoute
   '/sales/channels/$id': typeof AuthedSalesChannelsIdRoute
+  '/finance/bank-accounts/': typeof AuthedFinanceBankAccountsIndexRoute
+  '/finance/cash-accounts/': typeof AuthedFinanceCashAccountsIndexRoute
   '/iam/permissions/': typeof AuthedIamPermissionsIndexRoute
   '/iam/roles/': typeof AuthedIamRolesIndexRoute
   '/iam/users/': typeof AuthedIamUsersIndexRoute
@@ -273,6 +289,8 @@ export interface FileRoutesByTo {
   '/inventory/products/$id': typeof AuthedInventoryProductsIdRoute
   '/org/branches/$id': typeof AuthedOrgBranchesIdRoute
   '/sales/channels/$id': typeof AuthedSalesChannelsIdRoute
+  '/finance/bank-accounts': typeof AuthedFinanceBankAccountsIndexRoute
+  '/finance/cash-accounts': typeof AuthedFinanceCashAccountsIndexRoute
   '/iam/permissions': typeof AuthedIamPermissionsIndexRoute
   '/iam/roles': typeof AuthedIamRolesIndexRoute
   '/iam/users': typeof AuthedIamUsersIndexRoute
@@ -309,6 +327,8 @@ export interface FileRoutesById {
   '/_authed/inventory/products/$id': typeof AuthedInventoryProductsIdRoute
   '/_authed/org/branches/$id': typeof AuthedOrgBranchesIdRoute
   '/_authed/sales/channels/$id': typeof AuthedSalesChannelsIdRoute
+  '/_authed/finance/bank-accounts/': typeof AuthedFinanceBankAccountsIndexRoute
+  '/_authed/finance/cash-accounts/': typeof AuthedFinanceCashAccountsIndexRoute
   '/_authed/iam/permissions/': typeof AuthedIamPermissionsIndexRoute
   '/_authed/iam/roles/': typeof AuthedIamRolesIndexRoute
   '/_authed/iam/users/': typeof AuthedIamUsersIndexRoute
@@ -345,6 +365,8 @@ export interface FileRouteTypes {
     | '/inventory/products/$id'
     | '/org/branches/$id'
     | '/sales/channels/$id'
+    | '/finance/bank-accounts/'
+    | '/finance/cash-accounts/'
     | '/iam/permissions/'
     | '/iam/roles/'
     | '/iam/users/'
@@ -379,6 +401,8 @@ export interface FileRouteTypes {
     | '/inventory/products/$id'
     | '/org/branches/$id'
     | '/sales/channels/$id'
+    | '/finance/bank-accounts'
+    | '/finance/cash-accounts'
     | '/iam/permissions'
     | '/iam/roles'
     | '/iam/users'
@@ -414,6 +438,8 @@ export interface FileRouteTypes {
     | '/_authed/inventory/products/$id'
     | '/_authed/org/branches/$id'
     | '/_authed/sales/channels/$id'
+    | '/_authed/finance/bank-accounts/'
+    | '/_authed/finance/cash-accounts/'
     | '/_authed/iam/permissions/'
     | '/_authed/iam/roles/'
     | '/_authed/iam/users/'
@@ -613,6 +639,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedIamPermissionsIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/finance/cash-accounts/': {
+      id: '/_authed/finance/cash-accounts/'
+      path: '/finance/cash-accounts'
+      fullPath: '/finance/cash-accounts/'
+      preLoaderRoute: typeof AuthedFinanceCashAccountsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/finance/bank-accounts/': {
+      id: '/_authed/finance/bank-accounts/'
+      path: '/finance/bank-accounts'
+      fullPath: '/finance/bank-accounts/'
+      preLoaderRoute: typeof AuthedFinanceBankAccountsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/sales/channels/$id': {
       id: '/_authed/sales/channels/$id'
       path: '/sales/channels/$id'
@@ -689,6 +729,8 @@ interface AuthedRouteChildren {
   AuthedInventoryProductsIdRoute: typeof AuthedInventoryProductsIdRoute
   AuthedOrgBranchesIdRoute: typeof AuthedOrgBranchesIdRoute
   AuthedSalesChannelsIdRoute: typeof AuthedSalesChannelsIdRoute
+  AuthedFinanceBankAccountsIndexRoute: typeof AuthedFinanceBankAccountsIndexRoute
+  AuthedFinanceCashAccountsIndexRoute: typeof AuthedFinanceCashAccountsIndexRoute
   AuthedIamPermissionsIndexRoute: typeof AuthedIamPermissionsIndexRoute
   AuthedIamRolesIndexRoute: typeof AuthedIamRolesIndexRoute
   AuthedIamUsersIndexRoute: typeof AuthedIamUsersIndexRoute
@@ -723,6 +765,8 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedInventoryProductsIdRoute: AuthedInventoryProductsIdRoute,
   AuthedOrgBranchesIdRoute: AuthedOrgBranchesIdRoute,
   AuthedSalesChannelsIdRoute: AuthedSalesChannelsIdRoute,
+  AuthedFinanceBankAccountsIndexRoute: AuthedFinanceBankAccountsIndexRoute,
+  AuthedFinanceCashAccountsIndexRoute: AuthedFinanceCashAccountsIndexRoute,
   AuthedIamPermissionsIndexRoute: AuthedIamPermissionsIndexRoute,
   AuthedIamRolesIndexRoute: AuthedIamRolesIndexRoute,
   AuthedIamUsersIndexRoute: AuthedIamUsersIndexRoute,

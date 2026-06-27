@@ -40,10 +40,15 @@ Packages: `@turbohesap/shared`, `@turbohesap/backend`, `@turbohesap/frontend`,
    `shared/src/core/api.ts` + `shared/src/index.ts`, and **`shared` is rebuilt**
    before backend/frontend/mobile consume it. Never inline a wire shape in the
    backend or a client.
-2. **The 3-mirror rule.** A module lives in exactly three places with the same
-   name: `shared/src/modules/<mod>`, `backend/src/modules/<mod>`,
-   `frontend/src/modules/<mod>`. Endpoints are **always** `/api/<mod>/<resource>`.
-   Modules talk to each other **only** through `@turbohesap/shared` DTOs.
+2. **The mirror rule (incl. mobile).** A module lives in mirrored places with the
+   same name: `shared/src/modules/<mod>`, `backend/src/modules/<mod>`,
+   `frontend/src/modules/<mod>`, **and `mobile/src/modules/<mod>`**. Endpoints are
+   **always** `/api/<mod>/<resource>`. Modules talk to each other **only** through
+   `@turbohesap/shared` DTOs. **Mobile is NOT optional** — every user-facing module
+   ships at least a permission-gated mobile module config + list/detail screens
+   (see §12). Skipping a platform is allowed **only** if the user explicitly
+   approved it; if so, say so plainly in your final message. "I forgot mobile" is a
+   defect, not a deferral.
 3. **Build after every step.** After each layer you touch, run that layer's build
    /typecheck (see §4) and fix every error before moving on. Never stack unbuilt
    changes. "It looks right" is not "it builds".
@@ -68,8 +73,25 @@ Packages: `@turbohesap/shared`, `@turbohesap/backend`, `@turbohesap/frontend`,
 10. **Leave the docs true.** If you change structure, conventions, or the build
     pipeline, update `AGENTS.md`, the relevant skill, and this file in the same
     change.
+11. **Money is `decimal`, never `float`.** Any monetary / quantity-with-precision
+    column is `numeric/decimal` with a value transformer to a JS `number` — never
+    `double precision`, `float`, or `real`. Floats corrupt money. See §7.1.
+12. **Ship the whole feature, not a stub.** Deliver every resource the feature
+    actually needs, not just the obvious master-data table. For an accounts feature
+    that means the **transactions/movements ledger and computed balances**, not
+    only the account list. If you must defer part of the scope, you **list each
+    deferred piece explicitly** in your final message and get it acknowledged — you
+    do not silently ship half a module and call it done.
+13. **Every user-managed entity gets a detail page.** A list/grid row links
+    (`onRowClick`) to a detail page (web `*-detail-page.tsx` + `$id` route; mobile
+    detail screen) that surfaces the entity's **audit trail**, its **files/images**
+    (`FileManager`/`ImageManager`), and its **related/child records**. A list +
+    edit-dialog alone is incomplete for anything that has history, attachments, or
+    children. (Pure tiny reference lists — see lookups — are the only exception.)
 
 > If you cannot satisfy a rule, **stop and report why** — do not silently skip it.
+> Scope you chose not to build is a **reported deferral**, never an unmentioned
+> hole.
 
 ---
 
@@ -248,6 +270,39 @@ pure functions only, operating on DTOs (e.g. `category.helpers.ts`,
 - Register the module in `backend/src/app.module.ts`.
 - If you added an audited entity, register it in `audited-entities.ts`.
 - Generate + apply a migration. Build. Test. **Then §13.**
+
+### 7.1 Money, quantities & numeric columns (STRICT)
+**Never store money or precise quantities as a float.** PostgreSQL `double
+precision` / `real` and JS floats lose precision and silently corrupt totals — a
+fatal bug in finance, inventory pricing, tax, etc.
+
+- Use a `numeric/decimal` column with explicit precision/scale **and a value
+  transformer** so the entity property and the shared DTO stay a plain `number`:
+  ```ts
+  // money column on an entity (decimal in DB, number in TS/JSON)
+  @Column('numeric', { precision: 18, scale: 2, default: 0,
+    transformer: { to: (v: number) => v, from: (v: string | null) => (v == null ? 0 : Number(v)) } })
+  openingBalance!: number
+  ```
+  Use `scale: 2` for currency; widen scale for unit prices/quantities as needed
+  (`numeric(18,4)`). Quantities that can be fractional follow the same rule.
+- Confirm the generated migration emits `numeric(18,2)` — **not** `double
+  precision`. If it shows `double precision`, the entity is wrong; fix it and
+  regenerate.
+- Currency is always an explicit field next to the amount; default `'TRY'`.
+- Format for display on the client (`Intl.NumberFormat('tr-TR', { style:
+  'currency', currency })`); put the helper in a shared/util, not duplicated per
+  page.
+- A **balance is computed** from the movements ledger (opening balance + Σ
+  transactions), exposed as a derived DTO field — like `category.productCount`.
+  Do not keep a mutable `balance` column you update by hand.
+
+### 7.2 Branch scoping
+Money/stock/operational entities are usually **per branch**. Add a `branchId`
+(FK to `org` `Branch`, via the shared `BranchSummary` DTO for embedding) when the
+entity belongs to a location, so per-branch authorization (the existing
+`user_branches` model) and per-branch reporting work. Ask yourself "is this global
+or per-branch?" for every operational entity and justify the answer.
 
 ---
 
@@ -526,19 +581,33 @@ If you could not run them, say so explicitly and why — do not imply you did.
 
 ## 15. Definition of Done (tick every box)
 
-- [ ] `shared` built; `core/api.ts` + `index.ts` updated; no inline wire shapes.
-- [ ] Backend builds **and** unit tests pass.
+- [ ] `shared` built; `core/api.ts` + `index.ts` (+ `app-modules.ts` for a new
+      module) updated; no inline wire shapes.
+- [ ] **Scope is complete** (rule 12): every resource the feature needs exists
+      (incl. the transactions/movements ledger + computed balances for an accounts
+      feature), or each deferral is explicitly listed and acknowledged.
+- [ ] **No money/quantity stored as float** (§7.1): migration shows
+      `numeric(…)`, entity uses the number transformer, currency field present,
+      balances computed. Grep the migration for `double precision` → must be none
+      on money columns.
+- [ ] **Branch scoping decided** (§7.2): operational entities have `branchId` or a
+      stated reason they're global.
+- [ ] Backend builds **and** unit tests pass; **new service logic has `*.spec.ts`
+      coverage** (uniqueness, balance math, validation branches).
 - [ ] Entity changes have a committed, reviewed migration; `make migrate` ran.
 - [ ] Every route has the right `@RequirePermissions` (or `@Public()`); the same
-      key is mirrored in the UI.
+      key is mirrored in the UI; audited entities registered in `audited-entities.ts`.
 - [ ] **Every new/changed endpoint exercised over HTTP with a real token** (§13),
       including 401/400 negative checks; results reported.
 - [ ] Frontend `vite build` + `tsc -b` pass; tables use DataGrid; list pages have
-      no redundant header band; dialogs save-on-submit.
-- [ ] Mobile `typecheck` passes (+ `expo export` if RN deps/imports changed).
+      no redundant header band; dialogs save-on-submit; **list rows link to a
+      detail page** (rule 13) that shows audit + files + related records.
+- [ ] **Mobile built** (rule 2): module config + list/detail screens, permission
+      gated; `typecheck` passes (+ `expo export` if RN deps/imports changed). If
+      mobile was deferred, it was user-approved and is stated.
 - [ ] `AGENTS.md` / skills / `agy.md` updated if conventions changed.
 
-If any box is unchecked, the task is **not done** — say what remains.
+If any box is unchecked, the task is **not done** — say exactly what remains.
 
 ---
 
@@ -552,6 +621,14 @@ If any box is unchecked, the task is **not done** — say what remains.
 - ❌ Create a new table for a small enumerated list — use lookups.
 - ❌ Claim "done" without the §13 HTTP token tests.
 - ❌ Leave a build/typecheck red and move on.
+- ❌ Store money/quantity as `double precision`/`float`/`real` (§7.1).
+- ❌ Ship master-data tables only and omit the transactions/movements + balances
+  the feature exists for (rule 12), without explicitly reporting the deferral.
+- ❌ Skip the mobile layer of a user-facing module without explicit user approval
+  (rule 2).
+- ❌ Ship a list + edit-dialog with **no detail page** for an entity that has
+  audit history, attachments, or child records (rule 13).
+- ❌ Add backend service logic with **no `*.spec.ts`** test.
 - ❌ Hardcode permission strings, colours (mobile), or `@Column({ name })`.
 - ❌ Commit/push unless explicitly asked.
 

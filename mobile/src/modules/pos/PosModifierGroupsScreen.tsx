@@ -227,7 +227,7 @@ export function PosModifierGroupsScreen() {
                   <View style={{ flex: 1 }}>
                     <Input label="Grup adı" placeholder="örn. Ekstra Soslar" value={newGroupName} onChangeText={setNewGroupName} />
                   </View>
-                  <Button title="Ekle" icon="plus" onPress={createGroup} loading={busy} disabled={!newGroupName.trim()} />
+                  <Button title="Ekle" icon="plus" onPress={createGroup} loading={busy} disabled={!newGroupName.trim()} style={{ height: 48, alignSelf: 'flex-end' }} />
                 </View>
               </Section>
             ) : null}
@@ -329,7 +329,7 @@ export function PosModifierGroupsScreen() {
                   <View style={{ flex: 1 }}>
                     <Input label="Fiyat farkı" placeholder="0" value={optionDelta} onChangeText={setOptionDelta} keyboardType="decimal-pad" />
                   </View>
-                  <Button title="Ekle" icon="plus" onPress={addOption} loading={busy} disabled={!optionName.trim()} />
+                  <Button title="Ekle" icon="plus" onPress={addOption} loading={busy} disabled={!optionName.trim()} style={{ height: 48, alignSelf: 'flex-end' }} />
                 </View>
 
                 <Button title="Grubu Kaydet" fullWidth loading={busy} disabled={!form.name.trim()} onPress={saveGroup} />

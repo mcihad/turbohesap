@@ -226,6 +226,7 @@ export function PosFloorsScreen() {
                         onPress={() => createTable(floor.id)}
                         loading={busy}
                         disabled={!(newTableName[floor.id] ?? '').trim()}
+                        style={{ height: 48, alignSelf: 'flex-end' }}
                       />
                     </View>
                   </Section>
@@ -251,7 +252,7 @@ export function PosFloorsScreen() {
                     onChangeText={setNewFloorName}
                   />
                 </View>
-                <Button title="Ekle" icon="plus" onPress={createFloor} loading={busy} disabled={!newFloorName.trim()} />
+                <Button title="Ekle" icon="plus" onPress={createFloor} loading={busy} disabled={!newFloorName.trim()} style={{ height: 48, alignSelf: 'flex-end' }} />
               </View>
             </Section>
           </>

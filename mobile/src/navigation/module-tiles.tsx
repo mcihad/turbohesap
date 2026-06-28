@@ -116,6 +116,7 @@ export function descOf(key: string): string | undefined {
     sales: 'Satış kanalları',
     org: 'Şubeler ve organizasyon',
     inventory: 'Ürünler, stok ve kategoriler',
+    pos: 'Satış noktası, kasa ve masalar',
     finance: 'Kasa, banka ve işlemler',
     contacts: 'Cariler, gruplar ve fırsatlar',
     invoices: 'Satış ve alış faturaları',

@@ -20,6 +20,7 @@ import {
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
 import { useAsync } from '../../lib/use-async'
+import { ModuleSwitcherButton } from '../../navigation/ModuleSwitcher'
 import { useNav } from '../../navigation/nav-context'
 import { useTheme, useThemeControls } from '../../theme/theme-context'
 
@@ -92,7 +93,12 @@ export function PosDashboardScreen() {
       header={{
         title: 'POS',
         large: true,
-        right: <HeaderAction icon={theme.scheme === 'dark' ? 'sun' : 'moon'} onPress={toggle} />,
+        right: (
+          <>
+            <HeaderAction icon={theme.scheme === 'dark' ? 'sun' : 'moon'} onPress={toggle} />
+            <ModuleSwitcherButton />
+          </>
+        ),
       }}
       onRefresh={() => {
         registers.refetch()

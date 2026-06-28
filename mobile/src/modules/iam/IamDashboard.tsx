@@ -4,7 +4,7 @@ import * as React from 'react'
 
 import { IamPermissions } from '@turbohesap/shared'
 
-import { ChartCard, type Datum, MiniBarChart, RecentCard, SegmentBar } from '../../components'
+import { ChartCard, type Datum, MiniBarChart, RecentCard, Section, SegmentBar } from '../../components'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
 import { useAsync } from '../../lib/use-async'
@@ -33,12 +33,17 @@ export function IamDashboard() {
   return (
     <>
       <IamStats />
-      <ChartCard title="Kullanıcı durumu" subtitle="Aktif / pasif" isEmpty={statusData.length === 0}>
-        <SegmentBar data={statusData} />
-      </ChartCard>
-      <ChartCard title="Rol başına kullanıcı" subtitle="En çok kullanılan roller" isEmpty={roleData.length === 0}>
-        <MiniBarChart data={roleData} />
-      </ChartCard>
+      
+      <Section title="Grafikler & Dağılım">
+        <ChartCard title="Kullanıcı durumu" subtitle="Aktif / pasif" isEmpty={statusData.length === 0}>
+          <SegmentBar data={statusData} />
+        </ChartCard>
+        
+        <ChartCard title="Rol başına kullanıcı" subtitle="En çok kullanılan roller" isEmpty={roleData.length === 0}>
+          <MiniBarChart data={roleData} />
+        </ChartCard>
+      </Section>
+
       <RecentCard title="Son eklenen kullanıcılar" icon="users" items={recent} emptyText="Henüz kullanıcı yok" />
     </>
   )

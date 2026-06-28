@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { FinancePermissions } from '@turbohesap/shared'
-import { ChartCard, RecentCard, SegmentBar } from '../../components'
+import { ChartCard, RecentCard, Section, SegmentBar } from '../../components'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
 import { useAsync } from '../../lib/use-async'
@@ -54,9 +54,11 @@ export function FinanceDashboard() {
     <>
       <FinanceStats />
       
-      <ChartCard title="Hesap Dağılımı" subtitle="Hesap türlerine göre sayısal dağılım" isEmpty={distributionData.length === 0}>
-        <SegmentBar data={distributionData} />
-      </ChartCard>
+      <Section title="Grafikler & Dağılım">
+        <ChartCard title="Hesap Dağılımı" subtitle="Hesap türlerine göre sayısal dağılım" isEmpty={distributionData.length === 0}>
+          <SegmentBar data={distributionData} />
+        </ChartCard>
+      </Section>
 
       <RecentCard
         title="Son Tanımlanan Hesaplar"

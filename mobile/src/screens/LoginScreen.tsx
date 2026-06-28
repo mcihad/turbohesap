@@ -3,11 +3,10 @@
 // fetches permissions; RootNavigator then swaps to the app shell.
 
 import * as React from 'react'
-import { KeyboardAvoidingView, Platform, View } from 'react-native'
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Button, Input, Text } from '../components'
-import { Icon } from '../components/Icon'
 import { useAuth } from '../lib/auth/auth-context'
 import { useTheme } from '../theme/theme-context'
 
@@ -50,93 +49,152 @@ export function LoginScreen() {
       }}
     >
       <KeyboardAvoidingView
-        style={{ flex: 1, justifyContent: 'center', paddingHorizontal: t.spacing[6] }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
       >
-        {/* Brand mark */}
-        <View style={{ alignItems: 'center', gap: t.spacing[3], marginBottom: t.spacing[10] }}>
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: 'center',
+            paddingHorizontal: t.spacing[6],
+            paddingVertical: t.spacing[4],
+          }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Brand logo & heading */}
           <View
-            style={[
-              {
-                width: 64,
-                height: 64,
-                borderRadius: t.radius['2xl'],
-                backgroundColor: t.colors.primary,
-                alignItems: 'center',
-                justifyContent: 'center',
-              },
-              t.elevation('md'),
-            ]}
-          >
-            <Icon name="box" size={32} color={t.colors.primaryForeground} />
-          </View>
-          <View style={{ alignItems: 'center', gap: t.spacing[1] }}>
-            <Text variant="h1">TurboHesap</Text>
-            <Text variant="label" tone="muted">
-              Hesabınıza giriş yapın
-            </Text>
-          </View>
-        </View>
-
-        {/* Form */}
-        <View style={{ gap: t.spacing[4] }}>
-          <Input
-            label="Kullanıcı adı"
-            icon="user"
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={username}
-            onChangeText={setUsername}
-            placeholder="kullanıcı adınız"
-          />
-          {mode === 'pin' ? (
-            <Input
-              label="PIN"
-              icon="hash"
-              password
-              keyboardType="number-pad"
-              value={pin}
-              onChangeText={setPin}
-              placeholder="••••"
-              onSubmitEditing={signIn}
-              returnKeyType="go"
-              error={error ?? undefined}
-            />
-          ) : (
-            <Input
-              label="Parola"
-              icon="lock"
-              password
-              value={password}
-              onChangeText={setPassword}
-              placeholder="••••••••"
-              onSubmitEditing={signIn}
-              returnKeyType="go"
-              error={error ?? undefined}
-            />
-          )}
-          <Button
-            title={mode === 'pin' ? 'POS Girişi' : 'Giriş yap'}
-            size="lg"
-            fullWidth
-            loading={busy}
-            onPress={signIn}
-            style={{ marginTop: t.spacing[2] }}
-          />
-          <Button
-            title={mode === 'pin' ? 'Parola ile giriş' : 'POS PIN ile giriş'}
-            variant="ghost"
-            fullWidth
-            onPress={() => {
-              setError(null)
-              setMode((m) => (m === 'pin' ? 'password' : 'pin'))
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: t.spacing[4],
+              marginBottom: t.spacing[8],
             }}
-          />
-        </View>
+          >
+            <Image
+              source={require('../../assets/logo.png')}
+              style={{ width: 76, height: 76, borderRadius: t.radius.lg }}
+              resizeMode="contain"
+            />
+            <View style={{ gap: 2 }}>
+              <Text variant="h1" style={{ fontSize: 24, fontWeight: '700', lineHeight: 28 }}>
+                TurboHesap
+              </Text>
+              <Text variant="caption" tone="muted">
+                Hesabınıza giriş yapın
+              </Text>
+            </View>
+          </View>
 
-        <Text variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: t.spacing[8] }}>
-          @turbohesap/shared · web ile aynı kontratlar
-        </Text>
+          {/* Tab mode switcher */}
+          <View
+            style={{
+              flexDirection: 'row',
+              borderBottomWidth: 1,
+              borderBottomColor: t.colors.border,
+              marginBottom: t.spacing[5],
+            }}
+          >
+            <Pressable
+              onPress={() => {
+                setError(null)
+                setMode('password')
+              }}
+              style={{
+                flex: 1,
+                paddingVertical: t.spacing[3],
+                alignItems: 'center',
+                borderBottomWidth: mode === 'password' ? 2 : 0,
+                borderBottomColor: t.colors.primary,
+              }}
+            >
+              <Text
+                variant="label"
+                weight={mode === 'password' ? 'semibold' : 'normal'}
+                tone={mode === 'password' ? 'default' : 'muted'}
+              >
+                Yönetici Girişi
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                setError(null)
+                setMode('pin')
+              }}
+              style={{
+                flex: 1,
+                paddingVertical: t.spacing[3],
+                alignItems: 'center',
+                borderBottomWidth: mode === 'pin' ? 2 : 0,
+                borderBottomColor: t.colors.primary,
+              }}
+            >
+              <Text
+                variant="label"
+                weight={mode === 'pin' ? 'semibold' : 'normal'}
+                tone={mode === 'pin' ? 'default' : 'muted'}
+              >
+                POS Terminal
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* Form Fields */}
+          <View style={{ gap: t.spacing[4] }}>
+            <Input
+              label="Kullanıcı Adı"
+              icon="user"
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={username}
+              onChangeText={setUsername}
+              placeholder="kullanıcı adınız"
+            />
+
+            {mode === 'pin' ? (
+              <Input
+                label="PIN Kodu"
+                icon="hash"
+                password
+                keyboardType="number-pad"
+                value={pin}
+                onChangeText={setPin}
+                placeholder="••••"
+                onSubmitEditing={signIn}
+                returnKeyType="go"
+                error={error ?? undefined}
+              />
+            ) : (
+              <Input
+                label="Parola"
+                icon="lock"
+                password
+                value={password}
+                onChangeText={setPassword}
+                placeholder="••••••••"
+                onSubmitEditing={signIn}
+                returnKeyType="go"
+                error={error ?? undefined}
+              />
+            )}
+
+            <Button
+              title={mode === 'pin' ? 'POS Girişi Yap' : 'Giriş Yap'}
+              size="lg"
+              fullWidth
+              loading={busy}
+              onPress={signIn}
+              style={{ marginTop: t.spacing[2] }}
+            />
+          </View>
+
+          {/* Footer */}
+          <Text variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: t.spacing[10] }}>
+            @turbohesap/shared · web ile aynı kontratlar
+          </Text>
+        </ScrollView>
       </KeyboardAvoidingView>
     </View>
   )

@@ -4,7 +4,7 @@ import * as React from 'react'
 
 import { OrgPermissions } from '@turbohesap/shared'
 
-import { ChartCard, type Datum, MiniBarChart, RecentCard, SegmentBar } from '../../components'
+import { ChartCard, type Datum, MiniBarChart, RecentCard, Section, SegmentBar } from '../../components'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
 import { useAsync } from '../../lib/use-async'
@@ -35,12 +35,17 @@ export function OrgDashboard() {
   return (
     <>
       <OrgStats />
-      <ChartCard title="Şube türleri" subtitle="Türe göre dağılım" isEmpty={typeData.length === 0}>
-        <SegmentBar data={typeData} />
-      </ChartCard>
-      <ChartCard title="Şehirlere göre şube" subtitle="En çok şube olan şehirler" isEmpty={cityData.length === 0}>
-        <MiniBarChart data={cityData} />
-      </ChartCard>
+      
+      <Section title="Grafikler & Dağılım">
+        <ChartCard title="Şube türleri" subtitle="Türe göre dağılım" isEmpty={typeData.length === 0}>
+          <SegmentBar data={typeData} />
+        </ChartCard>
+        
+        <ChartCard title="Şehirlere göre şube" subtitle="En çok şube olan şehirler" isEmpty={cityData.length === 0}>
+          <MiniBarChart data={cityData} />
+        </ChartCard>
+      </Section>
+
       <RecentCard title="Son eklenen şubeler" icon="map-pin" items={recent} emptyText="Henüz şube yok" />
     </>
   )

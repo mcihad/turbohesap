@@ -49,21 +49,30 @@ export function ModuleDashboardScreen() {
             <Pressable
               key={item.key}
               onPress={() => nav.switchTab(item.key)}
-              style={({ pressed }) => ({ width: '47.5%', flexGrow: 1, opacity: pressed ? 0.85 : 1 })}
+              style={{ width: '47.5%', flexGrow: 1 }}
             >
-              <Card style={{ height: 124, justifyContent: 'space-between' }}>
-                <View style={{ width: 42, height: 42, borderRadius: t.radius.lg, backgroundColor: t.colors.muted, alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon name={item.icon} size={20} color={t.colors.foreground} />
-                </View>
-                <View style={{ gap: 2 }}>
-                  <Text variant="label" weight="semibold" numberOfLines={1}>
-                    {item.title}
-                  </Text>
-                  <Text variant="caption" tone="muted" numberOfLines={2} style={{ minHeight: 32 }}>
-                    {item.description ?? ' '}
-                  </Text>
-                </View>
-              </Card>
+              {({ pressed }) => (
+                <Card
+                  style={{
+                    height: 124,
+                    justifyContent: 'space-between',
+                    backgroundColor: pressed ? t.colors.surface : t.colors.card,
+                    opacity: pressed ? 0.9 : 1,
+                  }}
+                >
+                  <View style={{ width: 42, height: 42, borderRadius: t.radius.lg, backgroundColor: t.colors.primarySoft, alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon name={item.icon} size={20} color={t.colors.primary} />
+                  </View>
+                  <View style={{ gap: 2 }}>
+                    <Text variant="label" weight="semibold" numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                    <Text variant="caption" tone="muted" numberOfLines={2} style={{ minHeight: 32 }}>
+                      {item.description ?? ' '}
+                    </Text>
+                  </View>
+                </Card>
+              )}
             </Pressable>
           ))}
         </View>

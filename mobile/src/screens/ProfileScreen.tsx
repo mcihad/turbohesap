@@ -35,25 +35,54 @@ export function ProfileScreen() {
   // useModuleNav is available because Profile is rendered inside ModuleNavProvider.
   useModuleNav()
 
+  const groupedPerms = React.useMemo(() => {
+    const groups: Record<string, string[]> = {}
+    permissions.forEach((p) => {
+      const parts = p.split('.')
+      const mod = parts[0] || 'diğer'
+      if (!groups[mod]) groups[mod] = []
+      groups[mod].push(p)
+    })
+    return groups
+  }, [permissions])
+
   if (!user) return <Screen header={{ title: 'Profil' }}>{null}</Screen>
 
   return (
     <Screen header={{ title: 'Profil', large: true, right: <ModuleSwitcherButton /> }}>
-      {/* Identity */}
-      <Card style={{ alignItems: 'center', gap: t.spacing[3] }}>
-        <Avatar initials={initials(user)} size={76} />
-        <View style={{ alignItems: 'center', gap: 4 }}>
-          <Text variant="h2">{displayName(user)}</Text>
-          <Text variant="label" tone="muted">
+      {/* Identity Horizontal Card */}
+      <Card style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing[4], padding: t.spacing[4] }}>
+        <View style={{ position: 'relative' }}>
+          <Avatar initials={initials(user)} size={76} />
+          {/* Active status dot */}
+          <View
+            style={{
+              position: 'absolute',
+              bottom: 1,
+              right: 1,
+              width: 15,
+              height: 15,
+              borderRadius: 8,
+              backgroundColor: t.colors.success,
+              borderWidth: 2,
+              borderColor: t.colors.card,
+            }}
+          />
+        </View>
+        <View style={{ flex: 1, gap: 4 }}>
+          <Text variant="title" weight="bold" style={{ fontSize: 18 }}>
+            {displayName(user)}
+          </Text>
+          <Text variant="caption" tone="muted">
             {user.email}
           </Text>
-        </View>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing[1.5], justifyContent: 'center' }}>
-          {roles.length > 0 ? (
-            roles.map((r) => <Badge key={r} label={r} tone="primary" />)
-          ) : (
-            <Badge label="Rol yok" tone="muted" />
-          )}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing[1], marginTop: 2 }}>
+            {roles.length > 0 ? (
+              roles.map((r) => <Badge key={r} label={r} tone="primary" />)
+            ) : (
+              <Badge label="Rol yok" tone="muted" />
+            )}
+          </View>
         </View>
       </Card>
 
@@ -69,21 +98,43 @@ export function ProfileScreen() {
             chevron={false}
           />
           {showPerms ? (
-            <View style={{ paddingHorizontal: t.spacing[4], paddingBottom: t.spacing[4], gap: t.spacing[2] }}>
+            <View style={{ paddingHorizontal: t.spacing[4], paddingBottom: t.spacing[4], gap: t.spacing[3] }}>
               {permissions.length === 0 ? (
                 <Text variant="caption" tone="muted">
                   Atanmış izin yok.
                 </Text>
               ) : (
-                permissions
-                  .slice()
-                  .sort()
-                  .map((p) => (
-                    <View key={p} style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing[2] }}>
-                      <Icon name="check" size={14} color={t.colors.success} />
-                      <Text variant="mono">{p}</Text>
+                Object.entries(groupedPerms).map(([modName, keys]) => (
+                  <View key={modName} style={{ gap: t.spacing[1.5], marginTop: t.spacing[1] }}>
+                    <Text variant="overline" tone="muted" style={{ fontSize: 10, letterSpacing: 0.8 }}>
+                      {modName.toUpperCase()}
+                    </Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing[1.5] }}>
+                      {keys.map((p) => {
+                        const labelText = p.split('.').slice(1).join('.')
+                        return (
+                          <View
+                            key={p}
+                            style={{
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              gap: 4,
+                              backgroundColor: t.colors.surface,
+                              borderWidth: 1,
+                              borderColor: t.colors.border,
+                              paddingHorizontal: t.spacing[2],
+                              paddingVertical: t.spacing[1],
+                              borderRadius: t.radius.md,
+                            }}
+                          >
+                            <Icon name="check" size={12} color={t.colors.success} />
+                            <Text variant="mono">{labelText}</Text>
+                          </View>
+                        )
+                      })}
                     </View>
-                  ))
+                  </View>
+                ))
               )}
             </View>
           ) : null}
@@ -165,7 +216,7 @@ export function ProfileScreen() {
         </Card>
       </Section>
 
-      <Button title="Çıkış yap" variant="outline" icon="log-out" fullWidth onPress={logout} style={{ marginTop: t.spacing[2] }} />
+      <Button title="Çıkış yap" variant="destructive" icon="log-out" fullWidth onPress={logout} style={{ marginTop: t.spacing[2] }} />
 
       <Text variant="caption" tone="muted" style={{ textAlign: 'center', marginTop: t.spacing[2] }}>
         TurboHesap Mobile · v0.1.0

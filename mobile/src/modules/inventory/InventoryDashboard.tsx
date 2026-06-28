@@ -5,7 +5,7 @@ import * as React from 'react'
 
 import { InventoryPermissions, type ProductDto } from '@turbohesap/shared'
 
-import { ChartCard, type Datum, MiniBarChart, RecentCard, SegmentBar } from '../../components'
+import { ChartCard, type Datum, MiniBarChart, RecentCard, Section, SegmentBar } from '../../components'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
 import { useAsync } from '../../lib/use-async'
@@ -36,12 +36,17 @@ export function InventoryDashboard() {
   return (
     <>
       <InventoryStats />
-      <ChartCard title="Ürün dağılımı" subtitle="Kategoriye göre" isEmpty={byCat.length === 0}>
-        <SegmentBar data={byCat} />
-      </ChartCard>
-      <ChartCard title="Stok değeri" subtitle="Kategoriye göre (satış fiyatına göre)" isEmpty={valueByCat.length === 0}>
-        <MiniBarChart data={valueByCat} format={(n) => n.toLocaleString('tr-TR', { maximumFractionDigits: 0 })} />
-      </ChartCard>
+      
+      <Section title="Grafikler & Dağılım">
+        <ChartCard title="Ürün dağılımı" subtitle="Kategoriye göre" isEmpty={byCat.length === 0}>
+          <SegmentBar data={byCat} />
+        </ChartCard>
+        
+        <ChartCard title="Stok değeri" subtitle="Kategoriye göre (satış fiyatına göre)" isEmpty={valueByCat.length === 0}>
+          <MiniBarChart data={valueByCat} format={(n) => n.toLocaleString('tr-TR', { maximumFractionDigits: 0 })} />
+        </ChartCard>
+      </Section>
+
       <RecentCard title="Son eklenen ürünler" icon="box" items={recent} emptyText="Henüz ürün yok" />
     </>
   )

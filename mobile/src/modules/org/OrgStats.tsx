@@ -5,7 +5,7 @@ import { View } from 'react-native'
 
 import { OrgPermissions } from '@turbohesap/shared'
 
-import { StatCard } from '../../components'
+import { Section, StatCard } from '../../components'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
 import { useAsync } from '../../lib/use-async'
@@ -22,12 +22,14 @@ export function OrgStats() {
   const cities = new Set(list.map((b) => b.city).filter(Boolean)).size
 
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing[3] }}>
-      <Cell><StatCard icon="briefcase" tone="primary" label="Şube" value={String(list.length)} /></Cell>
-      <Cell><StatCard icon="check-circle" tone="success" label="Aktif" value={String(active)} /></Cell>
-      <Cell><StatCard icon="x-circle" tone="warning" label="Pasif" value={String(list.length - active)} /></Cell>
-      <Cell><StatCard icon="map-pin" tone="info" label="Şehir" value={String(cities)} /></Cell>
-    </View>
+    <Section title="Şube Özetleri">
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing[3] }}>
+        <Cell><StatCard icon="briefcase" tone="primary" label="Şube" value={String(list.length)} /></Cell>
+        <Cell><StatCard icon="check-circle" tone="success" label="Aktif" value={String(active)} /></Cell>
+        <Cell><StatCard icon="x-circle" tone="warning" label="Pasif" value={String(list.length - active)} /></Cell>
+        <Cell><StatCard icon="map-pin" tone="info" label="Şehir" value={String(cities)} /></Cell>
+      </View>
+    </Section>
   )
 }
 

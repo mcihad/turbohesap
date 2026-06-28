@@ -45,27 +45,29 @@ export function ContactsDashboard() {
 
   return (
     <>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing[3] }}>
-        <Cell>
-          <StatCard icon="users" tone="primary" label="Cari Sayısı" value={String(contactList.length)} />
-        </Cell>
-        <Cell>
-          <StatCard
-            icon="target"
-            tone="info"
-            label="Açık Fırsat"
-            value={canReadOpportunities ? String(oppList.length) : '—'}
-            delta={canReadOpportunities && oppList.length > 0 ? formatMoney(openRevenue, 'TRY') : undefined}
-            deltaTone="info"
-          />
-        </Cell>
-        <Cell>
-          <StatCard icon="arrow-down-left" tone="success" label="Toplam Alacak" value={formatMoney(totalReceivable, 'TRY')} />
-        </Cell>
-        <Cell>
-          <StatCard icon="arrow-up-right" tone="warning" label="Toplam Borç" value={formatMoney(totalPayable, 'TRY')} />
-        </Cell>
-      </View>
+      <Section title="Cari Özetleri">
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing[3] }}>
+          <Cell>
+            <StatCard icon="users" tone="primary" label="Cari Sayısı" value={String(contactList.length)} />
+          </Cell>
+          <Cell>
+            <StatCard
+              icon="target"
+              tone="info"
+              label="Açık Fırsat"
+              value={canReadOpportunities ? String(oppList.length) : '—'}
+              delta={canReadOpportunities && oppList.length > 0 ? formatMoney(openRevenue, 'TRY') : undefined}
+              deltaTone="info"
+            />
+          </Cell>
+          <Cell>
+            <StatCard icon="arrow-down-left" tone="success" label="Toplam Alacak" value={formatMoney(totalReceivable, 'TRY')} />
+          </Cell>
+          <Cell>
+            <StatCard icon="arrow-up-right" tone="warning" label="Toplam Borç" value={formatMoney(totalPayable, 'TRY')} />
+          </Cell>
+        </View>
+      </Section>
 
       <Section title="Son Cariler">
         {recent.length === 0 ? (

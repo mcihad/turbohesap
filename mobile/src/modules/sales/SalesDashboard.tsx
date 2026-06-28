@@ -4,7 +4,7 @@ import * as React from 'react'
 
 import { SalesPermissions } from '@turbohesap/shared'
 
-import { ChartCard, type Datum, MiniBarChart, RecentCard, SegmentBar } from '../../components'
+import { ChartCard, type Datum, MiniBarChart, RecentCard, Section, SegmentBar } from '../../components'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
 import { useAsync } from '../../lib/use-async'
@@ -39,12 +39,17 @@ export function SalesDashboard() {
   return (
     <>
       <SalesStats />
-      <ChartCard title="Kanal türleri" subtitle="Türe göre dağılım" isEmpty={typeData.length === 0}>
-        <SegmentBar data={typeData} />
-      </ChartCard>
-      <ChartCard title="Komisyon oranları" subtitle="Kanal başına %" isEmpty={commission.length === 0} emptyText="Komisyonlu kanal yok">
-        <MiniBarChart data={commission} format={(n) => `%${n}`} />
-      </ChartCard>
+      
+      <Section title="Grafikler & Dağılım">
+        <ChartCard title="Kanal türleri" subtitle="Türe göre dağılım" isEmpty={typeData.length === 0}>
+          <SegmentBar data={typeData} />
+        </ChartCard>
+        
+        <ChartCard title="Komisyon oranları" subtitle="Kanal başına %" isEmpty={commission.length === 0} emptyText="Komisyonlu kanal yok">
+          <MiniBarChart data={commission} format={(n) => `%${n}`} />
+        </ChartCard>
+      </Section>
+
       <RecentCard title="Son eklenen kanallar" icon="shopping-bag" items={recent} emptyText="Henüz kanal yok" />
     </>
   )

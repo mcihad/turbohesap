@@ -16,6 +16,7 @@ import {
   Section,
   StatCard,
   Text,
+  withAlpha,
 } from '../../components'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
@@ -81,6 +82,41 @@ export function PosDashboardScreen() {
     },
   ]
 
+  const getTileColors = (key: string) => {
+    switch (key) {
+      case 'sell':
+        return {
+          bg: withAlpha(t.colors.success, 0.08),
+          color: t.colors.success,
+          borderColor: withAlpha(t.colors.success, 0.15),
+        }
+      case 'registers':
+        return {
+          bg: withAlpha(t.colors.primary, 0.08),
+          color: t.colors.primary,
+          borderColor: withAlpha(t.colors.primary, 0.15),
+        }
+      case 'floors':
+        return {
+          bg: withAlpha(t.colors.info, 0.08),
+          color: t.colors.info,
+          borderColor: withAlpha(t.colors.info, 0.15),
+        }
+      case 'modifiers':
+        return {
+          bg: withAlpha(t.colors.warning, 0.08),
+          color: t.colors.warning,
+          borderColor: withAlpha(t.colors.warning, 0.15),
+        }
+      default:
+        return {
+          bg: t.colors.primarySoft,
+          color: t.colors.primary,
+          borderColor: t.colors.border,
+        }
+    }
+  }
+
   // registersRead implies a "sell" user can also see the registers tile.
   const visibleTiles = tiles.filter(
     (tile) =>
@@ -91,7 +127,7 @@ export function PosDashboardScreen() {
   return (
     <Screen
       header={{
-        title: 'POS',
+        title: 'POS - Satış Noktası',
         large: true,
         right: (
           <>
@@ -107,56 +143,68 @@ export function PosDashboardScreen() {
       refreshing={registers.refreshing || openSessions.refreshing}
     >
       {canRead ? (
-        <View style={{ flexDirection: 'row', gap: t.spacing[3] }}>
-          <StatCard icon="monitor" label="Aktif kasa" value={String(registerCount)} tone="primary" />
-          <StatCard
-            icon="clock"
-            label="Açık vardiya"
-            value={String(openCount)}
-            tone={openCount > 0 ? 'success' : 'warning'}
-          />
-        </View>
+        <Section title="Durum Özetleri">
+          <View style={{ flexDirection: 'row', gap: t.spacing[3] }}>
+            <StatCard icon="monitor" label="Aktif kasa" value={String(registerCount)} tone="primary" />
+            <StatCard
+              icon="clock"
+              label="Açık vardiya"
+              value={String(openCount)}
+              tone={openCount > 0 ? 'success' : 'warning'}
+            />
+          </View>
+        </Section>
       ) : null}
 
-      <Section title="Hızlı işlemler">
+      <Section title="Hızlı İşlemler">
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing[3] }}>
           {visibleTiles.map((tile) => (
             <Pressable
               key={tile.key}
               onPress={() => nav.navigate(tile.screen, undefined, tile.title)}
-              style={({ pressed }) => ({
-                width: '47.5%',
-                flexGrow: 1,
-                padding: t.spacing[4],
-                borderRadius: t.radius.xl,
-                borderWidth: 1,
-                borderColor: t.colors.border,
-                backgroundColor: pressed ? t.colors.muted : t.colors.card,
-                gap: t.spacing[3],
-                minHeight: 132,
-                justifyContent: 'space-between',
-              })}
+              style={({ pressed }) => {
+                const colors = getTileColors(tile.key)
+                return {
+                  width: '47.5%',
+                  flexGrow: 1,
+                  padding: t.spacing[4],
+                  borderRadius: t.radius.xl,
+                  borderWidth: 1,
+                  borderColor: pressed ? colors.color : colors.borderColor,
+                  backgroundColor: pressed ? t.colors.surface : t.colors.card,
+                  gap: t.spacing[3],
+                  minHeight: 132,
+                  justifyContent: 'space-between',
+                }
+              }}
             >
-              <View
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: t.radius.lg,
-                  backgroundColor: t.colors.primarySoft,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Icon name={tile.icon} size={22} color={t.colors.primary} />
-              </View>
-              <View style={{ gap: 2 }}>
-                <Text variant="title" weight="semibold">
-                  {tile.title}
-                </Text>
-                <Text variant="caption" tone="muted" numberOfLines={2}>
-                  {tile.description}
-                </Text>
-              </View>
+              {({ pressed }) => {
+                const colors = getTileColors(tile.key)
+                return (
+                  <>
+                    <View
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: t.radius.lg,
+                        backgroundColor: colors.bg,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Icon name={tile.icon} size={22} color={colors.color} />
+                    </View>
+                    <View style={{ gap: 2 }}>
+                      <Text variant="title" weight="semibold">
+                        {tile.title}
+                      </Text>
+                      <Text variant="caption" tone="muted" numberOfLines={2}>
+                        {tile.description}
+                      </Text>
+                    </View>
+                  </>
+                )
+              }}
             </Pressable>
           ))}
         </View>

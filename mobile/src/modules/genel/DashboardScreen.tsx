@@ -238,30 +238,34 @@ export function DashboardScreen() {
                 <Pressable
                   key={act.label + i}
                   onPress={act.onPress}
-                  style={({ pressed }) => ({
+                  style={{
                     alignItems: 'center',
                     gap: t.spacing[1.5],
                     width: 76,
-                    opacity: pressed ? 0.75 : 1,
-                  })}
+                  }}
                 >
-                  <View
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: t.radius.full,
-                      backgroundColor: t.colors.surface,
-                      borderWidth: 1,
-                      borderColor: t.colors.border,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Icon name={act.icon} size={20} color={color} />
-                  </View>
-                  <Text variant="caption" weight="medium" style={{ fontSize: 11, textAlign: 'center' }} numberOfLines={1}>
-                    {act.label}
-                  </Text>
+                  {({ pressed }) => (
+                    <>
+                      <View
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: t.radius.full,
+                          backgroundColor: pressed ? t.colors.muted : t.colors.surface,
+                          borderWidth: 1,
+                          borderColor: t.colors.border,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          opacity: pressed ? 0.8 : 1,
+                        }}
+                      >
+                        <Icon name={act.icon} size={20} color={color} />
+                      </View>
+                      <Text variant="caption" weight="medium" style={{ fontSize: 11, textAlign: 'center' }} numberOfLines={1}>
+                        {act.label}
+                      </Text>
+                    </>
+                  )}
                 </Pressable>
               )
             })}

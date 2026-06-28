@@ -6,7 +6,7 @@ import { View } from 'react-native'
 
 import { InventoryPermissions } from '@turbohesap/shared'
 
-import { StatCard } from '../../components'
+import { Section, StatCard } from '../../components'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
 import { useAsync } from '../../lib/use-async'
@@ -25,14 +25,16 @@ export function InventoryStats() {
   const stockValue = list.reduce((s, p) => s + p.quantity * (p.salePrice ?? 0), 0)
 
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing[3] }}>
-      <Cell><StatCard icon="box" tone="primary" label="Ürün" value={String(list.length)} /></Cell>
-      <Cell><StatCard icon="alert-triangle" tone="warning" label="Düşük stok" value={String(low)} /></Cell>
-      <Cell><StatCard icon="dollar-sign" tone="success" label="Stok değeri" value={stockValue.toLocaleString('tr-TR', { maximumFractionDigits: 0 })} /></Cell>
-      {canCategories ? (
-        <Cell><StatCard icon="folder" tone="info" label="Kategori" value={String((categories.data ?? []).length)} /></Cell>
-      ) : null}
-    </View>
+    <Section title="Stok Özetleri">
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing[3] }}>
+        <Cell><StatCard icon="box" tone="primary" label="Ürün" value={String(list.length)} /></Cell>
+        <Cell><StatCard icon="alert-triangle" tone="warning" label="Düşük stok" value={String(low)} /></Cell>
+        <Cell><StatCard icon="dollar-sign" tone="success" label="Stok değeri" value={stockValue.toLocaleString('tr-TR', { maximumFractionDigits: 0 })} /></Cell>
+        {canCategories ? (
+          <Cell><StatCard icon="folder" tone="info" label="Kategori" value={String((categories.data ?? []).length)} /></Cell>
+        ) : null}
+      </View>
+    </Section>
   )
 }
 

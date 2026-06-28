@@ -5,7 +5,7 @@ import { View } from 'react-native'
 
 import { IamPermissions } from '@turbohesap/shared'
 
-import { StatCard } from '../../components'
+import { Section, StatCard } from '../../components'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
 import { useAsync } from '../../lib/use-async'
@@ -25,16 +25,18 @@ export function IamStats() {
   const active = list.filter((u) => u.isActive).length
 
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing[3] }}>
-      {canUsers ? (
-        <>
-          <Cell><StatCard icon="users" tone="primary" label="Kullanıcı" value={String(list.length)} /></Cell>
-          <Cell><StatCard icon="user-check" tone="success" label="Aktif" value={String(active)} /></Cell>
-        </>
-      ) : null}
-      {canRoles ? <Cell><StatCard icon="shield" tone="info" label="Rol" value={String((roles.data ?? []).length)} /></Cell> : null}
-      {canPerms ? <Cell><StatCard icon="key" tone="warning" label="İzin" value={String((perms.data ?? []).length)} /></Cell> : null}
-    </View>
+    <Section title="Kullanıcı Özetleri">
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing[3] }}>
+        {canUsers ? (
+          <>
+            <Cell><StatCard icon="users" tone="primary" label="Kullanıcı" value={String(list.length)} /></Cell>
+            <Cell><StatCard icon="user-check" tone="success" label="Aktif" value={String(active)} /></Cell>
+          </>
+        ) : null}
+        {canRoles ? <Cell><StatCard icon="shield" tone="info" label="Rol" value={String((roles.data ?? []).length)} /></Cell> : null}
+        {canPerms ? <Cell><StatCard icon="key" tone="warning" label="İzin" value={String((perms.data ?? []).length)} /></Cell> : null}
+      </View>
+    </Section>
   )
 }
 

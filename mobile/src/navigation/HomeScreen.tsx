@@ -7,7 +7,7 @@ import * as React from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { Avatar, HeaderAction, Icon, Input, Text } from '../components'
+import { Avatar, Card, HeaderAction, Icon, Input, Text, withAlpha } from '../components'
 import { useAuth } from '../lib/auth/auth-context'
 import { displayName, initials } from '../lib/tokens'
 import { useThemeControls } from '../theme/theme-context'
@@ -17,7 +17,7 @@ import { GridTile, ListTile, LayoutToggle, descOf, type Layout, type ModuleTile 
 export function HomeScreen() {
   const insets = useSafeAreaInsets()
   const { modules, enterModule } = useModuleNav()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const { theme, toggle } = useThemeControls()
   const t = theme
   const [query, setQuery] = React.useState('')
@@ -53,24 +53,43 @@ export function HomeScreen() {
           <Icon name="box" size={22} color={t.colors.primaryForeground} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text variant="h2">TurboHesap</Text>
-          {user ? (
-            <Text variant="caption" tone="muted">
-              Merhaba, {displayName(user).split(' ')[0]}
-            </Text>
-          ) : null}
+          <Text variant="h2" weight="bold">TurboHesap</Text>
         </View>
         <HeaderAction icon={t.scheme === 'dark' ? 'sun' : 'moon'} onPress={toggle} />
+        <HeaderAction icon="log-out" onPress={() => void logout()} />
         <Pressable onPress={() => enterModule(PROFILE_KEY)} hitSlop={6}>
           {user ? <Avatar initials={initials(user)} size={36} /> : null}
         </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: t.spacing[4], gap: t.spacing[4], paddingBottom: insets.bottom + t.spacing[8] }}>
+        {/* Welcome Hero Card */}
+        <Card
+          style={{
+            backgroundColor: t.colors.primarySoft,
+            borderColor: withAlpha(t.colors.primary, 0.15),
+            borderWidth: 1,
+            padding: t.spacing[4],
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: t.spacing[4],
+          }}
+        >
+          {user ? <Avatar initials={initials(user)} size={52} /> : null}
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text variant="h2" weight="bold">
+              Merhaba, {user ? displayName(user).split(' ')[0] : 'Kullanıcı'} 👋
+            </Text>
+            <Text variant="caption" style={{ color: t.colors.primary, fontWeight: '500' }}>
+              Yönetici Paneli · TurboHesap ERP
+            </Text>
+          </View>
+        </Card>
+
         {/* Search + layout toggle */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing[2] }}>
           <View style={{ flex: 1 }}>
-            <Input icon="search" placeholder="Modül ara" value={query} onChangeText={setQuery} />
+            <Input icon="search" placeholder="Modül ara..." value={query} onChangeText={setQuery} />
           </View>
           <LayoutToggle value={layout} onChange={setLayout} />
         </View>

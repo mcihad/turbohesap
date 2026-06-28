@@ -4,7 +4,7 @@ import * as React from 'react'
 
 import { LookupsPermissions } from '@turbohesap/shared'
 
-import { ChartCard, type Datum, MiniBarChart, RecentCard } from '../../components'
+import { ChartCard, type Datum, MiniBarChart, RecentCard, Section } from '../../components'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
 import { useAsync } from '../../lib/use-async'
@@ -30,9 +30,13 @@ export function LookupsDashboard() {
   return (
     <>
       <LookupsStats />
-      <ChartCard title="Liste başına öğe" subtitle="Her listedeki öğe sayısı" isEmpty={perList.length === 0}>
-        <MiniBarChart data={perList} />
-      </ChartCard>
+      
+      <Section title="Grafikler & Dağılım">
+        <ChartCard title="Liste başına öğe" subtitle="Her listedeki öğe sayısı" isEmpty={perList.length === 0}>
+          <MiniBarChart data={perList} />
+        </ChartCard>
+      </Section>
+
       <RecentCard title="Son eklenen değerler" icon="list" items={recent} emptyText="Henüz değer yok" />
     </>
   )

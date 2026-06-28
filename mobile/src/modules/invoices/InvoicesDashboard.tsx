@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { View } from 'react-native'
 import { InvoicesPermissions } from '@turbohesap/shared'
-import { RecentCard, StatCard } from '../../components'
+import { RecentCard, Section, StatCard } from '../../components'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
 import { useAsync } from '../../lib/use-async'
@@ -41,20 +41,22 @@ export function InvoicesDashboard() {
 
   return (
     <>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing[3] }}>
-        <Cell>
-          <StatCard icon="file-text" tone="primary" label="Fatura Sayısı" value={String(list.length)} />
-        </Cell>
-        <Cell>
-          <StatCard icon="edit-3" tone="warning" label="Taslak" value={String(draftCount)} />
-        </Cell>
-        <Cell>
-          <StatCard icon="arrow-up-right" tone="success" label="Satış Toplamı" value={formatMoney(salesTotal)} />
-        </Cell>
-        <Cell>
-          <StatCard icon="arrow-down-left" tone="info" label="Alış Toplamı" value={formatMoney(purchaseTotal)} />
-        </Cell>
-      </View>
+      <Section title="Fatura Özetleri">
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing[3] }}>
+          <Cell>
+            <StatCard icon="file-text" tone="primary" label="Fatura Sayısı" value={String(list.length)} />
+          </Cell>
+          <Cell>
+            <StatCard icon="edit-3" tone="warning" label="Taslak" value={String(draftCount)} />
+          </Cell>
+          <Cell>
+            <StatCard icon="arrow-up-right" tone="success" label="Satış Toplamı" value={formatMoney(salesTotal)} />
+          </Cell>
+          <Cell>
+            <StatCard icon="arrow-down-left" tone="info" label="Alış Toplamı" value={formatMoney(purchaseTotal)} />
+          </Cell>
+        </View>
+      </Section>
 
       <RecentCard
         title="Son Faturalar"

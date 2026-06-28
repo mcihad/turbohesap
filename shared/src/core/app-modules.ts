@@ -48,9 +48,14 @@ export const MODULES: AppModuleInfo[] = [
     description: 'Kasa, banka ve finansal işlemler',
   },
   {
-    key: 'components',
-    label: 'Bileşenler',
-    description: 'Arayüz bileşeni önizlemeleri',
+    key: 'contacts',
+    label: 'Cari',
+    description: 'Müşteri, tedarikçi, cari hesap ve CRM',
+  },
+  {
+    key: 'invoices',
+    label: 'Fatura',
+    description: 'Satış/alış faturaları, KDV ve tevkifat',
   },
 ]
 

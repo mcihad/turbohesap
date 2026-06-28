@@ -1,27 +1,43 @@
 import * as React from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { ArrowDownLeft, ArrowUpRight, Activity } from 'lucide-react'
 
-import { OrgPermissions, toApiError, type ProductDto } from '@turbohesap/shared'
+import {
+  InventoryPermissions,
+  OrgPermissions,
+  type MovementDirection,
+  type ProductDto,
+  type StockMovementDto,
+  type StockMovementTypeDto,
+} from '@turbohesap/shared'
 
 import { api } from '@/lib/api'
+import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth/auth-context'
-import { formatDateTime } from '@/lib/datetime'
+import { formatDate } from '@/lib/datetime'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { DataGrid, type ColumnDef } from '@/components/data-grid'
-import type { ProductStockDto } from '@turbohesap/shared'
+import { StockMatrix } from './stock-matrix'
+import { StockMovementDialog } from './stock-movement-dialog'
 
-const NONE = '__none__'
+const directionLabel = (d: MovementDirection) => (d === 'in' ? 'Giriş' : 'Çıkış')
+
+function DirectionBadge({ direction }: { direction: MovementDirection }) {
+  return (
+    <Badge variant={direction === 'in' ? 'success' : 'destructive'}>
+      {directionLabel(direction)}
+    </Badge>
+  )
+}
 
 export function StockTab({
   product,
@@ -33,72 +49,67 @@ export function StockTab({
   refetch: () => void
 }) {
   const { hasPermission } = useAuth()
+  const qc = useQueryClient()
   const branchesQuery = useQuery({
     queryKey: ['org', 'branches'],
     queryFn: () => api.org.branches.list(),
     enabled: hasPermission(OrgPermissions.branchesRead),
   })
   const branches = branchesQuery.data ?? []
-  const variants = product.variants ?? []
 
-  const [variantId, setVariantId] = React.useState<string>(NONE)
-  const [branchId, setBranchId] = React.useState<string>(NONE)
-  const [qty, setQty] = React.useState('0')
+  const canMove = hasPermission(InventoryPermissions.productsStock)
 
-  const save = useMutation({
-    mutationFn: () =>
-      api.inventory.products.setStock(product.id, {
-        variantId: variantId === NONE ? null : variantId,
-        branchId: branchId === NONE ? null : branchId,
-        quantity: Number(qty) || 0,
-      }),
-    onSuccess: () => { toast.success('Stok güncellendi'); setQty('0'); refetch() },
-    onError: (e) => toast.error('Kaydetme başarısız', { description: toApiError(e).message }),
+  const movementTypesQuery = useQuery({
+    queryKey: ['inventory', 'movementTypes'],
+    queryFn: () => api.inventory.movementTypes.list(),
+    enabled: canMove,
   })
+  const movementTypes = (movementTypesQuery.data ?? []).filter((t) => t.isActive)
 
-  const remove = useMutation({
-    mutationFn: (stockId: string) => api.inventory.products.removeStock(product.id, stockId),
-    onSuccess: () => { toast.success('Stok kaydı silindi'); refetch() },
-    onError: (e) => toast.error('Silme başarısız', { description: toApiError(e).message }),
+  const movementsQuery = useQuery({
+    queryKey: ['inventory', 'stockMovements', product.id],
+    queryFn: () => api.inventory.stockMovements.list({ productId: product.id }),
+    enabled: hasPermission(InventoryPermissions.productsRead),
   })
+  const movements = movementsQuery.data ?? []
 
-  const rows = product.stock ?? []
-  const total = rows.length ? rows.reduce((s, r) => s + r.quantity, 0) : product.quantity
+  const [movementType, setMovementType] = React.useState<StockMovementTypeDto | null>(null)
 
-  const columns: ColumnDef<ProductStockDto>[] = [
+  const stockRows = product.stock ?? []
+  const total = stockRows.length
+    ? stockRows.reduce((s, r) => s + r.quantity, 0)
+    : product.quantity
+
+  // After a movement: refresh the ledger and on-hand stock.
+  const onMovementSaved = () => {
+    void qc.invalidateQueries({ queryKey: ['inventory', 'stockMovements', product.id] })
+    refetch()
+  }
+
+  const movementColumns: ColumnDef<StockMovementDto>[] = [
     {
-      id: 'variant',
-      header: 'Varyant',
-      size: 200,
-      enableGrouping: true,
-      accessorFn: (s) => s.variantLabel ?? 'Tüm ürün',
-      cell: ({ row }) =>
-        row.original.variantLabel ? (
-          <span className="font-medium">{row.original.variantLabel}</span>
-        ) : (
-          <span className="text-muted-foreground">Tüm ürün</span>
-        ),
+      id: 'date',
+      accessorKey: 'date',
+      header: 'Tarih',
+      size: 120,
+      cell: ({ row }) => <span className="tabular-nums">{formatDate(row.original.date)}</span>,
     },
     {
-      id: 'branch',
-      header: 'Şube',
+      id: 'movementTypeName',
+      accessorKey: 'movementTypeName',
+      header: 'Hareket tipi',
       size: 180,
       enableGrouping: true,
-      accessorFn: (s) => s.branch?.name ?? 'Genel',
-      cell: ({ row }) =>
-        row.original.branch?.name ?? <span className="text-muted-foreground">Genel</span>,
+      cell: ({ row }) => <span className="font-medium">{row.original.movementTypeName}</span>,
     },
     {
-      id: 'branchCode',
-      header: 'Şube kodu',
-      size: 120,
-      accessorFn: (s) => s.branch?.code ?? '',
-      cell: ({ row }) =>
-        row.original.branch?.code ? (
-          <span className="font-mono text-xs text-muted-foreground">{row.original.branch.code}</span>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        ),
+      id: 'direction',
+      accessorKey: 'direction',
+      header: 'Yön',
+      size: 100,
+      enableGrouping: true,
+      accessorFn: (m) => directionLabel(m.direction),
+      cell: ({ row }) => <DirectionBadge direction={row.original.direction} />,
     },
     {
       id: 'quantity',
@@ -106,92 +117,121 @@ export function StockTab({
       header: 'Miktar',
       size: 120,
       cell: ({ row }) => (
-        <span className="tabular-nums">
+        <span
+          className={cn(
+            'tabular-nums font-medium',
+            row.original.direction === 'in' ? 'text-success' : 'text-destructive',
+          )}
+        >
+          {row.original.direction === 'in' ? '+' : '−'}
           {row.original.quantity}
-          {product.unit ? <span className="ml-1 text-xs text-muted-foreground">{product.unit}</span> : null}
+          {row.original.unit ? (
+            <span className="ml-1 text-xs text-muted-foreground">{row.original.unit}</span>
+          ) : null}
         </span>
       ),
     },
     {
-      id: 'updatedAt',
-      accessorKey: 'updatedAt',
-      header: 'Güncellenme',
+      id: 'branchName',
+      header: 'Şube',
       size: 160,
-      cell: ({ row }) => (
-        <span className="text-xs text-muted-foreground">{formatDateTime(row.original.updatedAt)}</span>
-      ),
+      enableGrouping: true,
+      accessorFn: (m) => m.branchName ?? 'Genel',
+      cell: ({ row }) =>
+        row.original.branchName ?? <span className="text-muted-foreground">Genel</span>,
     },
-    ...(canStock
-      ? [{
-          id: 'actions', header: '', size: 60, enableSorting: false, enableHiding: false, enableColumnFilter: false, enableGrouping: false,
-          cell: ({ row }) => (
-            <div className="flex justify-end">
-              <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); remove.mutate(row.original.id) }} aria-label="Sil">
-                <Trash2 className="size-4 text-destructive" />
-              </Button>
-            </div>
-          ),
-        } as ColumnDef<ProductStockDto>]
-      : []),
+    {
+      id: 'description',
+      accessorKey: 'description',
+      header: 'Açıklama',
+      size: 220,
+      cell: ({ row }) =>
+        row.original.description ? (
+          <span className="text-sm">{row.original.description}</span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
+      id: 'sourceModule',
+      accessorKey: 'sourceModule',
+      header: 'Kaynak',
+      size: 110,
+      enableGrouping: true,
+      accessorFn: (m) => m.sourceModule ?? '',
+      cell: ({ row }) =>
+        row.original.sourceModule === 'invoices' ? (
+          <Badge variant="secondary">Fatura</Badge>
+        ) : row.original.sourceModule ? (
+          <Badge variant="outline">{row.original.sourceModule}</Badge>
+        ) : (
+          <span className="text-muted-foreground">Manuel</span>
+        ),
+    },
   ]
 
   return (
     <div className="space-y-4">
-      {canStock ? (
-        <div className="grid items-end gap-3 rounded-lg border bg-muted/30 p-3 sm:grid-cols-[1fr_1fr_auto_auto]">
-          {variants.length > 0 ? (
-            <Cell label="Varyant">
-              <Select value={variantId} onValueChange={setVariantId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE}>Tüm ürün</SelectItem>
-                  {variants.map((v) => (
-                    <SelectItem key={v.id} value={v.id}>{v.label || v.code}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Cell>
-          ) : null}
-          <Cell label="Şube">
-            <Select value={branchId} onValueChange={setBranchId}>
-              <SelectTrigger><SelectValue placeholder="Şube" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NONE}>Genel (şubesiz)</SelectItem>
-                {branches.map((b) => (
-                  <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Cell>
-          <Cell label="Miktar">
-            <Input type="number" value={qty} onChange={(e) => setQty(e.target.value)} className="w-28" />
-          </Cell>
-          <Button onClick={() => save.mutate()} disabled={save.isPending}>Kaydet</Button>
+      {canMove ? (
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button>
+                <Activity className="size-4" />
+                Stok Hareketi
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-56">
+              <DropdownMenuLabel>Hareket tipi seçin</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {movementTypes.length === 0 ? (
+                <DropdownMenuItem disabled>Hareket tipi yok</DropdownMenuItem>
+              ) : (
+                movementTypes.map((t) => (
+                  <DropdownMenuItem key={t.id} onSelect={() => setMovementType(t)}>
+                    {t.direction === 'in' ? (
+                      <ArrowDownLeft className="size-4 text-success" />
+                    ) : (
+                      <ArrowUpRight className="size-4 text-destructive" />
+                    )}
+                    <span className="flex-1">{t.name}</span>
+                    <span className="text-xs text-muted-foreground">{directionLabel(t.direction)}</span>
+                  </DropdownMenuItem>
+                ))
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       ) : null}
 
-      <DataGrid
-        gridId="inventory.stock"
-        data={rows}
-        columns={columns}
-        getRowId={(s) => s.id}
-        emptyText="Henüz stok kaydı yok."
-        pageSize={25}
-      />
+      <StockMatrix product={product} branches={branches} canStock={canStock} refetch={refetch} />
 
       <p className="text-right text-sm text-muted-foreground">
         Toplam stok: <span className="font-medium text-foreground tabular-nums">{total}</span>
         {product.unit ? ` ${product.unit}` : ''}
       </p>
-    </div>
-  )
-}
 
-function Cell({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs">{label}</Label>
-      {children}
+      <div className="space-y-2 pt-2">
+        <h3 className="text-sm font-medium">Stok Hareketleri</h3>
+        <DataGrid
+          gridId="inventory.stockMovements"
+          data={movements}
+          columns={movementColumns}
+          getRowId={(m) => m.id}
+          loading={movementsQuery.isLoading}
+          emptyText="Henüz stok hareketi yok."
+          pageSize={25}
+        />
+      </div>
+
+      <StockMovementDialog
+        open={movementType !== null}
+        onOpenChange={(o) => { if (!o) setMovementType(null) }}
+        productId={product.id}
+        movementType={movementType}
+        branches={branches}
+        onSaved={onMovementSaved}
+      />
     </div>
   )
 }

@@ -18,7 +18,11 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.anonymous.turbohesapmobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -41,7 +45,8 @@
           "photosPermission": "Ürün ve kategori görsellerini eklemek için fotoğraflarınıza erişim izni verin.",
           "cameraPermission": "Ürün ve kategori görselleri çekmek için kamera erişimine izin verin."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ]
   }
 }

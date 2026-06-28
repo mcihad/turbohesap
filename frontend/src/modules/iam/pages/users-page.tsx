@@ -37,6 +37,7 @@ interface FormState {
   password: string
   firstName: string
   lastName: string
+  telegramChatId: string
   isActive: boolean
   roleIds: string[]
   branchIds: string[]
@@ -48,6 +49,7 @@ const EMPTY: FormState = {
   password: '',
   firstName: '',
   lastName: '',
+  telegramChatId: '',
   isActive: true,
   roleIds: [],
   branchIds: [],
@@ -95,6 +97,7 @@ export function UsersPage() {
       password: '',
       firstName: u.firstName,
       lastName: u.lastName,
+      telegramChatId: u.telegramChatId ?? '',
       isActive: u.isActive,
       roleIds: u.roles.map((r) => r.id),
       branchIds: u.branches.map((b) => b.id),
@@ -111,6 +114,7 @@ export function UsersPage() {
           email: form.email,
           firstName: form.firstName,
           lastName: form.lastName,
+          telegramChatId: form.telegramChatId.trim() || null,
           isActive: form.isActive,
           roleIds: form.roleIds,
           ...(canReadBranches ? { branchIds: form.branchIds } : {}),
@@ -123,6 +127,7 @@ export function UsersPage() {
           password: form.password,
           firstName: form.firstName,
           lastName: form.lastName,
+          telegramChatId: form.telegramChatId.trim() || null,
           isActive: form.isActive,
           roleIds: form.roleIds,
           ...(canReadBranches ? { branchIds: form.branchIds } : {}),
@@ -306,6 +311,19 @@ export function UsersPage() {
                   onChange={(e) => setForm({ ...form, lastName: e.target.value })}
                 />
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="u-telegram">Telegram Chat ID</Label>
+              <Input
+                id="u-telegram"
+                value={form.telegramChatId}
+                onChange={(e) => setForm({ ...form, telegramChatId: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Bildirim ve mesajların Telegram'dan gönderilebilmesi için kullanıcının chat
+                ID'si.
+              </p>
             </div>
 
             <div className="space-y-1.5">

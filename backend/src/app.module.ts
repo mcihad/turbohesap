@@ -2,6 +2,7 @@ import { type MiddlewareConsumer, Module, type NestModule } from '@nestjs/common
 import { ConfigModule } from '@nestjs/config'
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core'
 import { JwtModule } from '@nestjs/jwt'
+import { ScheduleModule } from '@nestjs/schedule'
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
 
 import { RequestContextMiddleware } from './common/context/request-context.middleware'
@@ -22,6 +23,8 @@ import { InventoryModule } from './modules/inventory/inventory.module'
 import { FilesModule } from './modules/files/files.module'
 import { SettingsModule } from './modules/settings/settings.module'
 import { FinanceModule } from './modules/finance/finance.module'
+import { ContactsModule } from './modules/contacts/contacts.module'
+import { InvoicesModule } from './modules/invoices/invoices.module'
 
 @Module({
   imports: [
@@ -30,6 +33,7 @@ import { FinanceModule } from './modules/finance/finance.module'
       envFilePath: ['.env', '../.env'],
       load: [configuration],
     }),
+    ScheduleModule.forRoot(),
     // JwtModule here makes JwtService available to the global JwtAuthGuard.
     JwtModule.register({}),
     // Global rate limiting (in-memory store; use a shared store for multi-instance).
@@ -50,6 +54,8 @@ import { FinanceModule } from './modules/finance/finance.module'
     FilesModule,
     SettingsModule,
     FinanceModule,
+    ContactsModule,
+    InvoicesModule,
   ],
   controllers: [HealthController, DebugController],
   providers: [

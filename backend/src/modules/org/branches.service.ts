@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  type OnModuleInit,
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Not, Repository } from 'typeorm'
@@ -13,10 +14,19 @@ import type { CreateBranchDto } from './dto/create-branch.dto'
 import type { UpdateBranchDto } from './dto/update-branch.dto'
 
 @Injectable()
-export class BranchesService {
+export class BranchesService implements OnModuleInit {
   constructor(
     @InjectRepository(Branch) private readonly branches: Repository<Branch>,
   ) {}
+
+  /** Seed a default "Merkez" branch on first boot so stock/invoicing has a home. */
+  async onModuleInit(): Promise<void> {
+    if ((await this.branches.count()) === 0) {
+      await this.branches.save(
+        this.branches.create({ code: 'MERKEZ', name: 'Merkez', type: 'headquarter', isActive: true }),
+      )
+    }
+  }
 
   async list(): Promise<BranchDto[]> {
     const rows = await this.branches.find({ order: { name: 'ASC' } })

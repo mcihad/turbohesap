@@ -1,9 +1,10 @@
 import * as React from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import {
   PRODUCT_TYPES,
+  OrgPermissions,
   effectiveFieldDefsWithSource,
   toApiError,
   type CreateProductRequest,
@@ -14,6 +15,7 @@ import {
 } from '@turbohesap/shared'
 
 import { api } from '@/lib/api'
+import { useAuth } from '@/lib/auth/auth-context'
 import { LookupSelect } from '@/components/lookup-select'
 import { Button } from '@/components/ui/button'
 import {
@@ -73,6 +75,9 @@ const EMPTY: FormState = {
   attributes: {},
 }
 
+// Sentinel key for the "Genel" (branchId = null) opening-stock row.
+const GENERAL_KEY = 'genel'
+
 function fromDto(p: ProductDto): FormState {
   const n = (v: number | null) => (v == null ? '' : String(v))
   return {
@@ -120,9 +125,24 @@ export function ProductFormDialog({
   const [form, setForm] = React.useState<FormState>(EMPTY)
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((s) => ({ ...s, [k]: v }))
 
+  // Per-branch opening stock (create only), keyed by branchId; GENERAL_KEY = null branch.
+  const [openingStock, setOpeningStock] = React.useState<Record<string, string>>({})
+
+  const { hasPermission } = useAuth()
+  const canReadBranches = hasPermission(OrgPermissions.branchesRead)
+  const branchesQuery = useQuery({
+    queryKey: ['org', 'branches'],
+    queryFn: () => api.org.branches.list(),
+    enabled: canReadBranches,
+  })
+  const branches = branchesQuery.data ?? []
+
   // Reset the form whenever the dialog opens (for a fresh create or a given edit).
   React.useEffect(() => {
-    if (open) setForm(editing ? fromDto(editing) : EMPTY)
+    if (open) {
+      setForm(editing ? fromDto(editing) : EMPTY)
+      setOpeningStock({})
+    }
   }, [open, editing])
 
   const dynamicFields = React.useMemo(
@@ -139,8 +159,22 @@ export function ProductFormDialog({
         throw new Error(`Zorunlu alanları doldurun: ${labels.join(', ')}`)
       }
       const payload = toPayload(form)
-      if (editing) await api.inventory.products.update(editing.id, payload)
-      else await api.inventory.products.create(payload)
+      if (editing) {
+        // Editing stock is handled via the stock tab / movements — never send `stocks` here.
+        await api.inventory.products.update(editing.id, payload)
+      } else {
+        // Per-branch opening stock, create only and only when tracking stock.
+        const stocks =
+          form.trackStock && branches.length > 0
+            ? Object.entries(openingStock)
+                .map(([key, raw]) => ({
+                  branchId: key === GENERAL_KEY ? null : key,
+                  quantity: Number(raw) || 0,
+                }))
+                .filter((s) => s.quantity !== 0)
+            : []
+        await api.inventory.products.create(stocks.length > 0 ? { ...payload, stocks } : payload)
+      }
     },
     onSuccess: () => {
       toast.success(editing ? 'Ürün güncellendi' : 'Ürün oluşturuldu')
@@ -224,6 +258,31 @@ export function ProductFormDialog({
             values={form.attributes}
             onChange={(k, v) => setForm((s) => ({ ...s, attributes: { ...s.attributes, [k]: v } }))}
           />
+
+          {/* Per-branch opening stock — create only, when tracking stock and branches exist. */}
+          {!editing && form.trackStock && branches.length > 0 ? (
+            <div className="space-y-2 rounded-md border p-3">
+              <Label>Açılış Stoğu (şubeye göre)</Label>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {branches.map((b) => (
+                  <Field key={b.id} label={b.name}>
+                    <Input
+                      type="number"
+                      value={openingStock[b.id] ?? '0'}
+                      onChange={(e) => setOpeningStock((s) => ({ ...s, [b.id]: e.target.value }))}
+                    />
+                  </Field>
+                ))}
+                <Field label="Genel">
+                  <Input
+                    type="number"
+                    value={openingStock[GENERAL_KEY] ?? '0'}
+                    onChange={(e) => setOpeningStock((s) => ({ ...s, [GENERAL_KEY]: e.target.value }))}
+                  />
+                </Field>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <DialogFooter>

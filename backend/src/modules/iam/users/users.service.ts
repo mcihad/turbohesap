@@ -48,6 +48,7 @@ export class UsersService {
       isActive: dto.isActive ?? true,
       roles: await this.resolveRoles(dto.roleIds),
       branches: await this.resolveBranches(dto.branchIds),
+      telegramChatId: dto.telegramChatId ?? null,
     })
     const saved = await this.users.save(user)
     return toUserDto(await this.findOrFail(saved.id))
@@ -62,6 +63,7 @@ export class UsersService {
     if (dto.password) user.passwordHash = hash(dto.password)
     if (dto.roleIds) user.roles = await this.resolveRoles(dto.roleIds)
     if (dto.branchIds) user.branches = await this.resolveBranches(dto.branchIds)
+    if (dto.telegramChatId !== undefined) user.telegramChatId = dto.telegramChatId
     await this.users.save(user)
     return toUserDto(await this.findOrFail(id))
   }

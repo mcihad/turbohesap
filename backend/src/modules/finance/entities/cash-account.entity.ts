@@ -1,4 +1,4 @@
-import { Column, Entity } from 'typeorm'
+import { Column, Entity, Index } from 'typeorm'
 import { BaseEntity } from '../../../common/entities/base.entity'
 
 @Entity('finance_cash_accounts')
@@ -9,7 +9,15 @@ export class CashAccount extends BaseEntity {
   @Column()
   currency!: string
 
-  @Column({ type: 'double precision', default: 0 })
+  @Column('numeric', {
+    precision: 18,
+    scale: 2,
+    default: 0,
+    transformer: {
+      to: (v: number) => v,
+      from: (v: string | null) => (v == null ? 0 : Number(v)),
+    },
+  })
   openingBalance!: number
 
   @Column({ default: '' })
@@ -17,4 +25,8 @@ export class CashAccount extends BaseEntity {
 
   @Column({ default: true })
   isActive!: boolean
+
+  @Index()
+  @Column({ type: 'uuid', nullable: true })
+  branchId!: string | null
 }

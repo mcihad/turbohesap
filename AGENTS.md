@@ -676,6 +676,17 @@ recipes). Mobile is separate (`mobile/.env`, `EXPO_PUBLIC_*`).
   schema) and products/stock.
 - `/api/sales/channels`, `/api/org/branches`, `/api/lookups` — sales channels,
   branches (per-branch user authz), generic reference lists.
+- `/api/finance/{cash-accounts,bank-accounts,transactions}` — kasa/banka + ledger
+  (computed balances; `transactions.contactId` links a tahsilat/ödeme to a cari).
+- `/api/contacts/{contacts,groups,persons,addresses,transactions,activities,opportunities}`
+  — Cari/CRM: unified contacts (customer/supplier/both/lead), group tree, people,
+  addresses, debit/credit ledger (Cari Ekstre → computed balance), CRM activities
+  and the opportunity pipeline.
+- `/api/invoices/invoices` (+ `/:id/issue`, `/:id/cancel`) — Türkiye-uyumlu fatura
+  (satış/alış/iade): KDV + tevkifat (computed via the shared `invoice.helpers`
+  `computeInvoiceTotals`), KDV özeti, gapless numbering + ETTN on issue, and
+  cari-ledger posting (issue → cari borç/alacak; cancel reverses). The web entry
+  is a dedicated page with a live line editor + inline cari/ürün create.
 - `/api/files` — polymorphic uploads (`raw/:storedName` is `@Public()`);
   `/api/settings/:type` — per-user jsonb state (DataGrid layouts). See §5.4.
 

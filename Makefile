@@ -61,6 +61,22 @@ mobile-ios: ## Open the mobile app in the iOS simulator
 mobile-android: ## Open the mobile app on Android
 	$(PNPM) --filter @turbohesap/mobile android
 
+# Android toolchain defaults for macOS — prefer a JDK 17 (Expo/RN's supported
+# toolchain; Gradle 9 + JDK 21 trips the Foojay toolchain resolver), falling back
+# to Android Studio's bundled JDK. Default SDK location is also assumed so
+# `make mobile-android-release` works without exporting JAVA_HOME/ANDROID_HOME.
+# Override either on the command line if needed.
+JAVA_HOME ?= $(shell test -d /opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home \
+	&& echo /opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home \
+	|| echo "/Applications/Android Studio.app/Contents/jbr/Contents/Home")
+ANDROID_HOME ?= $(HOME)/Library/Android/sdk
+
+.PHONY: mobile-android-release
+mobile-android-release: build-shared ## Build a RELEASE Android app and run it on a device/emulator (auto-prebuilds native android/)
+	@test -x "$(JAVA_HOME)/bin/java" || (echo "JDK not found at JAVA_HOME=$(JAVA_HOME). Install Android Studio or set JAVA_HOME=<jdk17+ home>." && exit 1)
+	JAVA_HOME="$(JAVA_HOME)" ANDROID_HOME="$(ANDROID_HOME)" PATH="$(ANDROID_HOME)/platform-tools:$(ANDROID_HOME)/emulator:$$PATH" \
+		$(PNPM) --filter @turbohesap/mobile exec expo run:android --variant release
+
 .PHONY: stop
 stop: ## Stop running dev/server processes (API + Vite :5173)
 	@for p in $(PORT) 5173; do \

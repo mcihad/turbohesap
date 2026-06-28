@@ -4,6 +4,7 @@ export interface CashAccountDto {
   name: string
   currency: string
   openingBalance: number
+  balance: number // Computed balance (openingBalance + sum of transactions)
   description: string
   isActive: boolean
   createdAt: string
@@ -31,6 +32,7 @@ export interface BankAccountDto {
   iban: string
   currency: string
   openingBalance: number
+  balance: number // Computed balance (openingBalance + sum of transactions)
   description: string
   isActive: boolean
   createdAt: string
@@ -51,3 +53,32 @@ export interface CreateBankAccountRequest {
 }
 
 export type UpdateBankAccountRequest = Partial<CreateBankAccountRequest>
+
+// Finance Transaction (Kasa/Banka Hareketi) DTOs
+export type FinanceTransactionType = 'in' | 'out'
+
+export interface FinanceTransactionDto {
+  id: string
+  cashAccountId: string | null
+  bankAccountId: string | null
+  /** Linked cari (contact) — the counterparty of a tahsilat/ödeme. */
+  contactId: string | null
+  type: FinanceTransactionType
+  amount: number
+  date: string
+  description: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateFinanceTransactionRequest {
+  cashAccountId?: string | null
+  bankAccountId?: string | null
+  contactId?: string | null
+  type: FinanceTransactionType
+  amount: number
+  date: string
+  description?: string
+}
+
+export type UpdateFinanceTransactionRequest = Partial<CreateFinanceTransactionRequest>

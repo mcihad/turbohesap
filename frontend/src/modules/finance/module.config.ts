@@ -1,4 +1,4 @@
-import { CreditCard, Landmark, Wallet } from 'lucide-react'
+import { CreditCard, Landmark, Wallet, LayoutDashboard } from 'lucide-react'
 
 import { FinancePermissions } from '@turbohesap/shared'
 
@@ -8,10 +8,11 @@ export const financeModule: AppModule = {
   key: 'finance',
   label: 'Finans',
   icon: Landmark,
-  home: '/finance/cash-accounts',
+  home: '/finance',
   nav: [
     {
       items: [
+        { title: 'Gösterge Paneli', icon: LayoutDashboard, to: '/finance', exact: true },
         {
           title: 'Kasa Hesapları',
           icon: Wallet,

@@ -13,6 +13,7 @@ export {
   FormTextArea,
   FormSwitchRow,
   FormSelect,
+  FormDatePicker,
   Checklist,
   CheckBox,
   type SelectOption,

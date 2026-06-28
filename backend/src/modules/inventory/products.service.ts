@@ -214,7 +214,7 @@ export class ProductsService {
     if (exists) throw new BadRequestException('Bu stok kodu zaten kullanımda')
     if (dto.categoryId) await this.requireCategory(dto.categoryId)
 
-    const { code, name, attributes, categoryId, variantAttributes, ...rest } = dto
+    const { code, name, attributes, categoryId, variantAttributes, stocks, ...rest } = dto
     const product = this.products.create({
       ...rest,
       code: code.trim(),
@@ -223,7 +223,18 @@ export class ProductsService {
       variantAttributes: variantAttributes ?? [],
       attributes: attributes ?? {},
     })
-    return this.get((await this.products.save(product)).id)
+    const saved = await this.products.save(product)
+
+    // Opening per-branch stock (one row per branch).
+    if (stocks?.length) {
+      for (const s of stocks) {
+        if (!s || s.quantity == null) continue
+        await this.stocks.save(
+          this.stocks.create({ productId: saved.id, variantId: null, branchId: s.branchId ?? null, quantity: s.quantity }),
+        )
+      }
+    }
+    return this.get(saved.id)
   }
 
   async update(id: string, dto: UpdateProductDto): Promise<ProductDto> {

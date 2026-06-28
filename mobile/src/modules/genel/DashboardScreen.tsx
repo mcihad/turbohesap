@@ -27,6 +27,7 @@ import {
   LookupsPermissions,
   OrgPermissions,
   SalesPermissions,
+  FinancePermissions,
 } from '@turbohesap/shared'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
@@ -60,6 +61,8 @@ export function DashboardScreen() {
   const channels = useAsync(() => api.sales.channels.list(), [], { enabled: hasPermission(SalesPermissions.channelsRead) })
   const users = useAsync(() => api.iam.users.list(), [], { enabled: hasPermission(IamPermissions.usersRead) })
   const lists = useAsync(() => api.lookups.lists(), [], { enabled: hasPermission(LookupsPermissions.read) })
+  const cashAccounts = useAsync(() => api.finance.cashAccounts.list(), [], { enabled: hasPermission(FinancePermissions.cashAccountsRead) })
+  const bankAccounts = useAsync(() => api.finance.bankAccounts.list(), [], { enabled: hasPermission(FinancePermissions.bankAccountsRead) })
   const audit = useAsync(() => api.iam.auditLogs.list({ page: 1, pageSize: 6 }), [], { enabled: hasPermission(IamPermissions.auditRead) })
 
   const counts = (
@@ -67,6 +70,7 @@ export function DashboardScreen() {
       { icon: 'box', label: 'Ürün', n: products.data?.length ?? 0, show: hasPermission(InventoryPermissions.productsRead), tone: 'primary' },
       { icon: 'briefcase', label: 'Şube', n: branches.data?.length ?? 0, show: hasPermission(OrgPermissions.branchesRead), tone: 'info' },
       { icon: 'shopping-bag', label: 'Kanal', n: channels.data?.length ?? 0, show: hasPermission(SalesPermissions.channelsRead), tone: 'success' },
+      { icon: 'credit-card', label: 'Kasa/Banka', n: (cashAccounts.data?.length ?? 0) + (bankAccounts.data?.length ?? 0), show: hasPermission(FinancePermissions.cashAccountsRead), tone: 'success' },
       { icon: 'users', label: 'Kullanıcı', n: users.data?.length ?? 0, show: hasPermission(IamPermissions.usersRead), tone: 'warning' },
       { icon: 'list', label: 'Liste', n: lists.data?.length ?? 0, show: hasPermission(LookupsPermissions.read), tone: 'info' },
     ] as CountTile[]

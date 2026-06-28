@@ -26,12 +26,44 @@ import { CategoriesApiClient } from '../modules/inventory/categories.client'
 import type { ICategoriesService } from '../modules/inventory/categories.service'
 import { ProductsApiClient } from '../modules/inventory/products.client'
 import type { IProductsService } from '../modules/inventory/products.service'
+import { StockMovementTypesApiClient } from '../modules/inventory/stock-movement-types.client'
+import type { IStockMovementTypesService } from '../modules/inventory/stock-movement-types.service'
+import { StockMovementsApiClient } from '../modules/inventory/stock-movements.client'
+import type { IStockMovementsService } from '../modules/inventory/stock-movements.service'
 import { HealthApiClient } from '../modules/health/health.client'
 import type { IHealthService } from '../modules/health/health.service'
 import { CashAccountsApiClient } from '../modules/finance/cash-accounts.client'
 import type { ICashAccountsService } from '../modules/finance/cash-accounts.service'
 import { BankAccountsApiClient } from '../modules/finance/bank-accounts.client'
 import type { IBankAccountsService } from '../modules/finance/bank-accounts.service'
+import { FinanceTransactionsApiClient } from '../modules/finance/finance-transactions.client'
+import type { IFinanceTransactionsService } from '../modules/finance/finance-transactions.service'
+import { ContactsApiClient } from '../modules/contacts/contacts.client'
+import type { IContactsService } from '../modules/contacts/contacts.service'
+import { ContactGroupsApiClient } from '../modules/contacts/contact-groups.client'
+import type { IContactGroupsService } from '../modules/contacts/contact-groups.service'
+import { ContactPersonsApiClient } from '../modules/contacts/contact-persons.client'
+import type { IContactPersonsService } from '../modules/contacts/contact-persons.service'
+import { ContactAddressesApiClient } from '../modules/contacts/contact-addresses.client'
+import type { IContactAddressesService } from '../modules/contacts/contact-addresses.service'
+import { ContactTransactionsApiClient } from '../modules/contacts/contact-transactions.client'
+import type { IContactTransactionsService } from '../modules/contacts/contact-transactions.service'
+import { ActivitiesApiClient } from '../modules/contacts/activities.client'
+import type { IActivitiesService } from '../modules/contacts/activities.service'
+import { OpportunitiesApiClient } from '../modules/contacts/opportunities.client'
+import type { IOpportunitiesService } from '../modules/contacts/opportunities.service'
+import { PipelinesApiClient } from '../modules/contacts/pipelines.client'
+import type { IPipelinesService } from '../modules/contacts/pipelines.service'
+import { CrmAnalyticsApiClient } from '../modules/contacts/crm-analytics.client'
+import type { ICrmAnalyticsService } from '../modules/contacts/crm-analytics.service'
+import { NotificationsApiClient } from '../modules/contacts/notifications.client'
+import type { INotificationsService } from '../modules/contacts/notifications.service'
+import { CrmFieldsApiClient } from '../modules/contacts/crm-fields.client'
+import type { ICrmFieldsService } from '../modules/contacts/crm-fields.service'
+import { IntegrationsApiClient } from '../modules/contacts/integrations.client'
+import type { IIntegrationsService } from '../modules/contacts/integrations.service'
+import { InvoicesApiClient } from '../modules/invoices/invoices.client'
+import type { IInvoicesService } from '../modules/invoices/invoices.service'
 import { createHttpClient, type HttpClientConfig } from './http'
 
 // Resources are grouped by module — `api.<module>.<resource>` — mirroring the
@@ -57,11 +89,29 @@ export interface OrgApi {
 export interface InventoryApi {
   categories: ICategoriesService
   products: IProductsService
+  movementTypes: IStockMovementTypesService
+  stockMovements: IStockMovementsService
 }
 
 export interface FinanceApi {
   cashAccounts: ICashAccountsService
   bankAccounts: IBankAccountsService
+  transactions: IFinanceTransactionsService
+}
+
+export interface ContactsApi {
+  contacts: IContactsService
+  groups: IContactGroupsService
+  persons: IContactPersonsService
+  addresses: IContactAddressesService
+  transactions: IContactTransactionsService
+  activities: IActivitiesService
+  opportunities: IOpportunitiesService
+  pipelines: IPipelinesService
+  crm: ICrmAnalyticsService
+  notifications: INotificationsService
+  fields: ICrmFieldsService
+  integrations: IIntegrationsService
 }
 
 // TurbohesapApi bundles every module's service client behind its interface.
@@ -74,6 +124,10 @@ export interface TurbohesapApi {
   org: OrgApi
   inventory: InventoryApi
   finance: FinanceApi
+  /** Cari (contacts/CRM): contacts, groups, persons, addresses, ledger, activities, opportunities. */
+  contacts: ContactsApi
+  /** Fatura (invoices): sales/purchase invoices with KDV + tevkifat. */
+  invoices: IInvoicesService
   /** Generic key/value reference-data lists. */
   lookups: ILookupsService
   /** Generic file uploads/attachments (images + files for any entity). */
@@ -113,11 +167,29 @@ export function createTurbohesapApi(
     inventory: {
       categories: new CategoriesApiClient(http),
       products: new ProductsApiClient(http),
+      movementTypes: new StockMovementTypesApiClient(http),
+      stockMovements: new StockMovementsApiClient(http),
     },
     finance: {
       cashAccounts: new CashAccountsApiClient(http),
       bankAccounts: new BankAccountsApiClient(http),
+      transactions: new FinanceTransactionsApiClient(http),
     },
+    contacts: {
+      contacts: new ContactsApiClient(http),
+      groups: new ContactGroupsApiClient(http),
+      persons: new ContactPersonsApiClient(http),
+      addresses: new ContactAddressesApiClient(http),
+      transactions: new ContactTransactionsApiClient(http),
+      activities: new ActivitiesApiClient(http),
+      opportunities: new OpportunitiesApiClient(http),
+      pipelines: new PipelinesApiClient(http),
+      crm: new CrmAnalyticsApiClient(http),
+      notifications: new NotificationsApiClient(http),
+      fields: new CrmFieldsApiClient(http),
+      integrations: new IntegrationsApiClient(http),
+    },
+    invoices: new InvoicesApiClient(http),
     lookups: new LookupsApiClient(http),
     files: new FilesApiClient(http),
     settings: new SettingsApiClient(http),

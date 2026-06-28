@@ -38,8 +38,7 @@ Change the component **without breaking its contract or the design language**.
 
 ## 3. Adding a variant or prop (typical task)
 - New visual variant → add a key to the existing `cva` `variants` map; keep
-  `defaultVariants` stable. Add the variant to the component's **showcase**
-  (`frontend/src/modules/components/showcases.tsx`) so it's visible in the gallery.
+  `defaultVariants` stable.
 - New behavior prop → extend the props type; give it a safe default so existing
   call sites are unaffected.
 
@@ -51,12 +50,10 @@ pnpm lint             # zero errors
 pnpm build            # succeeds (emits into ../backend/static)
 ```
 If you changed something visible, sanity-check it in the running app
-(`make dev`) — open the component's page in the **Bileşenler** module
-(`/components/<slug>`).
+(`make dev`) on a page that uses the component.
 
 ## 5. Keep the docs true
-- Update the **`components.md`** entry if the component's purpose/API changed, and
-  the matching **showcase** in `frontend/src/modules/components/showcases.tsx`.
+- Update the **`components.md`** entry if the component's purpose/API changed.
 - If the change alters a documented standard (a variant set, a size, a
   focus/title style, a default), update the matching **DESIGN.md** entry in the
   same change so the doc still reproduces the real component 1:1.

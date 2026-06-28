@@ -1,6 +1,7 @@
 // Timeline — a vertical activity timeline for the dashboards (recent actions).
 // Each item is a tinted dot on a connector line with a title, subtitle and time.
 
+import type { ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import { Activity } from 'lucide-react'
 
@@ -34,20 +35,24 @@ export function Timeline({
   items,
   loading = false,
   emptyText = 'Henüz işlem yok',
+  action,
 }: {
   title?: string
   icon?: LucideIcon
   items: TimelineItem[]
   loading?: boolean
   emptyText?: string
+  /** Optional control rendered on the right of the header (e.g. an "add" button). */
+  action?: ReactNode
 }) {
   return (
     <Card className="h-full">
-      <CardHeader className="pb-2">
+      <CardHeader className="flex-row items-center justify-between gap-2 space-y-0 pb-2">
         <CardTitle className="flex items-center gap-2 text-sm">
           <Icon className="size-4 text-muted-foreground" />
           {title}
         </CardTitle>
+        {action}
       </CardHeader>
       <CardContent>
         {loading ? (

@@ -35,6 +35,34 @@ import { CategoryFormScreen } from '../modules/inventory/CategoryFormScreen'
 import { ProductDetailScreen } from '../modules/inventory/ProductDetailScreen'
 import { ProductFormScreen } from '../modules/inventory/ProductFormScreen'
 import { ProductsScreen } from '../modules/inventory/ProductsScreen'
+import { CashAccountsScreen } from '../modules/finance/CashAccountsScreen'
+import { CashAccountDetailScreen } from '../modules/finance/CashAccountDetailScreen'
+import { CashAccountFormScreen } from '../modules/finance/CashAccountFormScreen'
+import { BankAccountsScreen } from '../modules/finance/BankAccountsScreen'
+import { BankAccountDetailScreen } from '../modules/finance/BankAccountDetailScreen'
+import { BankAccountFormScreen } from '../modules/finance/BankAccountFormScreen'
+import { FinanceTransactionFormScreen } from '../modules/finance/FinanceTransactionFormScreen'
+import { ContactsScreen } from '../modules/contacts/ContactsScreen'
+import { ContactDetailScreen } from '../modules/contacts/ContactDetailScreen'
+import { ContactFormScreen } from '../modules/contacts/ContactFormScreen'
+import { ContactTransactionFormScreen } from '../modules/contacts/ContactTransactionFormScreen'
+import { ContactPersonFormScreen } from '../modules/contacts/ContactPersonFormScreen'
+import { ContactAddressFormScreen } from '../modules/contacts/ContactAddressFormScreen'
+import { ContactActivityFormScreen } from '../modules/contacts/ContactActivityFormScreen'
+import { OpportunitiesScreen } from '../modules/contacts/OpportunitiesScreen'
+import { OpportunityFormScreen } from '../modules/contacts/OpportunityFormScreen'
+import { OpportunityDetailScreen } from '../modules/contacts/OpportunityDetailScreen'
+import { ContactGroupsScreen } from '../modules/contacts/ContactGroupsScreen'
+import { ContactGroupDetailScreen } from '../modules/contacts/ContactGroupDetailScreen'
+import { PipelineBoardScreen } from '../modules/contacts/PipelineBoardScreen'
+import { CrmDashboardScreen } from '../modules/contacts/CrmDashboardScreen'
+import { MyWorkScreen } from '../modules/contacts/MyWorkScreen'
+import { NotificationsScreen } from '../modules/contacts/NotificationsScreen'
+import { LeadsScreen } from '../modules/contacts/LeadsScreen'
+import { IntegrationsSettingsScreen } from '../modules/contacts/IntegrationsSettingsScreen'
+import { InvoicesScreen } from '../modules/invoices/InvoicesScreen'
+import { InvoiceDetailScreen } from '../modules/invoices/InvoiceDetailScreen'
+import { InvoiceEntryScreen } from '../modules/invoices/InvoiceEntryScreen'
 import { ProfileScreen } from '../screens/ProfileScreen'
 import { ModuleDashboardScreen } from './ModuleDashboardScreen'
 import { ModuleHome } from './ModuleHome'
@@ -84,6 +112,40 @@ export const SCREENS: Record<string, () => React.ReactElement> = {
   'iam.audit.entity': () => <EntityAuditScreen />,
   'iam.errors': () => <ErrorLogsScreen />,
   'iam.errors.detail': () => <ErrorDetailScreen />,
+  // Finans (finance)
+  'finance.home': () => <ModuleHome moduleKey="finance" />,
+  'finance.cash-accounts': () => <CashAccountsScreen />,
+  'finance.cash-accounts.detail': () => <CashAccountDetailScreen />,
+  'finance.cash-accounts.form': () => <CashAccountFormScreen />,
+  'finance.bank-accounts': () => <BankAccountsScreen />,
+  'finance.bank-accounts.detail': () => <BankAccountDetailScreen />,
+  'finance.bank-accounts.form': () => <BankAccountFormScreen />,
+  'finance.transactions.form': () => <FinanceTransactionFormScreen />,
+  // Cari (contacts)
+  'contacts.home': () => <ModuleHome moduleKey="contacts" />,
+  'contacts.contacts': () => <ContactsScreen />,
+  'contacts.contacts.detail': () => <ContactDetailScreen />,
+  'contacts.contacts.form': () => <ContactFormScreen />,
+  'contacts.transactions.form': () => <ContactTransactionFormScreen />,
+  'contacts.persons.form': () => <ContactPersonFormScreen />,
+  'contacts.addresses.form': () => <ContactAddressFormScreen />,
+  'contacts.activities.form': () => <ContactActivityFormScreen />,
+  'contacts.opportunities': () => <OpportunitiesScreen />,
+  'contacts.opportunities.detail': () => <OpportunityDetailScreen />,
+  'contacts.opportunities.form': () => <OpportunityFormScreen />,
+  'contacts.groups': () => <ContactGroupsScreen />,
+  'contacts.groups.detail': () => <ContactGroupDetailScreen />,
+  'contacts.pipeline': () => <PipelineBoardScreen />,
+  'contacts.crm': () => <CrmDashboardScreen />,
+  'contacts.my-work': () => <MyWorkScreen />,
+  'contacts.notifications': () => <NotificationsScreen />,
+  'contacts.leads': () => <LeadsScreen />,
+  'contacts.integrations': () => <IntegrationsSettingsScreen />,
+  // Fatura (invoices)
+  'invoices.home': () => <ModuleHome moduleKey="invoices" />,
+  'invoices.invoices': () => <InvoicesScreen />,
+  'invoices.invoices.detail': () => <InvoiceDetailScreen />,
+  'invoices.invoices.form': () => <InvoiceEntryScreen />,
   // Profil (pseudo-module tab)
   profile: () => <ProfileScreen />,
 }

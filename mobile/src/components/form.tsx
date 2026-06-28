@@ -6,11 +6,13 @@
 import * as React from 'react'
 import {
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   TextInput,
   View,
 } from 'react-native'
+import DateTimePicker from '@react-native-community/datetimepicker'
 
 import { useTheme } from '../theme/theme-context'
 import { Icon } from './Icon'
@@ -346,6 +348,146 @@ export function CheckBox({ checked }: { checked: boolean }) {
       }}
     >
       {checked ? <Icon name="check" size={15} color={t.colors.primaryForeground} /> : null}
+    </View>
+  )
+}
+
+export function FormDatePicker({
+  label,
+  value,
+  onChange,
+  mode = 'datetime',
+}: {
+  label?: string
+  value: string
+  onChange: (v: string) => void
+  mode?: 'date' | 'datetime'
+}) {
+  const t = useTheme()
+  const dateVal = React.useMemo(() => {
+    const d = new Date(value)
+    return isNaN(d.getTime()) ? new Date() : d
+  }, [value])
+
+  const [showAndroid, setShowAndroid] = React.useState<boolean>(false)
+  const [androidMode, setAndroidMode] = React.useState<'date' | 'time'>('date')
+
+  const handleIOSChange = (event: any, selectedDate?: Date) => {
+    if (selectedDate) {
+      onChange(selectedDate.toISOString())
+    }
+  }
+
+  const handleAndroidChange = (event: any, selectedDate?: Date) => {
+    setShowAndroid(false)
+    if (event.type === 'dismissed') return
+
+    if (selectedDate) {
+      if (mode === 'datetime' && androidMode === 'date') {
+        const current = new Date(dateVal)
+        current.setFullYear(selectedDate.getFullYear())
+        current.setMonth(selectedDate.getMonth())
+        current.setDate(selectedDate.getDate())
+        onChange(current.toISOString())
+        setAndroidMode('time')
+        setTimeout(() => setShowAndroid(true), 100)
+      } else {
+        onChange(selectedDate.toISOString())
+      }
+    }
+  }
+
+  const showPicker = () => {
+    if (Platform.OS === 'android') {
+      setAndroidMode('date')
+      setShowAndroid(true)
+    }
+  }
+
+  const formatDisplay = () => {
+    try {
+      const options: Intl.DateTimeFormatOptions = mode === 'datetime'
+        ? { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }
+        : { year: 'numeric', month: 'long', day: 'numeric' }
+      return dateVal.toLocaleDateString('tr-TR', options)
+    } catch {
+      return value
+    }
+  }
+
+  if (Platform.OS === 'ios') {
+    return (
+      <View style={{ gap: t.spacing[1.5] }}>
+        {label ? (
+          <Text variant="label" tone="muted" weight="medium">
+            {label}
+          </Text>
+        ) : null}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            height: 48,
+            paddingHorizontal: t.spacing[3.5],
+            borderRadius: t.radius.md,
+            borderWidth: 1,
+            borderColor: t.colors.inputBorder,
+            backgroundColor: t.colors.card,
+            justifyContent: 'space-between',
+          }}
+        >
+          <Text variant="body" style={{ flex: 1 }}>
+            {formatDisplay()}
+          </Text>
+          <DateTimePicker
+            value={dateVal}
+            mode={mode === 'datetime' ? 'datetime' : 'date'}
+            display="compact"
+            onValueChange={handleIOSChange}
+            locale="tr-TR"
+            themeVariant={t.scheme}
+          />
+        </View>
+      </View>
+    )
+  }
+
+  return (
+    <View style={{ gap: t.spacing[1.5] }}>
+      {label ? (
+        <Text variant="label" tone="muted" weight="medium">
+          {label}
+        </Text>
+      ) : null}
+      <Pressable
+        onPress={showPicker}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          height: 48,
+          paddingHorizontal: t.spacing[3.5],
+          borderRadius: t.radius.md,
+          borderWidth: 1,
+          borderColor: t.colors.inputBorder,
+          backgroundColor: t.colors.card,
+          justifyContent: 'space-between',
+        }}
+      >
+        <Text variant="body" style={{ flex: 1 }}>
+          {formatDisplay()}
+        </Text>
+        <Icon name="calendar" size={18} color={t.colors.mutedForeground} />
+      </Pressable>
+
+      {showAndroid && (
+        <DateTimePicker
+          value={dateVal}
+          mode={androidMode}
+          display="default"
+          onValueChange={handleAndroidChange}
+          locale="tr-TR"
+        />
+      )}
     </View>
   )
 }

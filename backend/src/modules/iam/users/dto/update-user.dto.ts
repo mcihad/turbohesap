@@ -41,4 +41,8 @@ export class UpdateUserDto implements UpdateUserRequest {
   @IsArray()
   @IsUUID('4', { each: true })
   branchIds?: string[]
+
+  @IsOptional()
+  @IsString()
+  telegramChatId?: string | null
 }

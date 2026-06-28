@@ -134,4 +134,10 @@ export class CreateProductDto implements CreateProductRequest {
   @IsObject()
   @Allow()
   attributes?: Record<string, unknown>
+
+  // Optional per-branch opening stock.
+  @IsOptional()
+  @IsArray()
+  @Allow()
+  stocks?: { branchId: string | null; quantity: number }[]
 }

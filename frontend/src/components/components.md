@@ -5,11 +5,6 @@
 > **yoksa**, ancak o zaman yeni/özel bir bileşen üret — ve eklediğinde bu listeyi
 > güncelle.
 >
-> 🔎 **Canlı önizleme:** çalışan uygulamada **Bileşenler** modülü (`/components`)
-> her bileşeni kategorisine göre listeler; her birinin demosu `/components/<slug>`
-> sayfasında. Kaynağı: `src/modules/components/showcases.tsx`. Yeni bir paylaşılan
-> primitif eklediğinde oraya da bir showcase ekle.
->
 > Kurallar (bkz. `../../DESIGN.md`):
 > - shadcn/ui (new-york) + Radix primitifleri; ikonlar `lucide-react`.
 > - Asla token'ın ifade edebileceği bir değeri sabit yazma; renk/boşluk/radius

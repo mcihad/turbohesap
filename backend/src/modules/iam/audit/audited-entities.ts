@@ -7,6 +7,10 @@ export const IGNORED_AUDIT_ENTITIES = new Set<string>([
   'RefreshToken',
   // Per-user UI prefs / grid state — high-churn noise, not business data.
   'UserSetting',
+  // Per-user CRM notifications — high-churn, not business data.
+  'Notification',
+  // Integration connections hold secrets — never audit their values.
+  'IntegrationConnection',
 ])
 
 // Column names whose values are redacted in the recorded diff.
@@ -36,9 +40,25 @@ export const ENTITY_MODULE_MAP: Record<string, string> = {
   ProductPackaging: 'inventory',
   ProductStock: 'inventory',
   ProductChannelPrice: 'inventory',
+  StockMovement: 'inventory',
+  StockMovementType: 'inventory',
   FileEntity: 'files',
   CashAccount: 'finance',
   BankAccount: 'finance',
+  FinanceTransaction: 'finance',
+  Contact: 'contacts',
+  ContactGroup: 'contacts',
+  ContactPerson: 'contacts',
+  ContactAddress: 'contacts',
+  ContactTransaction: 'contacts',
+  Activity: 'contacts',
+  Opportunity: 'contacts',
+  Pipeline: 'contacts',
+  PipelineStage: 'contacts',
+  CrmFieldDefEntity: 'contacts',
+  Invoice: 'invoices',
+  InvoiceLine: 'invoices',
+  InvoicePayment: 'invoices',
 }
 
 export function moduleForEntity(entityName: string): string | null {

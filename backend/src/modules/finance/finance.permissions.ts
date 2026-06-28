@@ -22,4 +22,14 @@ export const FINANCE_PERMISSION_DEFS: PermissionDef[] = [
     description: 'Banka hesaplarını düzenle',
     group: 'Finans',
   },
+  {
+    key: FinancePermissions.transactionsRead,
+    description: 'Kasa/Banka hareketlerini görüntüle',
+    group: 'Finans',
+  },
+  {
+    key: FinancePermissions.transactionsWrite,
+    description: 'Kasa/Banka hareketlerini düzenle',
+    group: 'Finans',
+  },
 ]

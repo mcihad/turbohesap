@@ -9,11 +9,17 @@ import { InventoryDashboard } from '../modules/inventory/InventoryDashboard'
 import { LookupsDashboard } from '../modules/lookups/LookupsDashboard'
 import { OrgDashboard } from '../modules/org/OrgDashboard'
 import { SalesDashboard } from '../modules/sales/SalesDashboard'
+import { FinanceDashboard } from '../modules/finance/FinanceDashboard'
+import { ContactsDashboard } from '../modules/contacts/ContactsDashboard'
+import { InvoicesDashboard } from '../modules/invoices/InvoicesDashboard'
 
 export const MODULE_DASHBOARDS: Record<string, () => React.ReactElement> = {
   sales: () => <SalesDashboard />,
   org: () => <OrgDashboard />,
   inventory: () => <InventoryDashboard />,
+  finance: () => <FinanceDashboard />,
+  contacts: () => <ContactsDashboard />,
+  invoices: () => <InvoicesDashboard />,
   lookups: () => <LookupsDashboard />,
   iam: () => <IamDashboard />,
 }

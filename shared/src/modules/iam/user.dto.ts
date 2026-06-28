@@ -12,6 +12,8 @@ export interface UserDto {
   roles: RoleDto[]
   /** Branches this user is authorized for (org module). */
   branches: BranchSummary[]
+  /** Telegram chat id for direct notifications/messages to this user. */
+  telegramChatId: string | null
   lastLoginAt: string | null
   createdAt: string
   updatedAt: string
@@ -39,6 +41,7 @@ export interface CreateUserRequest {
   roleIds?: string[]
   /** IDs of branches the user is authorized for (org module). */
   branchIds?: string[]
+  telegramChatId?: string | null
 }
 
 export interface UpdateUserRequest {
@@ -49,4 +52,5 @@ export interface UpdateUserRequest {
   isActive?: boolean
   roleIds?: string[]
   branchIds?: string[]
+  telegramChatId?: string | null
 }

@@ -19,31 +19,54 @@ import { Route as AuthedSplatRouteImport } from './routes/_authed/$'
 import { Route as AuthedSalesIndexRouteImport } from './routes/_authed/sales/index'
 import { Route as AuthedOrgIndexRouteImport } from './routes/_authed/org/index'
 import { Route as AuthedLookupsIndexRouteImport } from './routes/_authed/lookups/index'
+import { Route as AuthedInvoicesIndexRouteImport } from './routes/_authed/invoices/index'
 import { Route as AuthedInventoryIndexRouteImport } from './routes/_authed/inventory/index'
 import { Route as AuthedIamIndexRouteImport } from './routes/_authed/iam/index'
-import { Route as AuthedComponentsIndexRouteImport } from './routes/_authed/components/index'
+import { Route as AuthedFinanceIndexRouteImport } from './routes/_authed/finance/index'
+import { Route as AuthedContactsIndexRouteImport } from './routes/_authed/contacts/index'
 import { Route as AuthedIamErrorLogsRouteImport } from './routes/_authed/iam/error-logs'
 import { Route as AuthedIamAuditLogsRouteImport } from './routes/_authed/iam/audit-logs'
 import { Route as AuthedGenelDashboardRouteImport } from './routes/_authed/genel/dashboard'
 import { Route as AuthedGenelAnalyticsRouteImport } from './routes/_authed/genel/analytics'
-import { Route as AuthedComponentsSlugRouteImport } from './routes/_authed/components/$slug'
+import { Route as AuthedContactsNotificationsRouteImport } from './routes/_authed/contacts/notifications'
+import { Route as AuthedContactsMyWorkRouteImport } from './routes/_authed/contacts/my-work'
+import { Route as AuthedContactsLeadsRouteImport } from './routes/_authed/contacts/leads'
+import { Route as AuthedContactsIntegrationsRouteImport } from './routes/_authed/contacts/integrations'
+import { Route as AuthedContactsCrmFieldsRouteImport } from './routes/_authed/contacts/crm-fields'
+import { Route as AuthedContactsCrmDashboardRouteImport } from './routes/_authed/contacts/crm-dashboard'
+import { Route as AuthedContactsContactsImportRouteImport } from './routes/_authed/contacts/contacts-import'
 import { Route as AuthedSalesChannelsIndexRouteImport } from './routes/_authed/sales/channels.index'
 import { Route as AuthedOrgBranchesIndexRouteImport } from './routes/_authed/org/branches.index'
 import { Route as AuthedLookupsItemsIndexRouteImport } from './routes/_authed/lookups/items.index'
+import { Route as AuthedInvoicesInvoicesIndexRouteImport } from './routes/_authed/invoices/invoices.index'
 import { Route as AuthedInventoryProductsIndexRouteImport } from './routes/_authed/inventory/products.index'
+import { Route as AuthedInventoryMovementTypesIndexRouteImport } from './routes/_authed/inventory/movement-types.index'
 import { Route as AuthedInventoryCategoriesIndexRouteImport } from './routes/_authed/inventory/categories.index'
 import { Route as AuthedIamUsersIndexRouteImport } from './routes/_authed/iam/users.index'
 import { Route as AuthedIamRolesIndexRouteImport } from './routes/_authed/iam/roles.index'
 import { Route as AuthedIamPermissionsIndexRouteImport } from './routes/_authed/iam/permissions.index'
 import { Route as AuthedFinanceCashAccountsIndexRouteImport } from './routes/_authed/finance/cash-accounts.index'
 import { Route as AuthedFinanceBankAccountsIndexRouteImport } from './routes/_authed/finance/bank-accounts.index'
+import { Route as AuthedContactsPipelineIndexRouteImport } from './routes/_authed/contacts/pipeline.index'
+import { Route as AuthedContactsOpportunitiesIndexRouteImport } from './routes/_authed/contacts/opportunities.index'
+import { Route as AuthedContactsGroupsIndexRouteImport } from './routes/_authed/contacts/groups.index'
+import { Route as AuthedContactsContactsIndexRouteImport } from './routes/_authed/contacts/contacts.index'
 import { Route as AuthedSalesChannelsIdRouteImport } from './routes/_authed/sales/channels.$id'
 import { Route as AuthedOrgBranchesIdRouteImport } from './routes/_authed/org/branches.$id'
+import { Route as AuthedInvoicesInvoicesNewRouteImport } from './routes/_authed/invoices/invoices.new'
+import { Route as AuthedInvoicesInvoicesIdRouteImport } from './routes/_authed/invoices/invoices.$id'
 import { Route as AuthedInventoryProductsIdRouteImport } from './routes/_authed/inventory/products.$id'
 import { Route as AuthedInventoryCategoriesIdRouteImport } from './routes/_authed/inventory/categories.$id'
 import { Route as AuthedIamUsersIdRouteImport } from './routes/_authed/iam/users.$id'
 import { Route as AuthedIamRolesIdRouteImport } from './routes/_authed/iam/roles.$id'
 import { Route as AuthedIamPermissionsKeyRouteImport } from './routes/_authed/iam/permissions.$key'
+import { Route as AuthedFinanceCashAccountsIdRouteImport } from './routes/_authed/finance/cash-accounts.$id'
+import { Route as AuthedFinanceBankAccountsIdRouteImport } from './routes/_authed/finance/bank-accounts.$id'
+import { Route as AuthedContactsPipelinesSettingsRouteImport } from './routes/_authed/contacts/pipelines.settings'
+import { Route as AuthedContactsOpportunitiesIdRouteImport } from './routes/_authed/contacts/opportunities.$id'
+import { Route as AuthedContactsGroupsIdRouteImport } from './routes/_authed/contacts/groups.$id'
+import { Route as AuthedContactsContactsIdRouteImport } from './routes/_authed/contacts/contacts.$id'
+import { Route as AuthedInvoicesInvoicesIdEditRouteImport } from './routes/_authed/invoices/invoices.$id.edit'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -94,6 +117,11 @@ const AuthedLookupsIndexRoute = AuthedLookupsIndexRouteImport.update({
   path: '/lookups/',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedInvoicesIndexRoute = AuthedInvoicesIndexRouteImport.update({
+  id: '/invoices/',
+  path: '/invoices/',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const AuthedInventoryIndexRoute = AuthedInventoryIndexRouteImport.update({
   id: '/inventory/',
   path: '/inventory/',
@@ -104,9 +132,14 @@ const AuthedIamIndexRoute = AuthedIamIndexRouteImport.update({
   path: '/iam/',
   getParentRoute: () => AuthedRoute,
 } as any)
-const AuthedComponentsIndexRoute = AuthedComponentsIndexRouteImport.update({
-  id: '/components/',
-  path: '/components/',
+const AuthedFinanceIndexRoute = AuthedFinanceIndexRouteImport.update({
+  id: '/finance/',
+  path: '/finance/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedContactsIndexRoute = AuthedContactsIndexRouteImport.update({
+  id: '/contacts/',
+  path: '/contacts/',
   getParentRoute: () => AuthedRoute,
 } as any)
 const AuthedIamErrorLogsRoute = AuthedIamErrorLogsRouteImport.update({
@@ -129,11 +162,45 @@ const AuthedGenelAnalyticsRoute = AuthedGenelAnalyticsRouteImport.update({
   path: '/genel/analytics',
   getParentRoute: () => AuthedRoute,
 } as any)
-const AuthedComponentsSlugRoute = AuthedComponentsSlugRouteImport.update({
-  id: '/components/$slug',
-  path: '/components/$slug',
+const AuthedContactsNotificationsRoute =
+  AuthedContactsNotificationsRouteImport.update({
+    id: '/contacts/notifications',
+    path: '/contacts/notifications',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedContactsMyWorkRoute = AuthedContactsMyWorkRouteImport.update({
+  id: '/contacts/my-work',
+  path: '/contacts/my-work',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedContactsLeadsRoute = AuthedContactsLeadsRouteImport.update({
+  id: '/contacts/leads',
+  path: '/contacts/leads',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedContactsIntegrationsRoute =
+  AuthedContactsIntegrationsRouteImport.update({
+    id: '/contacts/integrations',
+    path: '/contacts/integrations',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedContactsCrmFieldsRoute = AuthedContactsCrmFieldsRouteImport.update({
+  id: '/contacts/crm-fields',
+  path: '/contacts/crm-fields',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedContactsCrmDashboardRoute =
+  AuthedContactsCrmDashboardRouteImport.update({
+    id: '/contacts/crm-dashboard',
+    path: '/contacts/crm-dashboard',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedContactsContactsImportRoute =
+  AuthedContactsContactsImportRouteImport.update({
+    id: '/contacts/contacts-import',
+    path: '/contacts/contacts-import',
+    getParentRoute: () => AuthedRoute,
+  } as any)
 const AuthedSalesChannelsIndexRoute =
   AuthedSalesChannelsIndexRouteImport.update({
     id: '/sales/channels/',
@@ -150,10 +217,22 @@ const AuthedLookupsItemsIndexRoute = AuthedLookupsItemsIndexRouteImport.update({
   path: '/lookups/items/',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedInvoicesInvoicesIndexRoute =
+  AuthedInvoicesInvoicesIndexRouteImport.update({
+    id: '/invoices/invoices/',
+    path: '/invoices/invoices/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
 const AuthedInventoryProductsIndexRoute =
   AuthedInventoryProductsIndexRouteImport.update({
     id: '/inventory/products/',
     path: '/inventory/products/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedInventoryMovementTypesIndexRoute =
+  AuthedInventoryMovementTypesIndexRouteImport.update({
+    id: '/inventory/movement-types/',
+    path: '/inventory/movement-types/',
     getParentRoute: () => AuthedRoute,
   } as any)
 const AuthedInventoryCategoriesIndexRoute =
@@ -190,6 +269,30 @@ const AuthedFinanceBankAccountsIndexRoute =
     path: '/finance/bank-accounts/',
     getParentRoute: () => AuthedRoute,
   } as any)
+const AuthedContactsPipelineIndexRoute =
+  AuthedContactsPipelineIndexRouteImport.update({
+    id: '/contacts/pipeline/',
+    path: '/contacts/pipeline/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedContactsOpportunitiesIndexRoute =
+  AuthedContactsOpportunitiesIndexRouteImport.update({
+    id: '/contacts/opportunities/',
+    path: '/contacts/opportunities/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedContactsGroupsIndexRoute =
+  AuthedContactsGroupsIndexRouteImport.update({
+    id: '/contacts/groups/',
+    path: '/contacts/groups/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedContactsContactsIndexRoute =
+  AuthedContactsContactsIndexRouteImport.update({
+    id: '/contacts/contacts/',
+    path: '/contacts/contacts/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
 const AuthedSalesChannelsIdRoute = AuthedSalesChannelsIdRouteImport.update({
   id: '/sales/channels/$id',
   path: '/sales/channels/$id',
@@ -200,6 +303,18 @@ const AuthedOrgBranchesIdRoute = AuthedOrgBranchesIdRouteImport.update({
   path: '/org/branches/$id',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedInvoicesInvoicesNewRoute =
+  AuthedInvoicesInvoicesNewRouteImport.update({
+    id: '/invoices/invoices/new',
+    path: '/invoices/invoices/new',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedInvoicesInvoicesIdRoute =
+  AuthedInvoicesInvoicesIdRouteImport.update({
+    id: '/invoices/invoices/$id',
+    path: '/invoices/invoices/$id',
+    getParentRoute: () => AuthedRoute,
+  } as any)
 const AuthedInventoryProductsIdRoute =
   AuthedInventoryProductsIdRouteImport.update({
     id: '/inventory/products/$id',
@@ -227,6 +342,47 @@ const AuthedIamPermissionsKeyRoute = AuthedIamPermissionsKeyRouteImport.update({
   path: '/iam/permissions/$key',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedFinanceCashAccountsIdRoute =
+  AuthedFinanceCashAccountsIdRouteImport.update({
+    id: '/finance/cash-accounts/$id',
+    path: '/finance/cash-accounts/$id',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedFinanceBankAccountsIdRoute =
+  AuthedFinanceBankAccountsIdRouteImport.update({
+    id: '/finance/bank-accounts/$id',
+    path: '/finance/bank-accounts/$id',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedContactsPipelinesSettingsRoute =
+  AuthedContactsPipelinesSettingsRouteImport.update({
+    id: '/contacts/pipelines/settings',
+    path: '/contacts/pipelines/settings',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedContactsOpportunitiesIdRoute =
+  AuthedContactsOpportunitiesIdRouteImport.update({
+    id: '/contacts/opportunities/$id',
+    path: '/contacts/opportunities/$id',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedContactsGroupsIdRoute = AuthedContactsGroupsIdRouteImport.update({
+  id: '/contacts/groups/$id',
+  path: '/contacts/groups/$id',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedContactsContactsIdRoute =
+  AuthedContactsContactsIdRouteImport.update({
+    id: '/contacts/contacts/$id',
+    path: '/contacts/contacts/$id',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedInvoicesInvoicesIdEditRoute =
+  AuthedInvoicesInvoicesIdEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => AuthedInvoicesInvoicesIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthedIndexRoute
@@ -235,34 +391,57 @@ export interface FileRoutesByFullPath {
   '/help': typeof AuthedHelpRoute
   '/profile': typeof AuthedProfileRoute
   '/settings': typeof AuthedSettingsRoute
-  '/components/$slug': typeof AuthedComponentsSlugRoute
+  '/contacts/contacts-import': typeof AuthedContactsContactsImportRoute
+  '/contacts/crm-dashboard': typeof AuthedContactsCrmDashboardRoute
+  '/contacts/crm-fields': typeof AuthedContactsCrmFieldsRoute
+  '/contacts/integrations': typeof AuthedContactsIntegrationsRoute
+  '/contacts/leads': typeof AuthedContactsLeadsRoute
+  '/contacts/my-work': typeof AuthedContactsMyWorkRoute
+  '/contacts/notifications': typeof AuthedContactsNotificationsRoute
   '/genel/analytics': typeof AuthedGenelAnalyticsRoute
   '/genel/dashboard': typeof AuthedGenelDashboardRoute
   '/iam/audit-logs': typeof AuthedIamAuditLogsRoute
   '/iam/error-logs': typeof AuthedIamErrorLogsRoute
-  '/components/': typeof AuthedComponentsIndexRoute
+  '/contacts/': typeof AuthedContactsIndexRoute
+  '/finance/': typeof AuthedFinanceIndexRoute
   '/iam/': typeof AuthedIamIndexRoute
   '/inventory/': typeof AuthedInventoryIndexRoute
+  '/invoices/': typeof AuthedInvoicesIndexRoute
   '/lookups/': typeof AuthedLookupsIndexRoute
   '/org/': typeof AuthedOrgIndexRoute
   '/sales/': typeof AuthedSalesIndexRoute
+  '/contacts/contacts/$id': typeof AuthedContactsContactsIdRoute
+  '/contacts/groups/$id': typeof AuthedContactsGroupsIdRoute
+  '/contacts/opportunities/$id': typeof AuthedContactsOpportunitiesIdRoute
+  '/contacts/pipelines/settings': typeof AuthedContactsPipelinesSettingsRoute
+  '/finance/bank-accounts/$id': typeof AuthedFinanceBankAccountsIdRoute
+  '/finance/cash-accounts/$id': typeof AuthedFinanceCashAccountsIdRoute
   '/iam/permissions/$key': typeof AuthedIamPermissionsKeyRoute
   '/iam/roles/$id': typeof AuthedIamRolesIdRoute
   '/iam/users/$id': typeof AuthedIamUsersIdRoute
   '/inventory/categories/$id': typeof AuthedInventoryCategoriesIdRoute
   '/inventory/products/$id': typeof AuthedInventoryProductsIdRoute
+  '/invoices/invoices/$id': typeof AuthedInvoicesInvoicesIdRouteWithChildren
+  '/invoices/invoices/new': typeof AuthedInvoicesInvoicesNewRoute
   '/org/branches/$id': typeof AuthedOrgBranchesIdRoute
   '/sales/channels/$id': typeof AuthedSalesChannelsIdRoute
+  '/contacts/contacts/': typeof AuthedContactsContactsIndexRoute
+  '/contacts/groups/': typeof AuthedContactsGroupsIndexRoute
+  '/contacts/opportunities/': typeof AuthedContactsOpportunitiesIndexRoute
+  '/contacts/pipeline/': typeof AuthedContactsPipelineIndexRoute
   '/finance/bank-accounts/': typeof AuthedFinanceBankAccountsIndexRoute
   '/finance/cash-accounts/': typeof AuthedFinanceCashAccountsIndexRoute
   '/iam/permissions/': typeof AuthedIamPermissionsIndexRoute
   '/iam/roles/': typeof AuthedIamRolesIndexRoute
   '/iam/users/': typeof AuthedIamUsersIndexRoute
   '/inventory/categories/': typeof AuthedInventoryCategoriesIndexRoute
+  '/inventory/movement-types/': typeof AuthedInventoryMovementTypesIndexRoute
   '/inventory/products/': typeof AuthedInventoryProductsIndexRoute
+  '/invoices/invoices/': typeof AuthedInvoicesInvoicesIndexRoute
   '/lookups/items/': typeof AuthedLookupsItemsIndexRoute
   '/org/branches/': typeof AuthedOrgBranchesIndexRoute
   '/sales/channels/': typeof AuthedSalesChannelsIndexRoute
+  '/invoices/invoices/$id/edit': typeof AuthedInvoicesInvoicesIdEditRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -271,34 +450,57 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthedProfileRoute
   '/settings': typeof AuthedSettingsRoute
   '/': typeof AuthedIndexRoute
-  '/components/$slug': typeof AuthedComponentsSlugRoute
+  '/contacts/contacts-import': typeof AuthedContactsContactsImportRoute
+  '/contacts/crm-dashboard': typeof AuthedContactsCrmDashboardRoute
+  '/contacts/crm-fields': typeof AuthedContactsCrmFieldsRoute
+  '/contacts/integrations': typeof AuthedContactsIntegrationsRoute
+  '/contacts/leads': typeof AuthedContactsLeadsRoute
+  '/contacts/my-work': typeof AuthedContactsMyWorkRoute
+  '/contacts/notifications': typeof AuthedContactsNotificationsRoute
   '/genel/analytics': typeof AuthedGenelAnalyticsRoute
   '/genel/dashboard': typeof AuthedGenelDashboardRoute
   '/iam/audit-logs': typeof AuthedIamAuditLogsRoute
   '/iam/error-logs': typeof AuthedIamErrorLogsRoute
-  '/components': typeof AuthedComponentsIndexRoute
+  '/contacts': typeof AuthedContactsIndexRoute
+  '/finance': typeof AuthedFinanceIndexRoute
   '/iam': typeof AuthedIamIndexRoute
   '/inventory': typeof AuthedInventoryIndexRoute
+  '/invoices': typeof AuthedInvoicesIndexRoute
   '/lookups': typeof AuthedLookupsIndexRoute
   '/org': typeof AuthedOrgIndexRoute
   '/sales': typeof AuthedSalesIndexRoute
+  '/contacts/contacts/$id': typeof AuthedContactsContactsIdRoute
+  '/contacts/groups/$id': typeof AuthedContactsGroupsIdRoute
+  '/contacts/opportunities/$id': typeof AuthedContactsOpportunitiesIdRoute
+  '/contacts/pipelines/settings': typeof AuthedContactsPipelinesSettingsRoute
+  '/finance/bank-accounts/$id': typeof AuthedFinanceBankAccountsIdRoute
+  '/finance/cash-accounts/$id': typeof AuthedFinanceCashAccountsIdRoute
   '/iam/permissions/$key': typeof AuthedIamPermissionsKeyRoute
   '/iam/roles/$id': typeof AuthedIamRolesIdRoute
   '/iam/users/$id': typeof AuthedIamUsersIdRoute
   '/inventory/categories/$id': typeof AuthedInventoryCategoriesIdRoute
   '/inventory/products/$id': typeof AuthedInventoryProductsIdRoute
+  '/invoices/invoices/$id': typeof AuthedInvoicesInvoicesIdRouteWithChildren
+  '/invoices/invoices/new': typeof AuthedInvoicesInvoicesNewRoute
   '/org/branches/$id': typeof AuthedOrgBranchesIdRoute
   '/sales/channels/$id': typeof AuthedSalesChannelsIdRoute
+  '/contacts/contacts': typeof AuthedContactsContactsIndexRoute
+  '/contacts/groups': typeof AuthedContactsGroupsIndexRoute
+  '/contacts/opportunities': typeof AuthedContactsOpportunitiesIndexRoute
+  '/contacts/pipeline': typeof AuthedContactsPipelineIndexRoute
   '/finance/bank-accounts': typeof AuthedFinanceBankAccountsIndexRoute
   '/finance/cash-accounts': typeof AuthedFinanceCashAccountsIndexRoute
   '/iam/permissions': typeof AuthedIamPermissionsIndexRoute
   '/iam/roles': typeof AuthedIamRolesIndexRoute
   '/iam/users': typeof AuthedIamUsersIndexRoute
   '/inventory/categories': typeof AuthedInventoryCategoriesIndexRoute
+  '/inventory/movement-types': typeof AuthedInventoryMovementTypesIndexRoute
   '/inventory/products': typeof AuthedInventoryProductsIndexRoute
+  '/invoices/invoices': typeof AuthedInvoicesInvoicesIndexRoute
   '/lookups/items': typeof AuthedLookupsItemsIndexRoute
   '/org/branches': typeof AuthedOrgBranchesIndexRoute
   '/sales/channels': typeof AuthedSalesChannelsIndexRoute
+  '/invoices/invoices/$id/edit': typeof AuthedInvoicesInvoicesIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -309,34 +511,57 @@ export interface FileRoutesById {
   '/_authed/profile': typeof AuthedProfileRoute
   '/_authed/settings': typeof AuthedSettingsRoute
   '/_authed/': typeof AuthedIndexRoute
-  '/_authed/components/$slug': typeof AuthedComponentsSlugRoute
+  '/_authed/contacts/contacts-import': typeof AuthedContactsContactsImportRoute
+  '/_authed/contacts/crm-dashboard': typeof AuthedContactsCrmDashboardRoute
+  '/_authed/contacts/crm-fields': typeof AuthedContactsCrmFieldsRoute
+  '/_authed/contacts/integrations': typeof AuthedContactsIntegrationsRoute
+  '/_authed/contacts/leads': typeof AuthedContactsLeadsRoute
+  '/_authed/contacts/my-work': typeof AuthedContactsMyWorkRoute
+  '/_authed/contacts/notifications': typeof AuthedContactsNotificationsRoute
   '/_authed/genel/analytics': typeof AuthedGenelAnalyticsRoute
   '/_authed/genel/dashboard': typeof AuthedGenelDashboardRoute
   '/_authed/iam/audit-logs': typeof AuthedIamAuditLogsRoute
   '/_authed/iam/error-logs': typeof AuthedIamErrorLogsRoute
-  '/_authed/components/': typeof AuthedComponentsIndexRoute
+  '/_authed/contacts/': typeof AuthedContactsIndexRoute
+  '/_authed/finance/': typeof AuthedFinanceIndexRoute
   '/_authed/iam/': typeof AuthedIamIndexRoute
   '/_authed/inventory/': typeof AuthedInventoryIndexRoute
+  '/_authed/invoices/': typeof AuthedInvoicesIndexRoute
   '/_authed/lookups/': typeof AuthedLookupsIndexRoute
   '/_authed/org/': typeof AuthedOrgIndexRoute
   '/_authed/sales/': typeof AuthedSalesIndexRoute
+  '/_authed/contacts/contacts/$id': typeof AuthedContactsContactsIdRoute
+  '/_authed/contacts/groups/$id': typeof AuthedContactsGroupsIdRoute
+  '/_authed/contacts/opportunities/$id': typeof AuthedContactsOpportunitiesIdRoute
+  '/_authed/contacts/pipelines/settings': typeof AuthedContactsPipelinesSettingsRoute
+  '/_authed/finance/bank-accounts/$id': typeof AuthedFinanceBankAccountsIdRoute
+  '/_authed/finance/cash-accounts/$id': typeof AuthedFinanceCashAccountsIdRoute
   '/_authed/iam/permissions/$key': typeof AuthedIamPermissionsKeyRoute
   '/_authed/iam/roles/$id': typeof AuthedIamRolesIdRoute
   '/_authed/iam/users/$id': typeof AuthedIamUsersIdRoute
   '/_authed/inventory/categories/$id': typeof AuthedInventoryCategoriesIdRoute
   '/_authed/inventory/products/$id': typeof AuthedInventoryProductsIdRoute
+  '/_authed/invoices/invoices/$id': typeof AuthedInvoicesInvoicesIdRouteWithChildren
+  '/_authed/invoices/invoices/new': typeof AuthedInvoicesInvoicesNewRoute
   '/_authed/org/branches/$id': typeof AuthedOrgBranchesIdRoute
   '/_authed/sales/channels/$id': typeof AuthedSalesChannelsIdRoute
+  '/_authed/contacts/contacts/': typeof AuthedContactsContactsIndexRoute
+  '/_authed/contacts/groups/': typeof AuthedContactsGroupsIndexRoute
+  '/_authed/contacts/opportunities/': typeof AuthedContactsOpportunitiesIndexRoute
+  '/_authed/contacts/pipeline/': typeof AuthedContactsPipelineIndexRoute
   '/_authed/finance/bank-accounts/': typeof AuthedFinanceBankAccountsIndexRoute
   '/_authed/finance/cash-accounts/': typeof AuthedFinanceCashAccountsIndexRoute
   '/_authed/iam/permissions/': typeof AuthedIamPermissionsIndexRoute
   '/_authed/iam/roles/': typeof AuthedIamRolesIndexRoute
   '/_authed/iam/users/': typeof AuthedIamUsersIndexRoute
   '/_authed/inventory/categories/': typeof AuthedInventoryCategoriesIndexRoute
+  '/_authed/inventory/movement-types/': typeof AuthedInventoryMovementTypesIndexRoute
   '/_authed/inventory/products/': typeof AuthedInventoryProductsIndexRoute
+  '/_authed/invoices/invoices/': typeof AuthedInvoicesInvoicesIndexRoute
   '/_authed/lookups/items/': typeof AuthedLookupsItemsIndexRoute
   '/_authed/org/branches/': typeof AuthedOrgBranchesIndexRoute
   '/_authed/sales/channels/': typeof AuthedSalesChannelsIndexRoute
+  '/_authed/invoices/invoices/$id/edit': typeof AuthedInvoicesInvoicesIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -347,34 +572,57 @@ export interface FileRouteTypes {
     | '/help'
     | '/profile'
     | '/settings'
-    | '/components/$slug'
+    | '/contacts/contacts-import'
+    | '/contacts/crm-dashboard'
+    | '/contacts/crm-fields'
+    | '/contacts/integrations'
+    | '/contacts/leads'
+    | '/contacts/my-work'
+    | '/contacts/notifications'
     | '/genel/analytics'
     | '/genel/dashboard'
     | '/iam/audit-logs'
     | '/iam/error-logs'
-    | '/components/'
+    | '/contacts/'
+    | '/finance/'
     | '/iam/'
     | '/inventory/'
+    | '/invoices/'
     | '/lookups/'
     | '/org/'
     | '/sales/'
+    | '/contacts/contacts/$id'
+    | '/contacts/groups/$id'
+    | '/contacts/opportunities/$id'
+    | '/contacts/pipelines/settings'
+    | '/finance/bank-accounts/$id'
+    | '/finance/cash-accounts/$id'
     | '/iam/permissions/$key'
     | '/iam/roles/$id'
     | '/iam/users/$id'
     | '/inventory/categories/$id'
     | '/inventory/products/$id'
+    | '/invoices/invoices/$id'
+    | '/invoices/invoices/new'
     | '/org/branches/$id'
     | '/sales/channels/$id'
+    | '/contacts/contacts/'
+    | '/contacts/groups/'
+    | '/contacts/opportunities/'
+    | '/contacts/pipeline/'
     | '/finance/bank-accounts/'
     | '/finance/cash-accounts/'
     | '/iam/permissions/'
     | '/iam/roles/'
     | '/iam/users/'
     | '/inventory/categories/'
+    | '/inventory/movement-types/'
     | '/inventory/products/'
+    | '/invoices/invoices/'
     | '/lookups/items/'
     | '/org/branches/'
     | '/sales/channels/'
+    | '/invoices/invoices/$id/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -383,34 +631,57 @@ export interface FileRouteTypes {
     | '/profile'
     | '/settings'
     | '/'
-    | '/components/$slug'
+    | '/contacts/contacts-import'
+    | '/contacts/crm-dashboard'
+    | '/contacts/crm-fields'
+    | '/contacts/integrations'
+    | '/contacts/leads'
+    | '/contacts/my-work'
+    | '/contacts/notifications'
     | '/genel/analytics'
     | '/genel/dashboard'
     | '/iam/audit-logs'
     | '/iam/error-logs'
-    | '/components'
+    | '/contacts'
+    | '/finance'
     | '/iam'
     | '/inventory'
+    | '/invoices'
     | '/lookups'
     | '/org'
     | '/sales'
+    | '/contacts/contacts/$id'
+    | '/contacts/groups/$id'
+    | '/contacts/opportunities/$id'
+    | '/contacts/pipelines/settings'
+    | '/finance/bank-accounts/$id'
+    | '/finance/cash-accounts/$id'
     | '/iam/permissions/$key'
     | '/iam/roles/$id'
     | '/iam/users/$id'
     | '/inventory/categories/$id'
     | '/inventory/products/$id'
+    | '/invoices/invoices/$id'
+    | '/invoices/invoices/new'
     | '/org/branches/$id'
     | '/sales/channels/$id'
+    | '/contacts/contacts'
+    | '/contacts/groups'
+    | '/contacts/opportunities'
+    | '/contacts/pipeline'
     | '/finance/bank-accounts'
     | '/finance/cash-accounts'
     | '/iam/permissions'
     | '/iam/roles'
     | '/iam/users'
     | '/inventory/categories'
+    | '/inventory/movement-types'
     | '/inventory/products'
+    | '/invoices/invoices'
     | '/lookups/items'
     | '/org/branches'
     | '/sales/channels'
+    | '/invoices/invoices/$id/edit'
   id:
     | '__root__'
     | '/_authed'
@@ -420,34 +691,57 @@ export interface FileRouteTypes {
     | '/_authed/profile'
     | '/_authed/settings'
     | '/_authed/'
-    | '/_authed/components/$slug'
+    | '/_authed/contacts/contacts-import'
+    | '/_authed/contacts/crm-dashboard'
+    | '/_authed/contacts/crm-fields'
+    | '/_authed/contacts/integrations'
+    | '/_authed/contacts/leads'
+    | '/_authed/contacts/my-work'
+    | '/_authed/contacts/notifications'
     | '/_authed/genel/analytics'
     | '/_authed/genel/dashboard'
     | '/_authed/iam/audit-logs'
     | '/_authed/iam/error-logs'
-    | '/_authed/components/'
+    | '/_authed/contacts/'
+    | '/_authed/finance/'
     | '/_authed/iam/'
     | '/_authed/inventory/'
+    | '/_authed/invoices/'
     | '/_authed/lookups/'
     | '/_authed/org/'
     | '/_authed/sales/'
+    | '/_authed/contacts/contacts/$id'
+    | '/_authed/contacts/groups/$id'
+    | '/_authed/contacts/opportunities/$id'
+    | '/_authed/contacts/pipelines/settings'
+    | '/_authed/finance/bank-accounts/$id'
+    | '/_authed/finance/cash-accounts/$id'
     | '/_authed/iam/permissions/$key'
     | '/_authed/iam/roles/$id'
     | '/_authed/iam/users/$id'
     | '/_authed/inventory/categories/$id'
     | '/_authed/inventory/products/$id'
+    | '/_authed/invoices/invoices/$id'
+    | '/_authed/invoices/invoices/new'
     | '/_authed/org/branches/$id'
     | '/_authed/sales/channels/$id'
+    | '/_authed/contacts/contacts/'
+    | '/_authed/contacts/groups/'
+    | '/_authed/contacts/opportunities/'
+    | '/_authed/contacts/pipeline/'
     | '/_authed/finance/bank-accounts/'
     | '/_authed/finance/cash-accounts/'
     | '/_authed/iam/permissions/'
     | '/_authed/iam/roles/'
     | '/_authed/iam/users/'
     | '/_authed/inventory/categories/'
+    | '/_authed/inventory/movement-types/'
     | '/_authed/inventory/products/'
+    | '/_authed/invoices/invoices/'
     | '/_authed/lookups/items/'
     | '/_authed/org/branches/'
     | '/_authed/sales/channels/'
+    | '/_authed/invoices/invoices/$id/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -527,6 +821,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedLookupsIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/invoices/': {
+      id: '/_authed/invoices/'
+      path: '/invoices'
+      fullPath: '/invoices/'
+      preLoaderRoute: typeof AuthedInvoicesIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/inventory/': {
       id: '/_authed/inventory/'
       path: '/inventory'
@@ -541,11 +842,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedIamIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
-    '/_authed/components/': {
-      id: '/_authed/components/'
-      path: '/components'
-      fullPath: '/components/'
-      preLoaderRoute: typeof AuthedComponentsIndexRouteImport
+    '/_authed/finance/': {
+      id: '/_authed/finance/'
+      path: '/finance'
+      fullPath: '/finance/'
+      preLoaderRoute: typeof AuthedFinanceIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/contacts/': {
+      id: '/_authed/contacts/'
+      path: '/contacts'
+      fullPath: '/contacts/'
+      preLoaderRoute: typeof AuthedContactsIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/iam/error-logs': {
@@ -576,11 +884,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedGenelAnalyticsRouteImport
       parentRoute: typeof AuthedRoute
     }
-    '/_authed/components/$slug': {
-      id: '/_authed/components/$slug'
-      path: '/components/$slug'
-      fullPath: '/components/$slug'
-      preLoaderRoute: typeof AuthedComponentsSlugRouteImport
+    '/_authed/contacts/notifications': {
+      id: '/_authed/contacts/notifications'
+      path: '/contacts/notifications'
+      fullPath: '/contacts/notifications'
+      preLoaderRoute: typeof AuthedContactsNotificationsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/contacts/my-work': {
+      id: '/_authed/contacts/my-work'
+      path: '/contacts/my-work'
+      fullPath: '/contacts/my-work'
+      preLoaderRoute: typeof AuthedContactsMyWorkRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/contacts/leads': {
+      id: '/_authed/contacts/leads'
+      path: '/contacts/leads'
+      fullPath: '/contacts/leads'
+      preLoaderRoute: typeof AuthedContactsLeadsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/contacts/integrations': {
+      id: '/_authed/contacts/integrations'
+      path: '/contacts/integrations'
+      fullPath: '/contacts/integrations'
+      preLoaderRoute: typeof AuthedContactsIntegrationsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/contacts/crm-fields': {
+      id: '/_authed/contacts/crm-fields'
+      path: '/contacts/crm-fields'
+      fullPath: '/contacts/crm-fields'
+      preLoaderRoute: typeof AuthedContactsCrmFieldsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/contacts/crm-dashboard': {
+      id: '/_authed/contacts/crm-dashboard'
+      path: '/contacts/crm-dashboard'
+      fullPath: '/contacts/crm-dashboard'
+      preLoaderRoute: typeof AuthedContactsCrmDashboardRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/contacts/contacts-import': {
+      id: '/_authed/contacts/contacts-import'
+      path: '/contacts/contacts-import'
+      fullPath: '/contacts/contacts-import'
+      preLoaderRoute: typeof AuthedContactsContactsImportRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/sales/channels/': {
@@ -604,11 +954,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedLookupsItemsIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/invoices/invoices/': {
+      id: '/_authed/invoices/invoices/'
+      path: '/invoices/invoices'
+      fullPath: '/invoices/invoices/'
+      preLoaderRoute: typeof AuthedInvoicesInvoicesIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/inventory/products/': {
       id: '/_authed/inventory/products/'
       path: '/inventory/products'
       fullPath: '/inventory/products/'
       preLoaderRoute: typeof AuthedInventoryProductsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/inventory/movement-types/': {
+      id: '/_authed/inventory/movement-types/'
+      path: '/inventory/movement-types'
+      fullPath: '/inventory/movement-types/'
+      preLoaderRoute: typeof AuthedInventoryMovementTypesIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/inventory/categories/': {
@@ -653,6 +1017,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedFinanceBankAccountsIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/contacts/pipeline/': {
+      id: '/_authed/contacts/pipeline/'
+      path: '/contacts/pipeline'
+      fullPath: '/contacts/pipeline/'
+      preLoaderRoute: typeof AuthedContactsPipelineIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/contacts/opportunities/': {
+      id: '/_authed/contacts/opportunities/'
+      path: '/contacts/opportunities'
+      fullPath: '/contacts/opportunities/'
+      preLoaderRoute: typeof AuthedContactsOpportunitiesIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/contacts/groups/': {
+      id: '/_authed/contacts/groups/'
+      path: '/contacts/groups'
+      fullPath: '/contacts/groups/'
+      preLoaderRoute: typeof AuthedContactsGroupsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/contacts/contacts/': {
+      id: '/_authed/contacts/contacts/'
+      path: '/contacts/contacts'
+      fullPath: '/contacts/contacts/'
+      preLoaderRoute: typeof AuthedContactsContactsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/sales/channels/$id': {
       id: '/_authed/sales/channels/$id'
       path: '/sales/channels/$id'
@@ -665,6 +1057,20 @@ declare module '@tanstack/react-router' {
       path: '/org/branches/$id'
       fullPath: '/org/branches/$id'
       preLoaderRoute: typeof AuthedOrgBranchesIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/invoices/invoices/new': {
+      id: '/_authed/invoices/invoices/new'
+      path: '/invoices/invoices/new'
+      fullPath: '/invoices/invoices/new'
+      preLoaderRoute: typeof AuthedInvoicesInvoicesNewRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/invoices/invoices/$id': {
+      id: '/_authed/invoices/invoices/$id'
+      path: '/invoices/invoices/$id'
+      fullPath: '/invoices/invoices/$id'
+      preLoaderRoute: typeof AuthedInvoicesInvoicesIdRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/inventory/products/$id': {
@@ -702,8 +1108,71 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedIamPermissionsKeyRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/finance/cash-accounts/$id': {
+      id: '/_authed/finance/cash-accounts/$id'
+      path: '/finance/cash-accounts/$id'
+      fullPath: '/finance/cash-accounts/$id'
+      preLoaderRoute: typeof AuthedFinanceCashAccountsIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/finance/bank-accounts/$id': {
+      id: '/_authed/finance/bank-accounts/$id'
+      path: '/finance/bank-accounts/$id'
+      fullPath: '/finance/bank-accounts/$id'
+      preLoaderRoute: typeof AuthedFinanceBankAccountsIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/contacts/pipelines/settings': {
+      id: '/_authed/contacts/pipelines/settings'
+      path: '/contacts/pipelines/settings'
+      fullPath: '/contacts/pipelines/settings'
+      preLoaderRoute: typeof AuthedContactsPipelinesSettingsRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/contacts/opportunities/$id': {
+      id: '/_authed/contacts/opportunities/$id'
+      path: '/contacts/opportunities/$id'
+      fullPath: '/contacts/opportunities/$id'
+      preLoaderRoute: typeof AuthedContactsOpportunitiesIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/contacts/groups/$id': {
+      id: '/_authed/contacts/groups/$id'
+      path: '/contacts/groups/$id'
+      fullPath: '/contacts/groups/$id'
+      preLoaderRoute: typeof AuthedContactsGroupsIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/contacts/contacts/$id': {
+      id: '/_authed/contacts/contacts/$id'
+      path: '/contacts/contacts/$id'
+      fullPath: '/contacts/contacts/$id'
+      preLoaderRoute: typeof AuthedContactsContactsIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/invoices/invoices/$id/edit': {
+      id: '/_authed/invoices/invoices/$id/edit'
+      path: '/edit'
+      fullPath: '/invoices/invoices/$id/edit'
+      preLoaderRoute: typeof AuthedInvoicesInvoicesIdEditRouteImport
+      parentRoute: typeof AuthedInvoicesInvoicesIdRoute
+    }
   }
 }
+
+interface AuthedInvoicesInvoicesIdRouteChildren {
+  AuthedInvoicesInvoicesIdEditRoute: typeof AuthedInvoicesInvoicesIdEditRoute
+}
+
+const AuthedInvoicesInvoicesIdRouteChildren: AuthedInvoicesInvoicesIdRouteChildren =
+  {
+    AuthedInvoicesInvoicesIdEditRoute: AuthedInvoicesInvoicesIdEditRoute,
+  }
+
+const AuthedInvoicesInvoicesIdRouteWithChildren =
+  AuthedInvoicesInvoicesIdRoute._addFileChildren(
+    AuthedInvoicesInvoicesIdRouteChildren,
+  )
 
 interface AuthedRouteChildren {
   AuthedSplatRoute: typeof AuthedSplatRoute
@@ -711,31 +1180,53 @@ interface AuthedRouteChildren {
   AuthedProfileRoute: typeof AuthedProfileRoute
   AuthedSettingsRoute: typeof AuthedSettingsRoute
   AuthedIndexRoute: typeof AuthedIndexRoute
-  AuthedComponentsSlugRoute: typeof AuthedComponentsSlugRoute
+  AuthedContactsContactsImportRoute: typeof AuthedContactsContactsImportRoute
+  AuthedContactsCrmDashboardRoute: typeof AuthedContactsCrmDashboardRoute
+  AuthedContactsCrmFieldsRoute: typeof AuthedContactsCrmFieldsRoute
+  AuthedContactsIntegrationsRoute: typeof AuthedContactsIntegrationsRoute
+  AuthedContactsLeadsRoute: typeof AuthedContactsLeadsRoute
+  AuthedContactsMyWorkRoute: typeof AuthedContactsMyWorkRoute
+  AuthedContactsNotificationsRoute: typeof AuthedContactsNotificationsRoute
   AuthedGenelAnalyticsRoute: typeof AuthedGenelAnalyticsRoute
   AuthedGenelDashboardRoute: typeof AuthedGenelDashboardRoute
   AuthedIamAuditLogsRoute: typeof AuthedIamAuditLogsRoute
   AuthedIamErrorLogsRoute: typeof AuthedIamErrorLogsRoute
-  AuthedComponentsIndexRoute: typeof AuthedComponentsIndexRoute
+  AuthedContactsIndexRoute: typeof AuthedContactsIndexRoute
+  AuthedFinanceIndexRoute: typeof AuthedFinanceIndexRoute
   AuthedIamIndexRoute: typeof AuthedIamIndexRoute
   AuthedInventoryIndexRoute: typeof AuthedInventoryIndexRoute
+  AuthedInvoicesIndexRoute: typeof AuthedInvoicesIndexRoute
   AuthedLookupsIndexRoute: typeof AuthedLookupsIndexRoute
   AuthedOrgIndexRoute: typeof AuthedOrgIndexRoute
   AuthedSalesIndexRoute: typeof AuthedSalesIndexRoute
+  AuthedContactsContactsIdRoute: typeof AuthedContactsContactsIdRoute
+  AuthedContactsGroupsIdRoute: typeof AuthedContactsGroupsIdRoute
+  AuthedContactsOpportunitiesIdRoute: typeof AuthedContactsOpportunitiesIdRoute
+  AuthedContactsPipelinesSettingsRoute: typeof AuthedContactsPipelinesSettingsRoute
+  AuthedFinanceBankAccountsIdRoute: typeof AuthedFinanceBankAccountsIdRoute
+  AuthedFinanceCashAccountsIdRoute: typeof AuthedFinanceCashAccountsIdRoute
   AuthedIamPermissionsKeyRoute: typeof AuthedIamPermissionsKeyRoute
   AuthedIamRolesIdRoute: typeof AuthedIamRolesIdRoute
   AuthedIamUsersIdRoute: typeof AuthedIamUsersIdRoute
   AuthedInventoryCategoriesIdRoute: typeof AuthedInventoryCategoriesIdRoute
   AuthedInventoryProductsIdRoute: typeof AuthedInventoryProductsIdRoute
+  AuthedInvoicesInvoicesIdRoute: typeof AuthedInvoicesInvoicesIdRouteWithChildren
+  AuthedInvoicesInvoicesNewRoute: typeof AuthedInvoicesInvoicesNewRoute
   AuthedOrgBranchesIdRoute: typeof AuthedOrgBranchesIdRoute
   AuthedSalesChannelsIdRoute: typeof AuthedSalesChannelsIdRoute
+  AuthedContactsContactsIndexRoute: typeof AuthedContactsContactsIndexRoute
+  AuthedContactsGroupsIndexRoute: typeof AuthedContactsGroupsIndexRoute
+  AuthedContactsOpportunitiesIndexRoute: typeof AuthedContactsOpportunitiesIndexRoute
+  AuthedContactsPipelineIndexRoute: typeof AuthedContactsPipelineIndexRoute
   AuthedFinanceBankAccountsIndexRoute: typeof AuthedFinanceBankAccountsIndexRoute
   AuthedFinanceCashAccountsIndexRoute: typeof AuthedFinanceCashAccountsIndexRoute
   AuthedIamPermissionsIndexRoute: typeof AuthedIamPermissionsIndexRoute
   AuthedIamRolesIndexRoute: typeof AuthedIamRolesIndexRoute
   AuthedIamUsersIndexRoute: typeof AuthedIamUsersIndexRoute
   AuthedInventoryCategoriesIndexRoute: typeof AuthedInventoryCategoriesIndexRoute
+  AuthedInventoryMovementTypesIndexRoute: typeof AuthedInventoryMovementTypesIndexRoute
   AuthedInventoryProductsIndexRoute: typeof AuthedInventoryProductsIndexRoute
+  AuthedInvoicesInvoicesIndexRoute: typeof AuthedInvoicesInvoicesIndexRoute
   AuthedLookupsItemsIndexRoute: typeof AuthedLookupsItemsIndexRoute
   AuthedOrgBranchesIndexRoute: typeof AuthedOrgBranchesIndexRoute
   AuthedSalesChannelsIndexRoute: typeof AuthedSalesChannelsIndexRoute
@@ -747,31 +1238,54 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedProfileRoute: AuthedProfileRoute,
   AuthedSettingsRoute: AuthedSettingsRoute,
   AuthedIndexRoute: AuthedIndexRoute,
-  AuthedComponentsSlugRoute: AuthedComponentsSlugRoute,
+  AuthedContactsContactsImportRoute: AuthedContactsContactsImportRoute,
+  AuthedContactsCrmDashboardRoute: AuthedContactsCrmDashboardRoute,
+  AuthedContactsCrmFieldsRoute: AuthedContactsCrmFieldsRoute,
+  AuthedContactsIntegrationsRoute: AuthedContactsIntegrationsRoute,
+  AuthedContactsLeadsRoute: AuthedContactsLeadsRoute,
+  AuthedContactsMyWorkRoute: AuthedContactsMyWorkRoute,
+  AuthedContactsNotificationsRoute: AuthedContactsNotificationsRoute,
   AuthedGenelAnalyticsRoute: AuthedGenelAnalyticsRoute,
   AuthedGenelDashboardRoute: AuthedGenelDashboardRoute,
   AuthedIamAuditLogsRoute: AuthedIamAuditLogsRoute,
   AuthedIamErrorLogsRoute: AuthedIamErrorLogsRoute,
-  AuthedComponentsIndexRoute: AuthedComponentsIndexRoute,
+  AuthedContactsIndexRoute: AuthedContactsIndexRoute,
+  AuthedFinanceIndexRoute: AuthedFinanceIndexRoute,
   AuthedIamIndexRoute: AuthedIamIndexRoute,
   AuthedInventoryIndexRoute: AuthedInventoryIndexRoute,
+  AuthedInvoicesIndexRoute: AuthedInvoicesIndexRoute,
   AuthedLookupsIndexRoute: AuthedLookupsIndexRoute,
   AuthedOrgIndexRoute: AuthedOrgIndexRoute,
   AuthedSalesIndexRoute: AuthedSalesIndexRoute,
+  AuthedContactsContactsIdRoute: AuthedContactsContactsIdRoute,
+  AuthedContactsGroupsIdRoute: AuthedContactsGroupsIdRoute,
+  AuthedContactsOpportunitiesIdRoute: AuthedContactsOpportunitiesIdRoute,
+  AuthedContactsPipelinesSettingsRoute: AuthedContactsPipelinesSettingsRoute,
+  AuthedFinanceBankAccountsIdRoute: AuthedFinanceBankAccountsIdRoute,
+  AuthedFinanceCashAccountsIdRoute: AuthedFinanceCashAccountsIdRoute,
   AuthedIamPermissionsKeyRoute: AuthedIamPermissionsKeyRoute,
   AuthedIamRolesIdRoute: AuthedIamRolesIdRoute,
   AuthedIamUsersIdRoute: AuthedIamUsersIdRoute,
   AuthedInventoryCategoriesIdRoute: AuthedInventoryCategoriesIdRoute,
   AuthedInventoryProductsIdRoute: AuthedInventoryProductsIdRoute,
+  AuthedInvoicesInvoicesIdRoute: AuthedInvoicesInvoicesIdRouteWithChildren,
+  AuthedInvoicesInvoicesNewRoute: AuthedInvoicesInvoicesNewRoute,
   AuthedOrgBranchesIdRoute: AuthedOrgBranchesIdRoute,
   AuthedSalesChannelsIdRoute: AuthedSalesChannelsIdRoute,
+  AuthedContactsContactsIndexRoute: AuthedContactsContactsIndexRoute,
+  AuthedContactsGroupsIndexRoute: AuthedContactsGroupsIndexRoute,
+  AuthedContactsOpportunitiesIndexRoute: AuthedContactsOpportunitiesIndexRoute,
+  AuthedContactsPipelineIndexRoute: AuthedContactsPipelineIndexRoute,
   AuthedFinanceBankAccountsIndexRoute: AuthedFinanceBankAccountsIndexRoute,
   AuthedFinanceCashAccountsIndexRoute: AuthedFinanceCashAccountsIndexRoute,
   AuthedIamPermissionsIndexRoute: AuthedIamPermissionsIndexRoute,
   AuthedIamRolesIndexRoute: AuthedIamRolesIndexRoute,
   AuthedIamUsersIndexRoute: AuthedIamUsersIndexRoute,
   AuthedInventoryCategoriesIndexRoute: AuthedInventoryCategoriesIndexRoute,
+  AuthedInventoryMovementTypesIndexRoute:
+    AuthedInventoryMovementTypesIndexRoute,
   AuthedInventoryProductsIndexRoute: AuthedInventoryProductsIndexRoute,
+  AuthedInvoicesInvoicesIndexRoute: AuthedInvoicesInvoicesIndexRoute,
   AuthedLookupsItemsIndexRoute: AuthedLookupsItemsIndexRoute,
   AuthedOrgBranchesIndexRoute: AuthedOrgBranchesIndexRoute,
   AuthedSalesChannelsIndexRoute: AuthedSalesChannelsIndexRoute,

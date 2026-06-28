@@ -6,6 +6,7 @@ import * as React from 'react'
 import { ActivityIndicator, View } from 'react-native'
 
 import { useAuth } from '../lib/auth/auth-context'
+import { SessionWatcher } from '../lib/auth/SessionWatcher'
 import { LoginScreen } from '../screens/LoginScreen'
 import { useTheme } from '../theme/theme-context'
 import { AppShell } from './AppShell'
@@ -24,5 +25,10 @@ export function RootNavigator() {
 
   if (status === 'unauthenticated') return <LoginScreen />
 
-  return <AppShell />
+  return (
+    <>
+      <AppShell />
+      <SessionWatcher />
+    </>
+  )
 }

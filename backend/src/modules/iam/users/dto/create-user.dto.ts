@@ -44,4 +44,8 @@ export class CreateUserDto implements CreateUserRequest {
   @IsArray()
   @IsUUID('4', { each: true })
   branchIds?: string[]
+
+  @IsOptional()
+  @IsString()
+  telegramChatId?: string | null
 }

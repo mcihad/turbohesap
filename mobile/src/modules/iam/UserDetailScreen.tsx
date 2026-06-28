@@ -145,6 +145,7 @@ export function UserDetailScreen() {
               </Text>
               <Card style={{ gap: t.spacing[3] }}>
                 <MetaRow label="Kullanıcı adı" value={user.data.username} />
+                <MetaRow label="Telegram Chat ID" value={user.data.telegramChatId || '—'} />
                 <MetaRow label="Son giriş" value={user.data.lastLoginAt ? formatRelative(user.data.lastLoginAt) : 'Hiç'} />
                 <MetaRow label="Oluşturulma" value={formatDateTime(user.data.createdAt)} />
               </Card>

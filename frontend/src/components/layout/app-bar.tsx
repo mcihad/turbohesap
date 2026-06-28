@@ -9,9 +9,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { NotificationBell } from '@/modules/contacts/components/notification-bell'
 import { AppBreadcrumb } from './app-breadcrumb'
 import { ModeToggle } from './mode-toggle'
-import { Notifications } from './notifications'
 import { UserMenu } from './user-menu'
 
 export function AppBar() {
@@ -84,7 +84,7 @@ export function AppBar() {
           </TooltipTrigger>
           <TooltipContent>Temayı özelleştir</TooltipContent>
         </Tooltip>
-        <Notifications />
+        <NotificationBell />
         <ModeToggle />
         <div className="mx-1 h-5 w-px bg-border" />
         <UserMenu />

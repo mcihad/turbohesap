@@ -4,12 +4,14 @@
 // management (generate / upsert / delete). Mirrors the web product detail tabs.
 
 import * as React from 'react'
-import { Pressable, View } from 'react-native'
+import { Modal, Pressable, ScrollView, TextInput, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import {
   InventoryPermissions,
   OrgPermissions,
   SalesPermissions,
+  type BranchDto,
   type ProductDto,
 } from '@turbohesap/shared'
 
@@ -17,15 +19,20 @@ import {
   Badge,
   Button,
   Card,
+  EmptyState,
   Icon,
   Input,
+  ListCard,
+  ListRow,
   LookupSelect,
   Section,
   Text,
+  withAlpha,
 } from '../../components'
-import { FormSelect, type SelectOption } from '../../components/form'
+import { FormDatePicker, FormSelect, type SelectOption } from '../../components/form'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
+import { formatDate } from '../../lib/datetime'
 import { useAsync } from '../../lib/use-async'
 import { confirmDestructive, useSubmit } from '../../lib/use-submit'
 import { useTheme } from '../../theme/theme-context'
@@ -33,6 +40,9 @@ import { money } from './labels'
 import { BulkChannelPriceModal, BulkVariantPriceModal } from './product-bulk-price'
 
 const NONE = '__none__'
+
+const cellKey = (variantId: string | null, branchId: string | null) =>
+  `${variantId ?? 'none'}|${branchId ?? 'none'}`
 
 // A compact list row: primary text + caption on the left, a right node, and an
 // optional inline delete.
@@ -191,89 +201,348 @@ export function StockSection({
   product: ProductDto
   onChanged: () => void
 }) {
+  const t = useTheme()
   const { hasPermission } = useAuth()
   const canStock = hasPermission(InventoryPermissions.productsStock)
-  const { submit, busy } = useSubmit()
+  const canRead = hasPermission(InventoryPermissions.productsRead)
   const branches = useAsync(() => api.org.branches.list(), [], {
     enabled: hasPermission(OrgPermissions.branchesRead),
   })
-  const variants = product.variants ?? []
-  const rows = product.stock ?? []
-  const total = rows.length ? rows.reduce((s, r) => s + r.quantity, 0) : product.quantity
+  const movementTypes = useAsync(() => api.inventory.movementTypes.list(), [], {
+    enabled: canStock,
+  })
+  const movements = useAsync(
+    () => api.inventory.stockMovements.list({ productId: product.id }),
+    [product.id],
+    { enabled: canRead },
+  )
+  const [sheetOpen, setSheetOpen] = React.useState(false)
 
-  const [variantId, setVariantId] = React.useState<string>(NONE)
-  const [branchId, setBranchId] = React.useState<string>(NONE)
-  const [qty, setQty] = React.useState('0')
-
-  const variantOpts: SelectOption<string>[] = [
-    { value: NONE, label: 'Tüm ürün' },
-    ...variants.map((v) => ({ value: v.id, label: v.label || v.code })),
-  ]
-  const branchOpts: SelectOption<string>[] = [
-    { value: NONE, label: 'Genel (şubesiz)' },
+  // Movement-sheet options: a "Genel" branch + each user-defined movement type
+  // labelled with its direction (Giriş / Çıkış).
+  const movementBranchOpts: SelectOption<string>[] = [
+    { value: NONE, label: 'Genel' },
     ...(branches.data ?? []).map((b) => ({ value: b.id, label: b.name })),
   ]
+  const movementTypeOpts: SelectOption<string>[] = [
+    { value: '', label: 'Hareket tipi seçin' },
+    ...(movementTypes.data ?? []).map((mt) => ({
+      value: mt.id,
+      label: `${mt.name} (${mt.direction === 'in' ? 'Giriş' : 'Çıkış'})`,
+    })),
+  ]
+
+  const movementRows = movements.data ?? []
 
   return (
-    <Section title="Stok">
-      {canStock ? (
-        <Card style={{ gap: 12 }}>
-          {variants.length > 0 ? (
-            <FormSelect label="Varyant" value={variantId} options={variantOpts} onChange={setVariantId} />
-          ) : null}
-          <FormSelect label="Şube" value={branchId} options={branchOpts} onChange={setBranchId} />
-          <Input label="Miktar" value={qty} onChangeText={setQty} keyboardType="decimal-pad" />
+    <Section
+      title="Stok"
+      action={
+        canStock ? (
           <Button
-            title="Stok kaydet"
+            title="Stok Hareketi"
+            icon="activity"
             size="sm"
-            loading={busy}
-            onPress={() =>
-              submit(
-                async () => {
-                  await api.inventory.products.setStock(product.id, {
-                    variantId: variantId === NONE ? null : variantId,
-                    branchId: branchId === NONE ? null : branchId,
-                    quantity: Number(qty) || 0,
-                  })
-                },
-                { onSuccess: () => { setQty('0'); onChanged() } },
-              )
-            }
+            variant="ghost"
+            onPress={() => setSheetOpen(true)}
           />
-        </Card>
-      ) : null}
+        ) : undefined
+      }
+    >
+      <StockMatrix
+        product={product}
+        branches={branches.data ?? []}
+        canStock={canStock}
+        onChanged={onChanged}
+      />
 
-      {rows.length > 0 ? (
-        <Rows>
-          {rows.map((s) => (
-            <Row
-              key={s.id}
-              title={s.variantLabel || 'Tüm ürün'}
-              caption={s.branch?.name || 'Genel'}
-              right={
-                <Text variant="label" weight="semibold">
-                  {s.quantity}
-                  {product.unit ? ` ${product.unit}` : ''}
-                </Text>
-              }
-              onDelete={
-                canStock
-                  ? () => submit(() => api.inventory.products.removeStock(product.id, s.id), { onSuccess: onChanged })
-                  : undefined
-              }
-            />
-          ))}
-        </Rows>
-      ) : (
-        <Card>
-          <Text variant="caption" tone="muted">Henüz stok kaydı yok.</Text>
-        </Card>
-      )}
+      <Section title="Stok Hareketleri">
+        {movementRows.length > 0 ? (
+          <ListCard>
+            {movementRows.map((m) => (
+              <ListRow
+                key={m.id}
+                title={m.movementTypeName}
+                subtitle={`${formatDate(m.date)} · ${m.branchName ?? 'Genel'}${m.description ? ` · ${m.description}` : ''}`}
+                trailing={
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing[2] }}>
+                    {m.sourceModule === 'invoices' ? <Badge label="Fatura" tone="info" /> : null}
+                    <Text
+                      variant="label"
+                      weight="semibold"
+                      style={{ color: m.direction === 'in' ? t.colors.success : t.colors.destructive }}
+                    >
+                      {(m.direction === 'in' ? '+' : '−')}
+                      {m.quantity}
+                    </Text>
+                  </View>
+                }
+              />
+            ))}
+          </ListCard>
+        ) : (
+          <EmptyState icon="activity" title="Hareket yok" description="Bu ürün için henüz stok hareketi yok." />
+        )}
+      </Section>
 
-      <Text variant="caption" tone="muted" style={{ textAlign: 'right' }}>
-        Toplam: {total}{product.unit ? ` ${product.unit}` : ''}
-      </Text>
+      <MovementSheet
+        visible={sheetOpen}
+        productId={product.id}
+        typeOptions={movementTypeOpts}
+        branchOptions={movementBranchOpts}
+        onClose={() => setSheetOpen(false)}
+        onSaved={() => {
+          setSheetOpen(false)
+          onChanged()
+          movements.refetch()
+        }}
+      />
     </Section>
+  )
+}
+
+// Şube × Varyant stok matrisi — varyant başına bir kart, her şube için
+// düzenlenebilir miktar; değişen hücreler tek "Kaydet" ile toplu uygulanır.
+function StockMatrix({
+  product,
+  branches,
+  canStock,
+  onChanged,
+}: {
+  product: ProductDto
+  branches: BranchDto[]
+  canStock: boolean
+  onChanged: () => void
+}) {
+  const t = useTheme()
+  const { submit, busy } = useSubmit()
+  const variants = product.variants ?? []
+
+  const rows =
+    variants.length > 0
+      ? variants.map((v) => ({ key: v.id, label: v.label || v.code, variantId: v.id as string | null }))
+      : [{ key: 'none', label: 'Tüm ürün', variantId: null as string | null }]
+
+  const cols = [
+    { key: 'none', branchId: null as string | null, name: 'Genel' },
+    ...branches.map((b) => ({ key: b.id, branchId: b.id as string | null, name: b.name })),
+  ]
+
+  const original = React.useMemo(() => {
+    const m: Record<string, number> = {}
+    for (const s of product.stock ?? []) m[cellKey(s.variantId, s.branchId)] = s.quantity
+    return m
+  }, [product.stock])
+
+  const [values, setValues] = React.useState<Record<string, string>>({})
+
+  const seed = React.useCallback(() => {
+    const init: Record<string, string> = {}
+    for (const r of rows) for (const c of cols) {
+      const k = cellKey(r.variantId, c.branchId)
+      init[k] = String(original[k] ?? 0)
+    }
+    setValues(init)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id, product.updatedAt, rows.length, cols.length])
+
+  React.useEffect(() => {
+    seed()
+  }, [seed])
+
+  const isDirty = (k: string) => (values[k] ?? '') !== String(original[k] ?? 0)
+  const dirtyKeys = Object.keys(values).filter(isDirty)
+  const num = (k: string) => Number(values[k]) || 0
+  const rowTotal = (variantId: string | null) =>
+    cols.reduce((s, c) => s + num(cellKey(variantId, c.branchId)), 0)
+
+  const save = () =>
+    submit(
+      async () => {
+        for (const k of dirtyKeys) {
+          const [vid, bid] = k.split('|')
+          await api.inventory.products.setStock(product.id, {
+            variantId: vid === 'none' ? null : vid,
+            branchId: bid === 'none' ? null : bid,
+            quantity: Number(values[k]) || 0,
+          })
+        }
+      },
+      { onSuccess: onChanged, errorTitle: 'Kaydetme başarısız' },
+    )
+
+  return (
+    <View style={{ gap: t.spacing[3] }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text variant="overline" tone="muted">
+          Şube × Varyant Matrisi
+        </Text>
+        {canStock && dirtyKeys.length > 0 ? (
+          <View style={{ flexDirection: 'row', gap: t.spacing[2] }}>
+            <Button title="Sıfırla" variant="ghost" size="sm" onPress={seed} disabled={busy} />
+            <Button title={`Kaydet (${dirtyKeys.length})`} size="sm" loading={busy} onPress={save} />
+          </View>
+        ) : null}
+      </View>
+
+      {rows.map((r) => (
+        <Card key={r.key} style={{ gap: t.spacing[2] }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text weight="semibold" numberOfLines={1} style={{ flex: 1 }}>
+              {r.label}
+            </Text>
+            <Text variant="caption" tone="muted">
+              Σ {rowTotal(r.variantId)}
+              {product.unit ? ` ${product.unit}` : ''}
+            </Text>
+          </View>
+          {cols.map((c) => {
+            const k = cellKey(r.variantId, c.branchId)
+            const dirty = isDirty(k)
+            return (
+              <View key={c.key} style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing[3] }}>
+                <Text variant="label" tone="muted" numberOfLines={1} style={{ flex: 1 }}>
+                  {c.name}
+                </Text>
+                <TextInput
+                  value={values[k] ?? ''}
+                  editable={canStock && !busy}
+                  onChangeText={(txt) => setValues((v) => ({ ...v, [k]: txt }))}
+                  keyboardType="decimal-pad"
+                  selectTextOnFocus
+                  style={{
+                    width: 100,
+                    textAlign: 'right',
+                    paddingVertical: t.spacing[2],
+                    paddingHorizontal: t.spacing[3],
+                    borderRadius: t.radius.md,
+                    borderWidth: 1,
+                    borderColor: dirty ? t.colors.warning : t.colors.border,
+                    backgroundColor: dirty ? withAlpha(t.colors.warning, 0.12) : t.colors.background,
+                    color: t.colors.foreground,
+                    fontVariant: ['tabular-nums'],
+                    fontWeight: dirty ? '600' : '400',
+                  }}
+                />
+              </View>
+            )
+          })}
+        </Card>
+      ))}
+    </View>
+  )
+}
+
+// Bottom sheet to record a stock movement (Stok Hareketi). Mirrors the invoice
+// LineSheet: a slide-up Modal with a handle, a scrollable body of fields, and a
+// pinned footer. "Kaydet" stays disabled until a movement type and a positive
+// quantity are chosen; on success it posts the movement and lets the caller
+// refresh the on-hand totals and the movements list.
+function MovementSheet({
+  visible,
+  productId,
+  typeOptions,
+  branchOptions,
+  onClose,
+  onSaved,
+}: {
+  visible: boolean
+  productId: string
+  typeOptions: SelectOption<string>[]
+  branchOptions: SelectOption<string>[]
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const t = useTheme()
+  const insets = useSafeAreaInsets()
+  const { submit, busy } = useSubmit()
+
+  const [movementTypeId, setMovementTypeId] = React.useState('')
+  const [branchId, setBranchId] = React.useState(NONE)
+  const [qty, setQty] = React.useState('1')
+  const [date, setDate] = React.useState(() => new Date().toISOString())
+  const [description, setDescription] = React.useState('')
+
+  React.useEffect(() => {
+    if (!visible) return
+    setMovementTypeId('')
+    setBranchId(NONE)
+    setQty('1')
+    setDate(new Date().toISOString())
+    setDescription('')
+  }, [visible])
+
+  const valid = !!movementTypeId && (Number(qty) || 0) > 0
+
+  const save = () =>
+    submit(
+      async () => {
+        await api.inventory.stockMovements.create({
+          productId,
+          movementTypeId,
+          quantity: Number(qty) || 0,
+          branchId: branchId === NONE ? null : branchId,
+          date,
+          description: description.trim() || null,
+        })
+      },
+      { onSuccess: onSaved },
+    )
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: t.colors.overlay, justifyContent: 'flex-end' }}>
+        <View
+          style={{
+            backgroundColor: t.colors.background,
+            borderTopLeftRadius: t.radius['2xl'],
+            borderTopRightRadius: t.radius['2xl'],
+            maxHeight: '92%',
+            paddingTop: t.spacing[3],
+          }}
+        >
+          <View style={{ alignItems: 'center', paddingBottom: t.spacing[2] }}>
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: t.colors.border }} />
+          </View>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingHorizontal: t.spacing[5],
+              paddingBottom: t.spacing[2],
+            }}
+          >
+            <Text variant="title" weight="semibold">Stok hareketi</Text>
+            <Pressable onPress={onClose} hitSlop={8}>
+              <Icon name="x" size={22} color={t.colors.mutedForeground} />
+            </Pressable>
+          </View>
+
+          <ScrollView
+            contentContainerStyle={{ paddingHorizontal: t.spacing[5], paddingBottom: t.spacing[4], gap: t.spacing[3] }}
+          >
+            <FormSelect label="Hareket Tipi" value={movementTypeId} options={typeOptions} onChange={setMovementTypeId} />
+            <FormSelect label="Şube" value={branchId} options={branchOptions} onChange={setBranchId} />
+            <Input label="Miktar" value={qty} onChangeText={setQty} keyboardType="decimal-pad" />
+            <FormDatePicker label="Tarih" value={date} onChange={setDate} mode="date" />
+            <Input label="Açıklama" value={description} onChangeText={setDescription} placeholder="Opsiyonel" />
+          </ScrollView>
+
+          <View
+            style={{
+              paddingHorizontal: t.spacing[5],
+              paddingTop: t.spacing[3],
+              paddingBottom: insets.bottom + t.spacing[3],
+              borderTopWidth: 1,
+              borderTopColor: t.colors.border,
+            }}
+          >
+            <Button title="Kaydet" icon="check" fullWidth loading={busy} disabled={!valid} onPress={save} />
+          </View>
+        </View>
+      </View>
+    </Modal>
   )
 }
 

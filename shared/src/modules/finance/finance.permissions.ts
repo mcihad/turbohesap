@@ -4,6 +4,8 @@ export const FinancePermissions = {
   cashAccountsWrite: 'finance.cashAccounts.write',
   bankAccountsRead: 'finance.bankAccounts.read',
   bankAccountsWrite: 'finance.bankAccounts.write',
+  transactionsRead: 'finance.transactions.read',
+  transactionsWrite: 'finance.transactions.write',
 } as const
 
 export type FinancePermission = (typeof FinancePermissions)[keyof typeof FinancePermissions]

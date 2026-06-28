@@ -7,6 +7,7 @@ import { Alert } from 'react-native'
 
 import {
   InventoryPermissions,
+  OrgPermissions,
   PRODUCT_TYPES,
   type CreateProductRequest,
   type ProductType,
@@ -80,8 +81,12 @@ export function ProductFormScreen() {
   const categories = useAsync(() => api.inventory.categories.list(), [], {
     enabled: hasPermission(InventoryPermissions.categoriesRead),
   })
+  const canReadBranches = hasPermission(OrgPermissions.branchesRead)
+  const branches = useAsync(() => api.org.branches.list(), [], { enabled: !editing && canReadBranches })
 
   const [form, setForm] = React.useState<FormState>(EMPTY)
+  // Opening stock quantities keyed by branchId (create-only, stock-tracked products).
+  const [openingStock, setOpeningStock] = React.useState<Record<string, string>>({})
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((f) => ({ ...f, [k]: v }))
   const dynamicFields = React.useMemo(
     () => effectiveFieldDefsWithSource(form.categoryId, categories.data ?? []),
@@ -135,8 +140,16 @@ export function ProductFormScreen() {
     }
     void submit(
       async () => {
-        if (editing) await api.inventory.products.update(id as string, payload)
-        else await api.inventory.products.create(payload)
+        if (editing) {
+          await api.inventory.products.update(id as string, payload)
+        } else {
+          const stocks = (branches.data ?? [])
+            .map((b) => ({ branchId: b.id, quantity: Number(openingStock[b.id]) || 0 }))
+            .filter((s) => s.quantity !== 0)
+          await api.inventory.products.create(
+            form.trackStock && stocks.length > 0 ? { ...payload, stocks } : payload,
+          )
+        }
       },
       { onSuccess: nav.goBack },
     )
@@ -168,6 +181,21 @@ export function ProductFormScreen() {
         <Input label="Stok miktarı" value={form.quantity} onChangeText={(v) => set('quantity', v)} keyboardType="decimal-pad" />
         <Input label="Min. stok" value={form.minQuantity} onChangeText={(v) => set('minQuantity', v)} keyboardType="decimal-pad" />
       </Section>
+
+      {!editing && form.trackStock && (branches.data?.length ?? 0) > 0 ? (
+        <Section title="Açılış Stoğu">
+          {(branches.data ?? []).map((b) => (
+            <Input
+              key={b.id}
+              label={b.name}
+              value={openingStock[b.id] ?? ''}
+              onChangeText={(v) => setOpeningStock((s) => ({ ...s, [b.id]: v }))}
+              keyboardType="decimal-pad"
+              placeholder="0"
+            />
+          ))}
+        </Section>
+      ) : null}
 
       <Section title="Diğer">
         <Input label="Görsel adresi" value={form.imageUrl} onChangeText={(v) => set('imageUrl', v)} autoCapitalize="none" placeholder="https://…" />

@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Pencil, Plus, Trash2, Wallet } from 'lucide-react'
 import { toast } from 'sonner'
@@ -25,6 +26,7 @@ export function formatMoney(val: number, currency: string = 'TRY'): string {
 }
 
 export function CashAccountsPage() {
+  const navigate = useNavigate()
   const qc = useQueryClient()
   const { hasPermission } = useAuth()
   const canRead = hasPermission(FinancePermissions.cashAccountsRead)
@@ -93,12 +95,30 @@ export function CashAccountsPage() {
       id: 'openingBalance',
       accessorKey: 'openingBalance',
       header: 'Açılış Tutarı',
-      size: 150,
+      size: 140,
       cell: ({ row }) => (
-        <span className="font-mono text-sm">
+        <span className="font-mono text-xs text-muted-foreground">
           {formatMoney(row.original.openingBalance, row.original.currency)}
         </span>
       ),
+    },
+    {
+      id: 'balance',
+      accessorKey: 'balance',
+      header: () => <div className="text-right">Güncel Bakiye</div>,
+      size: 170,
+      cell: ({ row }) => {
+        const balance = row.original.balance
+        return (
+          <div
+            className={`text-right font-mono font-semibold tabular-nums ${
+              balance >= 0 ? 'text-emerald-600' : 'text-red-600'
+            }`}
+          >
+            {formatMoney(balance, row.original.currency)}
+          </div>
+        )
+      },
     },
     {
       id: 'description',
@@ -171,6 +191,7 @@ export function CashAccountsPage() {
           columns={columns}
           getRowId={(row) => row.id}
           loading={query.isLoading}
+          onRowClick={(row) => navigate({ to: '/finance/cash-accounts/$id', params: { id: row.id } })}
           emptyText="Kasa hesabı yok."
           toolbar={
             canWrite ? (

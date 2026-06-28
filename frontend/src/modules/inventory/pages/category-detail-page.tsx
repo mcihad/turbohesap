@@ -9,6 +9,7 @@ import {
   InventoryPermissions,
   toApiError,
   type CategoryFieldDef,
+  type ProductDto,
 } from '@turbohesap/shared'
 
 import { api } from '@/lib/api'
@@ -22,9 +23,11 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { DataGrid, type ColumnDef } from '@/components/data-grid'
 import { FileManager } from '@/modules/files/components/file-manager'
 import { CategoryDialog } from '../components/category-dialog'
 import { FieldDefBuilder } from '../components/field-def-builder'
+import { money } from '../labels'
 
 const ROUTE = '/_authed/inventory/categories/$id'
 
@@ -36,11 +39,17 @@ export function CategoryDetailPage() {
   const canRead = hasPermission(InventoryPermissions.categoriesRead)
   const canWrite = hasPermission(InventoryPermissions.categoriesWrite)
   const canFiles = hasPermission(FilesPermissions.write)
+  const canProductsRead = hasPermission(InventoryPermissions.productsRead)
 
   const query = useQuery({
     queryKey: ['inventory', 'categories', id],
     queryFn: () => api.inventory.categories.get(id),
     enabled: canRead && !!id,
+  })
+  const productsQuery = useQuery({
+    queryKey: ['inventory', 'products', { categoryId: id }],
+    queryFn: () => api.inventory.products.list(id),
+    enabled: canProductsRead && !!id,
   })
   const allQuery = useQuery({
     queryKey: ['inventory', 'categories'],
@@ -72,6 +81,15 @@ export function CategoryDetailPage() {
     onSuccess: () => { toast.success('Kategori silindi'); refetch(); navigate({ to: '/inventory/categories' }) },
     onError: (e) => toast.error('Silinemedi', { description: toApiError(e).message }),
   })
+
+  const productColumns: ColumnDef<ProductDto>[] = [
+    { id: 'code', accessorKey: 'code', header: 'Kod', size: 120, cell: ({ row }) => <span className="font-mono text-xs">{row.original.code}</span> },
+    { id: 'name', accessorKey: 'name', header: 'Ad', size: 240, cell: ({ row }) => <span className="font-medium">{row.original.name}</span> },
+    { id: 'brand', accessorKey: 'brand', header: 'Marka', size: 130, cell: ({ row }) => row.original.brand || '—' },
+    { id: 'salePrice', accessorKey: 'salePrice', header: 'Satış', size: 120, cell: ({ row }) => <span className="block text-right tabular-nums">{money(row.original.salePrice, row.original.currency)}</span> },
+    { id: 'totalStock', accessorKey: 'totalStock', header: 'Stok', size: 110, cell: ({ row }) => <span className="block text-right tabular-nums">{row.original.totalStock}{row.original.unit ? ` ${row.original.unit}` : ''}</span> },
+    { id: 'isActive', accessorKey: 'isActive', header: 'Durum', size: 100, cell: ({ row }) => <Badge variant={row.original.isActive ? 'success' : 'outline'}>{row.original.isActive ? 'Aktif' : 'Pasif'}</Badge> },
+  ]
 
   return (
     <PermissionRequired permission={InventoryPermissions.categoriesRead}>
@@ -131,6 +149,7 @@ export function CategoryDetailPage() {
             <Tabs defaultValue="genel" className="space-y-4">
               <TabsList className="flex-wrap">
                 <TabsTrigger value="genel">Genel</TabsTrigger>
+                <TabsTrigger value="urunler">Ürünler ({productsQuery.data?.length ?? 0})</TabsTrigger>
                 <TabsTrigger value="medya">Görseller</TabsTrigger>
                 <TabsTrigger value="alanlar">Özel alanlar ({category.fieldDefs.length})</TabsTrigger>
                 <TabsTrigger value="alt">Alt kategoriler ({children.length})</TabsTrigger>
@@ -163,6 +182,22 @@ export function CategoryDetailPage() {
                     <Field label="Oluşturma" value={formatDateTime(category.createdAt)} />
                     <Field label="Güncelleme" value={formatDateTime(category.updatedAt)} />
                     <Field label="Açıklama" value={category.description || '—'} full />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="urunler">
+                <Card>
+                  <CardContent className="p-0">
+                    <DataGrid
+                      gridId="inventory.category.products"
+                      data={productsQuery.data ?? []}
+                      columns={productColumns}
+                      getRowId={(p) => p.id}
+                      loading={productsQuery.isLoading}
+                      onRowClick={(p) => navigate({ to: '/inventory/products/$id', params: { id: p.id } })}
+                      emptyText="Bu kategoride ürün yok."
+                    />
                   </CardContent>
                 </Card>
               </TabsContent>

@@ -210,6 +210,10 @@ function UserInfoCard({ user }: { user: UserDto }) {
 
         <dl className="grid shrink-0 grid-cols-2 gap-x-6 gap-y-2 text-xs sm:grid-cols-1">
           <Meta
+            label="Telegram Chat ID"
+            value={user.telegramChatId || '—'}
+          />
+          <Meta
             label="Son giriş"
             value={user.lastLoginAt ? formatDateTime(user.lastLoginAt) : 'Hiç'}
           />

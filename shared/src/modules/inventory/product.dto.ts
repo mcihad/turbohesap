@@ -108,6 +108,8 @@ export interface CreateProductRequest {
   imageUrl?: string
   isActive?: boolean
   attributes?: Record<string, unknown>
+  /** Optional per-branch opening stock (branchId null = genel). */
+  stocks?: { branchId: string | null; quantity: number }[]
 }
 
 export type UpdateProductRequest = Partial<CreateProductRequest>

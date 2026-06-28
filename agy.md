@@ -107,9 +107,9 @@ For any feature/bugfix that touches the API or UI:
               → pnpm --filter @turbohesap/backend build           [MUST pass]
               → pnpm --filter @turbohesap/backend test            [MUST pass]
 (3) TEST     → login for a token, curl EVERY new/changed endpoint  [§13, MUST pass]
-(4) frontend → module.config + pages (DataGrid/dialogs) + routes, same permission keys
-              → pnpm --filter @turbohesap/frontend exec tsc -b
-              → pnpm --filter @turbohesap/frontend exec vite build [MUST pass]
+(4) frontend → module.config + registry + pages (DataGrid/dialogs) + routes, same permission keys
+              → pnpm --filter @turbohesap/frontend exec vite build  [regenerates routeTree.gen.ts]
+              → pnpm --filter @turbohesap/frontend exec tsc -b       [MUST pass — after the route tree exists]
 (5) mobile   → screens if needed (theme + primitives + permission gating)
               → pnpm --filter @turbohesap/mobile typecheck         [MUST pass]
               → CI=1 npx expo export --platform ios                [if RN deps/imports changed]
@@ -118,6 +118,12 @@ For any feature/bugfix that touches the API or UI:
 
 You do not advance to the next numbered step until the current one's build/test is
 green. Step (3) is mandatory and is the most-skipped step — **do not skip it**.
+
+> Before you call any layer done, run its checklist in **§18 (the complete
+> registration map)**. Missing a wiring point (a `core/api.ts` factory line, the
+> permissions catalog, the audit map, a mobile `screens.tsx` key, a `module.config`
+> nav item, a `registry.ts` entry) compiles fine but ships a dead/invisible feature.
+> §18 enumerates every file per layer; §19 covers adding an AI provider.
 
 ---
 
@@ -276,6 +282,8 @@ pure functions only, operating on DTOs (e.g. `category.helpers.ts`,
 precision` / `real` and JS floats lose precision and silently corrupt totals — a
 fatal bug in finance, inventory pricing, tax, etc.
 
+- A reusable transformer already exists: `backend/src/common/decimal.transformer.ts`
+  (`decimalTransformer`) — use it on `numeric` columns instead of re-inlining.
 - Use a `numeric/decimal` column with explicit precision/scale **and a value
   transformer** so the entity property and the shared DTO stay a plain `number`:
   ```ts
@@ -488,6 +496,13 @@ table + module for "a list of X values".
   `<Can>`, `<PermissionRequired>`, `useAsync(…, { enabled })`).
 - Images → the `components/image/` module (§8). Navigation is the
   dependency-free registry in `src/navigation/*`.
+- **Two registration points — both mandatory for every new screen** (the
+  most-missed mobile step): (1) add the screen key → component to the map in
+  `mobile/src/navigation/screens.tsx`; (2) add a nav item (`key`, `title`, Feather
+  `icon`, `description`, `permission`) to `mobile/src/modules/<mod>/module.config.ts`
+  `items`. A screen file that is not in BOTH is dead code. Navigate with
+  `useNav().navigate('<mod>.<res>'[, params, title])` — the key MUST exist in the
+  map. Form/sheet/bell components mounted directly by a screen need no key.
 - Verify: `pnpm --filter @turbohesap/mobile typecheck`; if you changed RN
   deps/imports, also `CI=1 npx expo export --platform ios`.
 
@@ -651,6 +666,109 @@ If any box is unchecked, the task is **not done** — say exactly what remains.
 | settings (per-user state) | `backend/src/modules/settings/*`, `frontend/src/components/data-grid/use-grid-state.ts` |
 | lookups | `backend/src/modules/lookups/*`, `shared/src/modules/lookups/*` |
 | mobile screen | `mobile/src/modules/inventory/*`, `mobile_design.md` |
+| **the most complete full-stack module (all advanced patterns)** | **`contacts` (CRM)** across all four packages — copy it for anything non-trivial |
+| kanban / drag-drop board (web) | `frontend/src/modules/contacts/pages/pipeline-board-page.tsx` (`@dnd-kit`); mobile fallback: `…/PipelineBoardScreen.tsx` + `StageChangePicker.tsx` |
+| analytics dashboard (charts/KPIs) | `frontend/src/modules/contacts/pages/crm-dashboard-page.tsx`; backend `…/contacts/crm-analytics.service.ts` |
+| in-app notifications + scheduler | `backend/.../contacts/notifications.service.ts` (`@Cron`), entity `notification.entity.ts`; web `components/notification-bell.tsx`; mobile `NotificationBell.tsx` |
+| per-entity custom fields | shared `CrmFieldDef`(=inventory `CategoryFieldDef`); backend `crm-fields.service.ts` + `entities/crm-field-def.entity.ts` + `attributes jsonb` column; web reuse `inventory/components/{field-def-builder,dynamic-attribute-fields}.tsx` |
+| bulk actions / CSV import | backend `contacts.service.ts` `bulk()`/`importContacts()`; web `components/bulk-actions-bar.tsx`, `pages/contacts-import-page.tsx` |
+| integrations (email/Telegram/WhatsApp/SMS) | `backend/.../contacts/integrations.service.ts` (adapters + secret masking); entity `integration-connection.entity.ts`; web `pages/integrations-settings-page.tsx` (tabbed) |
+| **AI — pluggable provider layer** | `backend/.../contacts/ai/ai-provider.ts` (`runAi`); provider catalog + model variants in shared `AI_PROVIDERS` (`integrations.dto.ts`). **To add an AI agent see §19.** |
 
 > Work like the agent before you and the agent after you will read your diff and
 > have to extend it. Same shapes, same gates, same tests. Every time.
+
+---
+
+## 18. The complete registration map — every file you must touch
+
+> The #1 source of defects is a **missing registration**: code compiles in
+> isolation but the feature is invisible/dead because a wiring point was skipped.
+> When adding a resource/feature, go through **every** box for each layer you
+> touch. Paths use `<mod>` = module, `<res>` = resource.
+
+### 18.1 shared (`shared/src/modules/<mod>/`)
+- [ ] `<res>.dto.ts` (+ `*.helpers.ts` for pure cross-platform logic).
+- [ ] `<res>.service.ts` (interface) and `<res>.client.ts` (axios impl).
+- [ ] `<mod>.permissions.ts` — add the key constant(s).
+- [ ] `<mod>/index.ts` — re-export the new DTO/service/client files.
+- [ ] `shared/src/index.ts` — re-exports the module folder (only for a NEW module).
+- [ ] `shared/src/core/api.ts` — add the client to the module's interface block
+      **and** construct it in `createTurbohesapApi` (BOTH places).
+- [ ] `shared/src/core/app-modules.ts` — only when adding a NEW module.
+- [ ] Rebuild: `pnpm --filter @turbohesap/shared build` before anything consumes it.
+
+### 18.2 backend (`backend/src/modules/<mod>/`)
+- [ ] `entities/<res>.entity.ts` — `@Entity('<table>')` extends `BaseEntity`;
+      money/qty via `decimalTransformer` (§7.1).
+- [ ] `dto/*.dto.ts` — class-validator classes `implements` the shared requests.
+- [ ] `<res>.service.ts` (+ `to<Res>Dto`) and `<res>.controller.ts`
+      (`@RequirePermissions` per route, `@CurrentUser()` where needed).
+- [ ] `<mod>.permissions.ts` — `PermissionDef[]` (Turkish descriptions).
+- [ ] `backend/src/permissions.catalog.ts` — spread the module's defs in (so they
+      auto-seed; admin auto-granted; non-admin roles need explicit grants).
+- [ ] `<mod>.module.ts` — add the entity to `TypeOrmModule.forFeature([...])`,
+      and the service to `providers`, the controller to `controllers`. (Cross-module
+      entity, e.g. `User`, is added to `forFeature` here too.)
+- [ ] `backend/src/app.module.ts` — register the module (NEW module only).
+- [ ] `backend/src/modules/iam/audit/audited-entities.ts` — add business entities to
+      `ENTITY_MODULE_MAP`; add high-churn/secret entities to `IGNORED_AUDIT_ENTITIES`.
+- [ ] Migration (`make migration-generate NAME=… && make migrate`) + review SQL.
+- [ ] `*.spec.ts` for new service logic. Build + test + **§13 HTTP token tests.**
+
+### 18.3 frontend / web (`frontend/src/modules/<mod>/`)
+- [ ] `pages/<res>-page.tsx` (DataGrid list, no PageHeader band) and
+      `pages/<res>-detail-page.tsx` (PageHeader + audit + files + related; rule 13).
+- [ ] `components/<res>-dialog.tsx` (save-on-submit) + any sub-dialogs.
+- [ ] `routes/_authed/<mod>/<res>.index.tsx` and `<res>.$id.tsx` (thin route files).
+- [ ] `modules/<mod>/module.config.ts` — nav items (icon + `to` + `permission`).
+- [ ] `frontend/src/modules/registry.ts` — register the module (NEW module only).
+- [ ] Verify with `vite build` (regenerates `routeTree.gen.ts`) **then** `tsc -b`.
+      A new route only type-resolves in `navigate({to})` AFTER the vite build.
+
+### 18.4 mobile (`mobile/src/modules/<mod>/`)
+- [ ] Screen files: `<Res>Screen.tsx` (list), `<Res>DetailScreen.tsx`,
+      `<Res>FormScreen.tsx` (+ sheets/pickers as needed).
+- [ ] `mobile/src/navigation/screens.tsx` — import each screen **and** add its
+      `'<mod>.<res>'` key → component to the map (BOTH).
+- [ ] `mobile/src/modules/<mod>/module.config.ts` — `items` nav entries
+      (`key`, `title`, Feather `icon`, `description`, `permission`).
+- [ ] `mobile/src/modules/registry.ts` — register the module (NEW module only).
+- [ ] Dashboard parity: a `MODULE_DASHBOARDS` entry / `<Mod>Dashboard.tsx` if the
+      web module has a dashboard (do not skip the dashboard on either platform).
+- [ ] Verify `pnpm --filter @turbohesap/mobile typecheck`.
+
+### 18.5 "new feature in an EXISTING module" vs "new module"
+- **New resource/feature in an existing module:** do 18.1–18.4 but SKIP the
+  "NEW module only" lines (`shared/src/index.ts`, `app-modules.ts`,
+  `app.module.ts`, `registry.ts`) — those already exist.
+- **New module:** do every line, including the "NEW module only" registrations.
+
+---
+
+## 19. Adding an AI provider / agent (pluggable)
+
+The AI layer is provider-abstracted; **adding an agent must not touch business
+logic.** One entry point `runAi(config, prompt, maxTokens)` in
+`backend/src/modules/contacts/ai/ai-provider.ts` dispatches by `config.provider`.
+
+To add a provider (e.g. a new vendor):
+1. **shared** — append an entry to `AI_PROVIDERS` in
+   `shared/src/modules/contacts/integrations.dto.ts`: `{ value, label, defaultModel,
+   defaultBaseUrl, needsApiKey, models: [{value,label}, …] }`, and add its `value`
+   to the `AiProvider` union. Rebuild shared. (The web/mobile integration settings
+   read `AI_PROVIDERS` automatically — provider + model-variant selects appear with
+   no UI change.)
+2. **backend** — if the vendor is **OpenAI-compatible** (`/chat/completions`),
+   nothing else is needed (the `default` branch handles it via `defaultBaseUrl`).
+   If it has a bespoke API, add one branch to the `switch` in `runAi` (see the
+   `anthropic` / `gemini` branches) and, if helpful, an env-key fallback in
+   `ENV_KEYS`.
+3. Test: configure it under Entegrasyonlar (or set its env key), hit
+   `POST /api/contacts/integrations/ai/draft-email` and confirm it routes to that
+   vendor (a wrong key returns **that vendor's** 4xx, not Anthropic's), and that an
+   unconfigured provider returns a graceful **400**.
+
+Never hardcode a vendor URL/model in a service — read it from `AI_PROVIDERS` +
+the `ai` integration `config`. Secrets (`apiKey`) are masked on read and preserved
+on re-save (see `SECRET_KEYS` + the merge in `IntegrationsService.upsert`).

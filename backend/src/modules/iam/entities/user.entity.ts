@@ -50,6 +50,10 @@ export class User {
   @JoinTable({ name: 'user_branches' })
   branches!: Branch[]
 
+  // Telegram chat id for direct notifications/messages to this user.
+  @Column({ type: 'varchar', nullable: true })
+  telegramChatId!: string | null
+
   @Column({ type: 'timestamptz', nullable: true })
   lastLoginAt!: Date | null
 

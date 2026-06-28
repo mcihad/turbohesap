@@ -3,6 +3,7 @@
 // server enforces). Gated by iam.users.write.
 
 import * as React from 'react'
+import { View } from 'react-native'
 
 import {
   IamPermissions,
@@ -18,6 +19,7 @@ import {
   Input,
   Screen,
   Section,
+  Text,
 } from '../../components'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
@@ -31,6 +33,7 @@ interface FormState {
   password: string
   firstName: string
   lastName: string
+  telegramChatId: string
   isActive: boolean
   roleIds: string[]
   branchIds: string[]
@@ -42,6 +45,7 @@ const EMPTY: FormState = {
   password: '',
   firstName: '',
   lastName: '',
+  telegramChatId: '',
   isActive: true,
   roleIds: [],
   branchIds: [],
@@ -77,6 +81,7 @@ export function UserFormScreen() {
       password: '',
       firstName: u.firstName,
       lastName: u.lastName,
+      telegramChatId: u.telegramChatId ?? '',
       isActive: u.isActive,
       roleIds: u.roles.map((r) => r.id),
       branchIds: u.branches.map((b) => b.id),
@@ -99,6 +104,7 @@ export function UserFormScreen() {
             email: form.email,
             firstName: form.firstName,
             lastName: form.lastName,
+            telegramChatId: form.telegramChatId.trim() || null,
             isActive: form.isActive,
             roleIds: form.roleIds,
             ...(canReadBranches ? { branchIds: form.branchIds } : {}),
@@ -111,6 +117,7 @@ export function UserFormScreen() {
             password: form.password,
             firstName: form.firstName,
             lastName: form.lastName,
+            telegramChatId: form.telegramChatId.trim() || null,
             isActive: form.isActive,
             roleIds: form.roleIds,
             ...(canReadBranches ? { branchIds: form.branchIds } : {}),
@@ -136,6 +143,18 @@ export function UserFormScreen() {
         <Input label="E-posta" value={form.email} onChangeText={(v) => set('email', v)} keyboardType="email-address" autoCapitalize="none" />
         <Input label="Ad" value={form.firstName} onChangeText={(v) => set('firstName', v)} />
         <Input label="Soyad" value={form.lastName} onChangeText={(v) => set('lastName', v)} />
+        <View style={{ gap: 4 }}>
+          <Input
+            label="Telegram Chat ID"
+            value={form.telegramChatId}
+            onChangeText={(v) => set('telegramChatId', v)}
+            keyboardType="numeric"
+            autoCapitalize="none"
+          />
+          <Text variant="caption" tone="muted">
+            Kişisel Telegram bildirimleri için (opsiyonel).
+          </Text>
+        </View>
         <Input
           label={editing ? 'Parola (değiştirmek için doldurun)' : 'Parola'}
           value={form.password}

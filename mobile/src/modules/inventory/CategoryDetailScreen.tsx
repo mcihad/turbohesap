@@ -17,6 +17,7 @@ import {
   HeaderAction,
   Icon,
   ListCard,
+  ListRow,
   Screen,
   Section,
   Skeleton,
@@ -29,7 +30,7 @@ import { useAsync } from '../../lib/use-async'
 import { confirmDestructive, useSubmit } from '../../lib/use-submit'
 import { useNav } from '../../navigation/nav-context'
 import { useTheme } from '../../theme/theme-context'
-import { fieldTypeLabel } from './labels'
+import { fieldTypeLabel, money } from './labels'
 
 export function CategoryDetailScreen() {
   const t = useTheme()
@@ -38,12 +39,17 @@ export function CategoryDetailScreen() {
   const canWrite = hasPermission(InventoryPermissions.categoriesWrite)
   const canAudit = hasPermission(IamPermissions.auditRead)
   const canFiles = hasPermission(FilesPermissions.write)
+  const canProductsRead = hasPermission(InventoryPermissions.productsRead)
   const id = String(nav.current.params?.id ?? '')
   const category = useAsync(() => api.inventory.categories.get(id), [id], {
     enabled: hasPermission(InventoryPermissions.categoriesRead) && !!id,
   })
+  const products = useAsync(() => api.inventory.products.list(id), [id], {
+    enabled: canProductsRead && !!id,
+  })
   const { submit, busy } = useSubmit()
   const c = category.data
+  const productList = products.data ?? []
 
   function removeField(key: string) {
     if (!c) return
@@ -83,8 +89,11 @@ export function CategoryDetailScreen() {
           </>
         ) : undefined,
       }}
-      onRefresh={category.refetch}
-      refreshing={category.refreshing}
+      onRefresh={() => {
+        category.refetch()
+        products.refetch()
+      }}
+      refreshing={category.refreshing || products.refreshing}
     >
       {category.loading ? (
         <Card style={{ gap: t.spacing[3] }}>
@@ -167,6 +176,41 @@ export function CategoryDetailScreen() {
               </ListCard>
             )}
           </Section>
+
+          {canProductsRead ? (
+            <Section title={`Bu kategorideki ürünler (${productList.length})`}>
+              {products.loading ? (
+                <Card>
+                  <Skeleton width="70%" height={15} />
+                </Card>
+              ) : productList.length === 0 ? (
+                <EmptyState icon="box" title="Ürün yok" description="Bu kategoride ürün bulunmuyor." />
+              ) : (
+                <ListCard>
+                  {productList.map((p) => (
+                    <ListRow
+                      key={p.id}
+                      icon="box"
+                      title={p.name}
+                      subtitle={`${p.code}${p.brand ? ' · ' + p.brand : ''}`}
+                      trailing={
+                        <View style={{ alignItems: 'flex-end', gap: 2 }}>
+                          <Text variant="label" weight="semibold">
+                            {money(p.salePrice, p.currency)}
+                          </Text>
+                          <Text variant="caption" tone="muted">
+                            {p.totalStock}
+                            {p.unit ? ` ${p.unit}` : ''}
+                          </Text>
+                        </View>
+                      }
+                      onPress={() => nav.navigate('inventory.products.detail', { id: p.id }, p.name)}
+                    />
+                  ))}
+                </ListCard>
+              )}
+            </Section>
+          ) : null}
 
           {canWrite ? (
             <View style={{ gap: t.spacing[2] }}>

@@ -41,6 +41,7 @@ export function toUserDto(user: User): UserDto {
     isActive: user.isActive,
     roles: (user.roles ?? []).map(toRoleDto),
     branches: (user.branches ?? []).map(toBranchSummary),
+    telegramChatId: user.telegramChatId ?? null,
     lastLoginAt: user.lastLoginAt ? user.lastLoginAt.toISOString() : null,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),

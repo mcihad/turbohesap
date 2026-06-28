@@ -49,6 +49,8 @@ export class UsersService {
       roles: await this.resolveRoles(dto.roleIds),
       branches: await this.resolveBranches(dto.branchIds),
       telegramChatId: dto.telegramChatId ?? null,
+      isPosUser: dto.isPosUser ?? false,
+      posPinHash: dto.posPin ? hash(dto.posPin) : null,
     })
     const saved = await this.users.save(user)
     return toUserDto(await this.findOrFail(saved.id))
@@ -64,6 +66,17 @@ export class UsersService {
     if (dto.roleIds) user.roles = await this.resolveRoles(dto.roleIds)
     if (dto.branchIds) user.branches = await this.resolveBranches(dto.branchIds)
     if (dto.telegramChatId !== undefined) user.telegramChatId = dto.telegramChatId
+    if (dto.isPosUser !== undefined) user.isPosUser = dto.isPosUser
+    if (dto.posPin !== undefined) user.posPinHash = dto.posPin ? hash(dto.posPin) : null
+    await this.users.save(user)
+    return toUserDto(await this.findOrFail(id))
+  }
+
+  /** Admin sets/clears another user's POS PIN. */
+  async setPin(id: string, pin: string | null): Promise<UserDto> {
+    const user = await this.findOrFail(id)
+    user.posPinHash = pin ? hash(pin) : null
+    if (pin) user.isPosUser = true
     await this.users.save(user)
     return toUserDto(await this.findOrFail(id))
   }

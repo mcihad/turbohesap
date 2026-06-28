@@ -8,6 +8,7 @@ import { FILES_PERMISSION_DEFS } from './modules/files/files.permissions'
 import { FINANCE_PERMISSION_DEFS } from './modules/finance/finance.permissions'
 import { CONTACTS_PERMISSION_DEFS } from './modules/contacts/contacts.permissions'
 import { INVOICES_PERMISSION_DEFS } from './modules/invoices/invoices.permissions'
+import { POS_PERMISSION_DEFS } from './modules/pos/pos.permissions'
 
 // The aggregated permission catalog: the union of every module's declared
 // permissions. On startup `SeedService` upserts these into the `permissions`
@@ -29,6 +30,7 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   ...FINANCE_PERMISSION_DEFS,
   ...CONTACTS_PERMISSION_DEFS,
   ...INVOICES_PERMISSION_DEFS,
+  ...POS_PERMISSION_DEFS,
 
   // Smoke-test entry: proves that a newly-declared permission is auto-created on
   // boot. Safe to remove — it is not used to guard any route.

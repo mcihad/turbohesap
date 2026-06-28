@@ -57,6 +57,11 @@ export const MODULES: AppModuleInfo[] = [
     label: 'Fatura',
     description: 'Satış/alış faturaları, KDV ve tevkifat',
   },
+  {
+    key: 'pos',
+    label: 'POS',
+    description: 'Hızlı satış noktası, kasa/vardiya ve mutfak ekranı',
+  },
 ]
 
 export const MODULE_KEYS: string[] = MODULES.map((m) => m.key)

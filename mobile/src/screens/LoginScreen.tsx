@@ -14,9 +14,11 @@ import { useTheme } from '../theme/theme-context'
 export function LoginScreen() {
   const t = useTheme()
   const insets = useSafeAreaInsets()
-  const { login } = useAuth()
+  const { login, posLogin } = useAuth()
+  const [mode, setMode] = React.useState<'password' | 'pin'>('password')
   const [username, setUsername] = React.useState('admin')
   const [password, setPassword] = React.useState('Admin123!')
+  const [pin, setPin] = React.useState('')
   const [error, setError] = React.useState<string | null>(null)
   const [busy, setBusy] = React.useState(false)
 
@@ -25,9 +27,14 @@ export function LoginScreen() {
     setError(null)
     setBusy(true)
     try {
-      await login(username.trim(), password)
+      if (mode === 'pin') await posLogin(username.trim(), pin)
+      else await login(username.trim(), password)
     } catch {
-      setError('Giriş başarısız. Kullanıcı adı veya parola hatalı.')
+      setError(
+        mode === 'pin'
+          ? 'POS girişi başarısız. Kullanıcı adı veya PIN hatalı.'
+          : 'Giriş başarısız. Kullanıcı adı veya parola hatalı.',
+      )
     } finally {
       setBusy(false)
     }
@@ -82,24 +89,48 @@ export function LoginScreen() {
             onChangeText={setUsername}
             placeholder="kullanıcı adınız"
           />
-          <Input
-            label="Parola"
-            icon="lock"
-            password
-            value={password}
-            onChangeText={setPassword}
-            placeholder="••••••••"
-            onSubmitEditing={signIn}
-            returnKeyType="go"
-            error={error ?? undefined}
-          />
+          {mode === 'pin' ? (
+            <Input
+              label="PIN"
+              icon="hash"
+              password
+              keyboardType="number-pad"
+              value={pin}
+              onChangeText={setPin}
+              placeholder="••••"
+              onSubmitEditing={signIn}
+              returnKeyType="go"
+              error={error ?? undefined}
+            />
+          ) : (
+            <Input
+              label="Parola"
+              icon="lock"
+              password
+              value={password}
+              onChangeText={setPassword}
+              placeholder="••••••••"
+              onSubmitEditing={signIn}
+              returnKeyType="go"
+              error={error ?? undefined}
+            />
+          )}
           <Button
-            title="Giriş yap"
+            title={mode === 'pin' ? 'POS Girişi' : 'Giriş yap'}
             size="lg"
             fullWidth
             loading={busy}
             onPress={signIn}
             style={{ marginTop: t.spacing[2] }}
+          />
+          <Button
+            title={mode === 'pin' ? 'Parola ile giriş' : 'POS PIN ile giriş'}
+            variant="ghost"
+            fullWidth
+            onPress={() => {
+              setError(null)
+              setMode((m) => (m === 'pin' ? 'password' : 'pin'))
+            }}
           />
         </View>
 

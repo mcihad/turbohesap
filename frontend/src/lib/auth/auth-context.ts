@@ -22,6 +22,10 @@ export interface AuthState {
   hasAllPermissions: (permissions: string[]) => boolean
   /** Local login with username + password. Throws on failure. */
   login: (username: string, password: string) => Promise<void>
+  /** POS terminal login with username + PIN. Throws on failure. */
+  posLogin: (username: string, pin: string) => Promise<void>
+  /** Fast cashier switch mid-shift by PIN (reuses the device session). */
+  posSwitch: (pin: string) => Promise<void>
   /** Clear the session (revokes the refresh token best-effort). */
   logout: () => Promise<void>
   /** Refresh the access token. Returns true on success. */

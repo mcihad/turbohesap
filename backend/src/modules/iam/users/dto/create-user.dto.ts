@@ -48,4 +48,12 @@ export class CreateUserDto implements CreateUserRequest {
   @IsOptional()
   @IsString()
   telegramChatId?: string | null
+
+  @IsOptional()
+  @IsBoolean()
+  isPosUser?: boolean
+
+  @IsOptional()
+  @IsString()
+  posPin?: string | null
 }

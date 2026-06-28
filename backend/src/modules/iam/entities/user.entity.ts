@@ -54,6 +54,14 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   telegramChatId!: string | null
 
+  // POS: can sign in to the register with a PIN; the PIN is bcrypt-hashed and
+  // never serialized (like passwordHash).
+  @Column({ default: false })
+  isPosUser!: boolean
+
+  @Column({ type: 'varchar', nullable: true, select: false })
+  posPinHash!: string | null
+
   @Column({ type: 'timestamptz', nullable: true })
   lastLoginAt!: Date | null
 

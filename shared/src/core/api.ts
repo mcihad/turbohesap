@@ -26,6 +26,8 @@ import { CategoriesApiClient } from '../modules/inventory/categories.client'
 import type { ICategoriesService } from '../modules/inventory/categories.service'
 import { ProductsApiClient } from '../modules/inventory/products.client'
 import type { IProductsService } from '../modules/inventory/products.service'
+import { ProductModifiersApiClient } from '../modules/inventory/product-modifiers.client'
+import type { IProductModifiersService } from '../modules/inventory/product-modifiers.service'
 import { StockMovementTypesApiClient } from '../modules/inventory/stock-movement-types.client'
 import type { IStockMovementTypesService } from '../modules/inventory/stock-movement-types.service'
 import { StockMovementsApiClient } from '../modules/inventory/stock-movements.client'
@@ -62,6 +64,14 @@ import { CrmFieldsApiClient } from '../modules/contacts/crm-fields.client'
 import type { ICrmFieldsService } from '../modules/contacts/crm-fields.service'
 import { IntegrationsApiClient } from '../modules/contacts/integrations.client'
 import type { IIntegrationsService } from '../modules/contacts/integrations.service'
+import { PosRegistersApiClient } from '../modules/pos/registers.client'
+import type { IPosRegistersService } from '../modules/pos/registers.service'
+import { PosSessionsApiClient } from '../modules/pos/sessions.client'
+import type { IPosSessionsService } from '../modules/pos/sessions.service'
+import { PosOrdersApiClient } from '../modules/pos/orders.client'
+import type { IPosOrdersService } from '../modules/pos/orders.service'
+import { PosTablesApiClient } from '../modules/pos/tables.client'
+import type { IPosTablesService } from '../modules/pos/tables.service'
 import { InvoicesApiClient } from '../modules/invoices/invoices.client'
 import type { IInvoicesService } from '../modules/invoices/invoices.service'
 import { createHttpClient, type HttpClientConfig } from './http'
@@ -89,8 +99,16 @@ export interface OrgApi {
 export interface InventoryApi {
   categories: ICategoriesService
   products: IProductsService
+  modifiers: IProductModifiersService
   movementTypes: IStockMovementTypesService
   stockMovements: IStockMovementsService
+}
+
+export interface PosApi {
+  registers: IPosRegistersService
+  sessions: IPosSessionsService
+  orders: IPosOrdersService
+  tables: IPosTablesService
 }
 
 export interface FinanceApi {
@@ -126,6 +144,8 @@ export interface TurbohesapApi {
   finance: FinanceApi
   /** Cari (contacts/CRM): contacts, groups, persons, addresses, ledger, activities, opportunities. */
   contacts: ContactsApi
+  /** POS (point of sale): registers, sessions, orders/payments. */
+  pos: PosApi
   /** Fatura (invoices): sales/purchase invoices with KDV + tevkifat. */
   invoices: IInvoicesService
   /** Generic key/value reference-data lists. */
@@ -167,6 +187,7 @@ export function createTurbohesapApi(
     inventory: {
       categories: new CategoriesApiClient(http),
       products: new ProductsApiClient(http),
+      modifiers: new ProductModifiersApiClient(http),
       movementTypes: new StockMovementTypesApiClient(http),
       stockMovements: new StockMovementsApiClient(http),
     },
@@ -188,6 +209,12 @@ export function createTurbohesapApi(
       notifications: new NotificationsApiClient(http),
       fields: new CrmFieldsApiClient(http),
       integrations: new IntegrationsApiClient(http),
+    },
+    pos: {
+      registers: new PosRegistersApiClient(http),
+      sessions: new PosSessionsApiClient(http),
+      orders: new PosOrdersApiClient(http),
+      tables: new PosTablesApiClient(http),
     },
     invoices: new InvoicesApiClient(http),
     lookups: new LookupsApiClient(http),

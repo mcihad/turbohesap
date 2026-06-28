@@ -17,6 +17,7 @@ import { AuthService } from './auth.service'
 import { LoginDto } from './dto/login.dto'
 import { LogoutDto, RefreshDto } from './dto/token.dto'
 import { VerifyPasswordDto } from './dto/verify-password.dto'
+import { PosLoginDto, PosSwitchDto, SetPinDto } from './dto/pos-auth.dto'
 
 // Local authentication endpoints under /api/auth. login/refresh/logout are
 // public; /me requires a valid access token (global JwtAuthGuard).
@@ -45,6 +46,30 @@ export class AuthController {
   @HttpCode(204)
   async logout(@Body() dto: LogoutDto): Promise<void> {
     await this.auth.logout(dto.refreshToken)
+  }
+
+  // POS terminal open with username + PIN.
+  @Throttle({ default: { ttl: 60_000, limit: 10 } })
+  @Public()
+  @Post('pos-login')
+  @HttpCode(200)
+  posLogin(@Body() dto: PosLoginDto): Promise<LoginResponse> {
+    return this.auth.posLogin(dto.username, dto.pin)
+  }
+
+  // Fast cashier switch mid-shift (authenticated device session) by PIN.
+  @Throttle({ default: { ttl: 60_000, limit: 20 } })
+  @Post('pos-switch')
+  @HttpCode(200)
+  posSwitch(@Body() dto: PosSwitchDto): Promise<LoginResponse> {
+    return this.auth.posSwitch(dto.pin)
+  }
+
+  // Set/change the caller's own POS PIN.
+  @Post('pos-pin')
+  @HttpCode(204)
+  async setPin(@Principal() user: AuthUser, @Body() dto: SetPinDto): Promise<void> {
+    await this.auth.setPin(user.sub, dto.pin, dto.currentPassword)
   }
 
   @Get('me')

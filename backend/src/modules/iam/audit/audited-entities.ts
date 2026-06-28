@@ -42,6 +42,9 @@ export const ENTITY_MODULE_MAP: Record<string, string> = {
   ProductChannelPrice: 'inventory',
   StockMovement: 'inventory',
   StockMovementType: 'inventory',
+  ProductModifierGroup: 'inventory',
+  ProductModifierOption: 'inventory',
+  ProductModifierLink: 'inventory',
   FileEntity: 'files',
   CashAccount: 'finance',
   BankAccount: 'finance',
@@ -59,6 +62,14 @@ export const ENTITY_MODULE_MAP: Record<string, string> = {
   Invoice: 'invoices',
   InvoiceLine: 'invoices',
   InvoicePayment: 'invoices',
+  PosRegister: 'pos',
+  PosSession: 'pos',
+  PosOrder: 'pos',
+  PosOrderLine: 'pos',
+  PosOrderLineModifier: 'pos',
+  PosPayment: 'pos',
+  PosFloor: 'pos',
+  PosTable: 'pos',
 }
 
 export function moduleForEntity(entityName: string): string | null {

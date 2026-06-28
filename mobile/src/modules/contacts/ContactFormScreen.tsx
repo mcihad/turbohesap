@@ -95,6 +95,10 @@ export function ContactFormScreen() {
   const { hasPermission } = useAuth()
   const id = nav.current.params?.id ? String(nav.current.params.id) : null
   const editing = !!id
+  // When opened from the Adaylar (leads) list the new record defaults to `lead`.
+  const roleParam = nav.current.params?.role as ContactRole | undefined
+  const isLead = !editing && roleParam === 'lead'
+  const title = editing ? 'Cari düzenle' : isLead ? 'Yeni aday' : 'Yeni cari'
   const { submit, busy } = useSubmit()
 
   const existing = useAsync(() => api.contacts.contacts.get(id as string), [id], {
@@ -103,7 +107,9 @@ export function ContactFormScreen() {
 
   const fieldDefs = useAsync(() => api.contacts.fields.get('contact'), [])
 
-  const [form, setForm] = React.useState<FormState>(EMPTY)
+  const [form, setForm] = React.useState<FormState>(() =>
+    roleParam ? { ...EMPTY, role: roleParam } : EMPTY,
+  )
   const [attributes, setAttributes] = React.useState<Record<string, unknown>>({})
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }))
@@ -181,7 +187,7 @@ export function ContactFormScreen() {
 
   if (!hasPermission(ContactsPermissions.contactsWrite)) {
     return (
-      <Screen header={{ title: editing ? 'Cari düzenle' : 'Yeni cari', onBack: nav.goBack }}>
+      <Screen header={{ title, onBack: nav.goBack }}>
         <EmptyState icon="shield-off" title="Yetkiniz yok" description="Bu sayfada düzenleme yapma yetkiniz yok." />
       </Screen>
     )
@@ -190,7 +196,7 @@ export function ContactFormScreen() {
   return (
     <Screen
       header={{
-        title: editing ? 'Cari düzenle' : 'Yeni cari',
+        title,
         onBack: nav.goBack,
       }}
       footer={

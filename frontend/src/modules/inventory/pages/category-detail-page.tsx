@@ -187,19 +187,15 @@ export function CategoryDetailPage() {
               </TabsContent>
 
               <TabsContent value="urunler">
-                <Card>
-                  <CardContent className="p-0">
-                    <DataGrid
-                      gridId="inventory.category.products"
-                      data={productsQuery.data ?? []}
-                      columns={productColumns}
-                      getRowId={(p) => p.id}
-                      loading={productsQuery.isLoading}
-                      onRowClick={(p) => navigate({ to: '/inventory/products/$id', params: { id: p.id } })}
-                      emptyText="Bu kategoride ürün yok."
-                    />
-                  </CardContent>
-                </Card>
+                <DataGrid
+                  gridId="inventory.category.products"
+                  data={productsQuery.data ?? []}
+                  columns={productColumns}
+                  getRowId={(p) => p.id}
+                  loading={productsQuery.isLoading}
+                  onRowClick={(p) => navigate({ to: '/inventory/products/$id', params: { id: p.id } })}
+                  emptyText="Bu kategoride ürün yok."
+                />
               </TabsContent>
 
               <TabsContent value="medya">

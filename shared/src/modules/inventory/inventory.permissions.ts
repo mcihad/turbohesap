@@ -11,6 +11,9 @@ export const InventoryPermissions = {
   productsDelete: 'inventory.products.delete',
   /** Adjust per-branch on-hand stock quantities. */
   productsStock: 'inventory.products.stock',
+  /** Manage POS modifier groups/options and product attachments. */
+  modifiersRead: 'inventory.modifiers.read',
+  modifiersWrite: 'inventory.modifiers.write',
 } as const
 
 export type InventoryPermission =

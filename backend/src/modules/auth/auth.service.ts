@@ -117,6 +117,58 @@ export class AuthService {
     return { valid: bcrypt.compareSync(password, user.passwordHash) }
   }
 
+  /** Open a POS terminal with username + PIN. */
+  async posLogin(username: string, pin: string): Promise<LoginResponse> {
+    const user = await this.users
+      .createQueryBuilder('user')
+      .addSelect('user.posPinHash')
+      .leftJoinAndSelect('user.roles', 'role')
+      .where('user.username = :username', { username })
+      .getOne()
+    if (!user || !user.isActive || !user.isPosUser || !user.posPinHash) {
+      throw new UnauthorizedException('invalid POS credentials')
+    }
+    if (!bcrypt.compareSync(pin, user.posPinHash)) {
+      throw new UnauthorizedException('invalid POS credentials')
+    }
+    user.lastLoginAt = new Date()
+    await this.users.save(user)
+    const tokens = await this.issueTokens(user)
+    return { ...tokens, user: toCurrentUser(user) }
+  }
+
+  /** Switch the active cashier mid-shift by PIN (caller already has a session). */
+  async posSwitch(pin: string): Promise<LoginResponse> {
+    const candidates = await this.users
+      .createQueryBuilder('user')
+      .addSelect('user.posPinHash')
+      .leftJoinAndSelect('user.roles', 'role')
+      .where('user.isPosUser = true')
+      .andWhere('user.isActive = true')
+      .andWhere('user.posPinHash IS NOT NULL')
+      .getMany()
+    const user = candidates.find((u) => u.posPinHash && bcrypt.compareSync(pin, u.posPinHash))
+    if (!user) throw new UnauthorizedException('invalid PIN')
+    const tokens = await this.issueTokens(user)
+    return { ...tokens, user: toCurrentUser(user) }
+  }
+
+  /** Set/clear the caller's own POS PIN (password re-confirmation required). */
+  async setPin(userId: string, pin: string, currentPassword?: string): Promise<void> {
+    const user = await this.users
+      .createQueryBuilder('user')
+      .addSelect('user.passwordHash')
+      .where('user.id = :id', { id: userId })
+      .getOne()
+    if (!user) throw new UnauthorizedException('user not found')
+    if (currentPassword && !bcrypt.compareSync(currentPassword, user.passwordHash)) {
+      throw new UnauthorizedException('invalid password')
+    }
+    user.posPinHash = pin ? bcrypt.hashSync(pin, 10) : null
+    if (pin) user.isPosUser = true
+    await this.users.save(user)
+  }
+
   /** Verify credentials; throws 401 on any failure. */
   private async validate(username: string, password: string): Promise<User> {
     const user = await this.users

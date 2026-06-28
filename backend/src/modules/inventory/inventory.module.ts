@@ -19,6 +19,11 @@ import { StockMovementTypesController } from './stock-movement-types.controller'
 import { StockMovementTypesService } from './stock-movement-types.service'
 import { StockMovementsController } from './stock-movements.controller'
 import { StockMovementsService } from './stock-movements.service'
+import { ProductModifierGroup } from './entities/product-modifier-group.entity'
+import { ProductModifierOption } from './entities/product-modifier-option.entity'
+import { ProductModifierLink } from './entities/product-modifier-link.entity'
+import { ProductModifiersController } from './product-modifiers.controller'
+import { ProductModifiersService } from './product-modifiers.service'
 
 // Envanter — product categories (a tree, with per-category custom field schemas)
 // and products with variants, packagings, per-branch stock and per-channel
@@ -35,6 +40,9 @@ import { StockMovementsService } from './stock-movements.service'
       ProductChannelPrice,
       StockMovement,
       StockMovementType,
+      ProductModifierGroup,
+      ProductModifierOption,
+      ProductModifierLink,
       Branch,
       SalesChannel,
     ]),
@@ -44,9 +52,16 @@ import { StockMovementsService } from './stock-movements.service'
     ProductsController,
     StockMovementTypesController,
     StockMovementsController,
+    ProductModifiersController,
   ],
-  providers: [CategoriesService, ProductsService, StockMovementTypesService, StockMovementsService],
-  // Exported so InvoicesModule can post/reverse stock movements on issue/cancel.
-  exports: [StockMovementsService, StockMovementTypesService],
+  providers: [
+    CategoriesService,
+    ProductsService,
+    StockMovementTypesService,
+    StockMovementsService,
+    ProductModifiersService,
+  ],
+  // Exported so InvoicesModule/PosModule can post/reverse stock movements.
+  exports: [StockMovementsService, StockMovementTypesService, ProductModifiersService],
 })
 export class InventoryModule {}

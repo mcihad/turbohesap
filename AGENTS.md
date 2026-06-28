@@ -64,12 +64,18 @@ each other's internals; they communicate only through `@turbohesap/shared`.
 │       ├── modules/        # ONE FOLDER PER MODULE — the contracts
 │       │   ├── auth/           # auth.dto.ts · auth.service.ts · auth.client.ts
 │       │   ├── iam/            # user/role/permission .dto · .service · .client
+│       │   ├── pos/            # registers/sessions/orders/tables .dto/.service/.client + pos.permissions.ts + pure pos-pricing.helpers.ts
 │       │   └── health/         # health.dto.ts · health.service.ts · health.client.ts
 │       └── index.ts        # barrel: re-exports core + every module
 ├── frontend/               # @turbohesap/frontend — the React SPA
 │   └── src/
 │       ├── lib/api.ts          # the app's createTurbohesapApi() instance
-│       └── modules/<module>/   # per-module UI: module.config.ts (nav) + pages/
+│       ├── components/dashboard/   # echart.tsx + chart-card.tsx (Apache ECharts) — the shared charting primitive
+│       ├── modules/<module>/   # per-module UI: module.config.ts (nav) + pages/ (e.g. modules/pos/)
+│       └── routes/
+│           ├── _authed/pos/    # in-shell admin pages (dashboard, registers, floors, modifiers)
+│           ├── _pos.tsx + _pos/ # FULL-SCREEN POS terminal route group (own chrome, no AppShell — see §6)
+│           └── pos.login.tsx   # POS PIN login (OUTSIDE the _pos auth gate)
 ├── backend/                # @turbohesap/backend — the NestJS service
 │   ├── src/
 │   │   ├── main.ts         # bootstrap: /api prefix, ValidationPipe, static + SPA fallback
@@ -85,10 +91,11 @@ each other's internals; they communicate only through `@turbohesap/shared`.
 │   │       ├── sales/      # sales channels → /api/sales/channels (master data; later used by products)
 │   │       ├── org/        # branches → /api/org/branches (locations; users are authorized per branch)
 │   │       ├── lookups/    # generic key/value reference lists → /api/lookups (LookupSelect consumes these)
-│   │       └── inventory/  # category TREE (+ per-category custom field schema, jsonb) + products/stock → /api/inventory/{categories,products}
+│   │       ├── inventory/  # category TREE (+ per-category custom field schema, jsonb) + products/stock + modifiers → /api/inventory/{categories,products,modifiers}
+│   │       └── pos/        # registers, sessions, orders, floors/tables → /api/pos/<resource>; order settle posts stock+finance+cari in one tx
 │   └── static/             # frontend build output, served by NestJS
 │       └── index.html      # tracked placeholder (overwritten by the real build)
-└── mobile/                 # @turbohesap/mobile — Expo app (src/lib/api.ts, tokens.ts)
+└── mobile/                 # @turbohesap/mobile — Expo app (src/lib/api.ts, tokens.ts; src/modules/pos/ POS screens)
 ```
 
 The `@turbohesap/*` package names are the org scope and stay fixed.
@@ -166,7 +173,16 @@ alongside). Examples today:
 | -------- | ---------------------------------------------------------- | ------------------ |
 | `auth`   | `LoginRequest`, `AuthTokens`, `LoginResponse`, `Refresh/LogoutRequest` | `IAuthService` |
 | `iam`    | `UserDto`, `CurrentUser`, `RoleDto`, `PermissionDto`, `Create/Update*Request` | `IUsersService`, `IRolesService`, `IPermissionsService` |
+| `pos`    | `PosRegisterDto`, `PosSessionDto`, `PosOrderDto`, `PosTableDto`/floors (+ pure `pos-pricing.helpers`) | `IPosRegistersService`, `IPosSessionsService`, `IPosOrdersService`, `IPosTablesService` |
 | `health` | `HealthStatus`                                             | `IHealthService` |
+
+> **POS in the contract layer:** `shared/src/modules/pos/*` carries the
+> registers/sessions/orders/tables DTOs + service interfaces + axios clients,
+> `pos.permissions.ts`, and the **pure** `pos-pricing.helpers.ts` (line/discount
+> math shared by web + mobile). It is wired into `core/api.ts` as a grouped
+> `api.pos.{registers,sessions,orders,tables}` and listed in `core/app-modules.ts`.
+> Product **modifiers** are part of `inventory` (`shared/src/modules/inventory/product-modifier.*`),
+> exposed as `api.inventory.modifiers`.
 
 ### Rules that keep separation clean
 
@@ -262,6 +278,20 @@ alongside). Examples today:
   (`src/permissions.catalog.ts` — keys from `@turbohesap/shared`, Turkish
   descriptions in each `<module>.permissions.ts`), the system roles
   (`admin`, `user`), and a default admin user from `SEED_ADMIN_*` — idempotent.
+- **`pos`** (`/api/pos`): `registers`, `sessions`, `orders` (+ split orders),
+  `floors`/`tables`. An order **settle** (`PosOrdersService.settleInTx`, inside one
+  `this.orders.manager.transaction`) posts in a **single transaction**: stock
+  movements, a finance entry (kasa/banka per tender), and a cari ledger entry —
+  the **same atomic pattern as `invoices`**. It reverses cleanly: stock via
+  `StockMovementsService.reverseSource(em, 'pos', orderId)`, and the
+  finance/contact rows by the `financeTransactionId`/`contactTransactionId` stored
+  on each `PosPayment`. Product **modifiers** are not a POS table — they live in
+  `inventory` (`ProductModifierGroup`/`Option`/`Link`, `/api/inventory/modifiers`).
+- **POS PIN auth** (additions on `auth`/`iam`): the `User` entity gains
+  `isPosUser` and `posPinHash` (`select:false`). New endpoints on `/api/auth`:
+  `pos-login` (`@Public()` + tight `@Throttle`, username+PIN → opens the terminal),
+  `pos-switch` (fast cashier switch by PIN on an already-authenticated device), and
+  `pos-pin` (caller sets/changes their own PIN). See `pos.users.pin` in §7.
 - **Errors:** a global exception filter (`common/filters/all-exceptions.filter.ts`,
   wired in `main.ts`) normalizes every thrown error to the shared `ApiError`
   (`{ statusCode, error, message, details? }`); validation arrays collapse to a
@@ -451,6 +481,18 @@ Three cross-cutting subsystems are already built. **Reuse them — never reinven
   under `src/routes/_authed/<module>/`.
 - **All API access goes through `src/lib/api.ts`** (`createTurbohesapApi`,
   baseUrl `/api`, token from `lib/auth/tokens.ts`).
+- **Full-screen route group (POS terminal):** a surface that needs its own chrome
+  instead of the app shell gets its own pathless layout next to `_authed`.
+  `routes/_pos.tsx` is the auth gate (mirrors `_authed.tsx` — redirects
+  unauthenticated users, but to the PIN login `/pos/login` instead of `/login`) yet
+  renders **no `AppShell`** (no sidebar/rail/navbar); its children
+  (`routes/_pos/pos.sell.$registerId.tsx`, …) are the terminal. The PIN login
+  `routes/pos.login.tsx` lives **outside** the gate so it's reachable while logged
+  out. Because the rail/command-palette navigate to a module's `home`, a module
+  with a full-screen surface must set `home` to an **in-shell** dashboard
+  (`pos.module.config.ts` → `/pos/dashboard`, under `_authed/pos/`) — never the
+  full-screen route — so the admin pages (registers, floors, modifiers) stay
+  reachable from the normal shell.
 - **Every web list/table is the DataGrid** (`src/components/data-grid/`) — the
   single table primitive. TanStack-Table based, it gives search, per-column
   filters, sorting, grouping, drag column reorder, a scrollable column chooser,
@@ -508,8 +550,9 @@ Three cross-cutting subsystems are already built. **Reuse them — never reinven
   UI, `<PermissionRequired>` guards whole screens, and `useAsync(…, { enabled })`
   gates fetches. UX only — the backend re-checks every key.
 - **Modules mirror the web** (`src/modules/<module>`): `genel` (dashboard,
-  analytics) and `iam` (users + detail, roles, permissions, audit logs, error
-  logs). Add a module/screen by following `mobile_design.md` §6 (build the screen,
+  analytics), `iam` (users + detail, roles, permissions, audit logs, error logs),
+  and `pos` (dashboard, registers, floors, modifier groups, sell + tender screens —
+  the mobile POS terminal). Add a module/screen by following `mobile_design.md` §6 (build the screen,
   register its key in `navigation/screens.tsx`, add a permission-gated nav item in
   `modules/registry.ts`).
 - **Images:** the reusable `src/components/image/` module mirrors the web
@@ -537,6 +580,14 @@ three layers. Read this before touching anything auth-related.
   `IamPermissions.usersWrite`); backend and frontend import them — never hardcode
   the string.
 - **Effective permissions** = the union of all the user's roles' permissions.
+
+> **POS permission group** (`PosPermissions`, group "POS"):
+> `pos.registers.read`/`write`, `pos.sell`, `pos.session.open`/`close`,
+> `pos.discount.line`/`pos.discount.override`, `pos.price.override`, `pos.refund`,
+> `pos.void`, `pos.drawer.open`, `pos.reprint`, `pos.reports`,
+> `pos.kitchen.view`/`pos.kitchen.bump`, `pos.tables.manage`, `pos.settings`,
+> `pos.users.pin`. Plus, on `inventory`, `inventory.modifiers.read`/`write` (the
+> shared product-modifier catalog that POS consumes).
 
 ### Who owns what (the three layers)
 | Layer | Role in RBAC | Where |

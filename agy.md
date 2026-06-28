@@ -312,6 +312,29 @@ entity belongs to a location, so per-branch authorization (the existing
 `user_branches` model) and per-branch reporting work. Ask yourself "is this global
 or per-branch?" for every operational entity and justify the answer.
 
+### 7.3 Route ordering — never shadow a collection route under another `:param`
+A static collection route placed under a path that **another controller already
+owns with a parametric segment** is swallowed by that param. Real bug: a
+`GET /inventory/products/modifier-map` was captured by the products controller's
+`/inventory/products/:id` → the literal `"modifier-map"` was parsed as a UUID
+(`500 invalid input syntax for type uuid: "modifier-map"`).
+- RULE: never put a static collection route under another controller's `:id`
+  parent. Give it its own path — the fix moved it to `/inventory/modifier-map`
+  (see `backend/src/modules/inventory/product-modifiers.controller.ts`).
+- Within ONE controller, declare static segments before parametric ones, but
+  cross-controller you cannot rely on order — use a non-colliding path.
+
+### 7.4 The server is authoritative for money — never trust client prices
+For POS order lines the server re-resolves `name` / `unitPrice` / `taxRate` from
+`productId` (+ the register's sales-channel `ProductChannelPrice`) and modifier
+snapshots from `optionId`; client-supplied values are **overrides only**, gated by
+a price-override permission (`pos.price.override`). See
+`backend/src/modules/pos/pos-orders.service.ts`.
+- Tax/price math lives **once** in shared `pos-pricing.helpers.ts`
+  (`resolveUnitPrice` / `lineGross` / `taxBreakdown` / `modifierDeltaSum`) and is
+  used by BOTH server and clients, so previews match the posted total to the kuruş.
+  Never duplicate pricing math per platform.
+
 ---
 
 ## 8. File management system (images & files) — USE IT, don't reinvent
@@ -482,6 +505,22 @@ table + module for "a list of X values".
 - Gate every page with `<PermissionRequired>`, every query with `enabled:
   hasPermission(...)`, every action with the same key. Verify: `vite build` +
   `tsc -b`.
+- **Full-screen / template-independent surfaces** (POS terminal, KDS, etc.) use a
+  **pathless gated layout route group that renders its OWN chrome** — no AppShell.
+  Pattern: `frontend/src/routes/_pos.tsx` mirrors `_authed.tsx` (auth gate) but
+  renders a full-screen shell (`h-svh`, its own header). Its **public** login
+  (`/pos/login`, `frontend/src/routes/pos.login.tsx`) lives OUTSIDE the gate as a
+  top-level route, else the gate redirect-loops on unauthenticated users.
+- A module whose `home` is a full-screen surface makes its in-sidebar admin pages
+  unreachable. A module's `home` (`module.config.ts`) MUST be a normal in-shell
+  dashboard page (e.g. POS `home: '/pos/dashboard'`); launch the full-screen
+  surface from a CTA on that dashboard.
+- **`PageWrapper` adds NO vertical spacing** between children — pass
+  `className="space-y-6"` (or wrap) to space page sections
+  (`frontend/src/components/layout/page.tsx`).
+- **Dashboards / charts**: reuse `frontend/src/components/dashboard/{echart.tsx,
+  chart-card.tsx}` (Apache ECharts; `barOption` / `donutOption` / `lineOption`).
+  Do not add another charting library.
 
 ---
 
@@ -579,6 +618,11 @@ curl -s -o /dev/null -w '%{http_code} %{content_type}\n' "$BASE/files/raw/$SN"  
 - Happy path: correct status (200/201/204) and the **exact shared DTO shape**.
 - Side effects: a create then list/get reflects it; a delete then get → **404**.
 
+**Do not be fooled by `jq` run over an error body.** A `500`/`400` returns the
+`ApiError` shape `{statusCode,error,message}`, so `jq 'length'` or
+`jq 'to_entries|length'` happily prints `3` as if you got data — always check the
+HTTP status (`-w '%{http_code}'`) and inspect the body before trusting a count.
+
 Record (in your final message) the commands you ran and the status codes you saw.
 If you could not run them, say so explicitly and why — do not imply you did.
 
@@ -591,6 +635,17 @@ If you could not run them, say so explicitly and why — do not imply you did.
   `make migrate`. Commit the migration file.
 - Never enable `synchronize`. Never hand-edit applied migrations; add a new one.
 - A permission is NOT a schema change — it auto-seeds (§5). No migration for it.
+- **Run migrations as the APP db role, never the superuser.**
+  `pnpm --filter @turbohesap/backend migration:run|generate` reads `DATABASE_URL`;
+  if it is unset it falls back to the `postgres` superuser and the new tables end up
+  **owned by postgres** → the app role (`turbohesap`) hits `permission denied for
+  table` at runtime. Always pass the app role explicitly, e.g.
+  `DATABASE_URL=postgres://turbohesap:turbohesap@localhost:5432/turbohesap pnpm
+  --filter @turbohesap/backend migration:run` (the `make` targets already do this).
+  Repair a mis-owned table as postgres: `ALTER TABLE <t> OWNER TO turbohesap`.
+- **Review generated migrations and STRIP unrelated drift** before committing — a
+  generate run picks up incidental diffs (e.g. CRM index renames) that don't belong
+  to your change. Commit only the SQL for the feature at hand.
 
 ---
 
@@ -644,6 +699,14 @@ If any box is unchecked, the task is **not done** — say exactly what remains.
 - ❌ Ship a list + edit-dialog with **no detail page** for an entity that has
   audit history, attachments, or child records (rule 13).
 - ❌ Add backend service logic with **no `*.spec.ts`** test.
+- ❌ Put a static collection route under another controller's `:id` parent — it
+  gets shadowed and the literal segment is parsed as the param (§7.3).
+- ❌ Trust client-supplied prices/tax for money-bearing lines — the server
+  re-resolves them; client values are permission-gated overrides only (§7.4).
+- ❌ Run migrations as the `postgres` superuser (unset `DATABASE_URL`) — it leaves
+  tables owned by postgres and the app gets `permission denied` (§14).
+- ❌ Make a module's `home` a full-screen surface — its sidebar admin pages become
+  unreachable; `home` must be an in-shell dashboard (§11).
 - ❌ Hardcode permission strings, colours (mobile), or `@Column({ name })`.
 - ❌ Commit/push unless explicitly asked.
 
@@ -674,6 +737,8 @@ If any box is unchecked, the task is **not done** — say exactly what remains.
 | bulk actions / CSV import | backend `contacts.service.ts` `bulk()`/`importContacts()`; web `components/bulk-actions-bar.tsx`, `pages/contacts-import-page.tsx` |
 | integrations (email/Telegram/WhatsApp/SMS) | `backend/.../contacts/integrations.service.ts` (adapters + secret masking); entity `integration-connection.entity.ts`; web `pages/integrations-settings-page.tsx` (tabbed) |
 | **AI — pluggable provider layer** | `backend/.../contacts/ai/ai-provider.ts` (`runAi`); provider catalog + model variants in shared `AI_PROVIDERS` (`integrations.dto.ts`). **To add an AI agent see §19.** |
+| a full-screen / template-independent surface | `frontend/src/routes/_pos.tsx` (gated own-chrome layout) + public `pos.login.tsx`; module config `home` stays in-shell (§11, §18.6) |
+| server-authoritative pricing + settle/post-to-ledger | `backend/src/modules/pos/pos-orders.service.ts` (one `manager.transaction`, `reverseSource`); shared math `shared/src/modules/pos/pos-pricing.helpers.ts`; mirrors `invoices.service`. See `docs/pos.md` |
 
 > Work like the agent before you and the agent after you will read your diff and
 > have to extend it. Same shapes, same gates, same tests. Every time.
@@ -743,6 +808,41 @@ If any box is unchecked, the task is **not done** — say exactly what remains.
   "NEW module only" lines (`shared/src/index.ts`, `app-modules.ts`,
   `app.module.ts`, `registry.ts`) — those already exist.
 - **New module:** do every line, including the "NEW module only" registrations.
+
+### 18.6 Worked example — the POS module (a full-screen, multi-resource module)
+POS spans all four layers via the same contracts-first pattern; copy it for any
+large module with a full-screen surface, server-side pricing, and a settle/post
+flow. Reference **`docs/pos.md`**.
+- **shared** (`shared/src/modules/pos/`): `register.dto.ts`, `session.dto.ts`,
+  `order.dto.ts`, `table.dto.ts`, `pos.permissions.ts`, `pos-pricing.helpers.ts`,
+  and `{registers,sessions,orders,tables}.{service,client}.ts`. Wired into
+  `shared/src/core/api.ts` as `api.pos.{registers,sessions,orders,tables}` and
+  listed in `shared/src/core/app-modules.ts`.
+- **backend** (`backend/src/modules/pos/`): entities
+  `pos_registers` / `pos_sessions` / `pos_orders` / `pos_order_lines` /
+  `pos_order_line_modifiers` / `pos_payments` / `pos_floors` / `pos_tables`;
+  service+controller per registers/sessions/orders/tables; `pos.permissions.ts`;
+  registered in `app.module.ts`, `permissions.catalog.ts`, and `audited-entities.ts`.
+- **inventory modifiers** (master-data lives in **inventory**, not pos):
+  `ProductModifierGroup` / `Option` / `Link` entities +
+  `product-modifiers.{service,controller}`; routes `/inventory/modifier-groups`,
+  `/inventory/products/:id/modifiers`, `/inventory/modifier-map` (own path, §7.3);
+  shared `inventory/product-modifier.*` + `api.inventory.modifiers`; perms
+  `inventory.modifiers.read` / `inventory.modifiers.write`.
+- **PIN auth**: `User.isPosUser` + `User.posPinHash` (`select:false`, bcrypt);
+  endpoints `/auth/pos-login` (`@Public()`, throttled), `/auth/pos-switch`,
+  `/auth/pos-pin`; web + mobile auth-context/provider gained `posLogin` / `posSwitch`.
+- **POS permission group "POS"**: `pos.registers.read/write`, `pos.sell`,
+  `pos.session.open/close`, `pos.discount.line/override`, `pos.price.override`,
+  `pos.refund`, `pos.void`, `pos.drawer.open`, `pos.reprint`, `pos.reports`,
+  `pos.kitchen.view/bump`, `pos.tables.manage`, `pos.settings`, `pos.users.pin`.
+- **Settle posts everything in ONE `manager.transaction`** (stock + finance
+  `kasa/banka` + cari), mirroring `invoices.service`; reversal via
+  `StockMovementsService.reverseSource(em, 'pos', id)` plus deleting the finance /
+  contact transaction ids stored back on `PosPayment`
+  (`financeTransactionId` / `contactTransactionId`).
+- **Full-screen surface**: the terminal lives under `_pos.tsx` (own chrome), login
+  at `/pos/login`, but `home` is the in-shell `/pos/dashboard` (§11).
 
 ---
 

@@ -71,5 +71,19 @@ export const contactsModule: MobileModule = {
       description: 'Satış fırsatları',
       permission: ContactsPermissions.opportunitiesRead,
     },
+    {
+      key: 'contacts.pipelines.settings',
+      title: 'Satış Hattı Ayarları',
+      icon: 'settings',
+      description: 'Pipeline ve aşamaları yönet',
+      permission: ContactsPermissions.pipelinesWrite,
+    },
+    {
+      key: 'contacts.fields',
+      title: 'CRM Özel Alanları',
+      icon: 'sliders',
+      description: 'Cari ve fırsat özel alanları',
+      permission: ContactsPermissions.pipelinesWrite,
+    },
   ],
 }

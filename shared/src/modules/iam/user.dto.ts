@@ -14,6 +14,10 @@ export interface UserDto {
   branches: BranchSummary[]
   /** Telegram chat id for direct notifications/messages to this user. */
   telegramChatId: string | null
+  /** Whether this user can sign in to the POS with a PIN. */
+  isPosUser: boolean
+  /** Whether a POS PIN has been set (the PIN itself is never returned). */
+  hasPosPin: boolean
   lastLoginAt: string | null
   createdAt: string
   updatedAt: string
@@ -42,6 +46,9 @@ export interface CreateUserRequest {
   /** IDs of branches the user is authorized for (org module). */
   branchIds?: string[]
   telegramChatId?: string | null
+  isPosUser?: boolean
+  /** Optional initial POS PIN (4-8 digits). */
+  posPin?: string | null
 }
 
 export interface UpdateUserRequest {
@@ -53,4 +60,11 @@ export interface UpdateUserRequest {
   roleIds?: string[]
   branchIds?: string[]
   telegramChatId?: string | null
+  isPosUser?: boolean
+  posPin?: string | null
+}
+
+/** Admin sets/clears a user's POS PIN (IAM: POST /iam/users/:id/pin). */
+export interface SetUserPinRequest {
+  pin: string | null
 }

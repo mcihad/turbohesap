@@ -17,6 +17,9 @@ top-level guides:
 - **[`lookups.md`](./lookups.md)** — the generic key/value reference-data system
   (`/api/lookups`) and the reusable **`LookupSelect`** component (web + mobile):
   data model, API, permissions, usage, and recipes.
+- **[`pos.md`](./pos.md)** — the point-of-sale module: PIN auth, modifiers,
+  registers/sessions/orders, split & multi-tender payments, the settle→stock→
+  kasa→cari flow, permissions, and the desktop-client integration guide.
 
 ## Planned documents
 

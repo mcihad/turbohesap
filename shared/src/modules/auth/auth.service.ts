@@ -2,6 +2,9 @@ import type { CurrentUser } from '../iam/user.dto'
 import type {
   AuthTokens,
   LoginResponse,
+  PosLoginRequest,
+  PosSwitchRequest,
+  SetPinRequest,
   VerifyPasswordResponse,
 } from './auth.dto'
 
@@ -18,4 +21,10 @@ export interface IAuthService {
   permissions(): Promise<string[]>
   /** Re-confirm the current user's password (for destructive-action gates). */
   verifyPassword(password: string): Promise<VerifyPasswordResponse>
+  /** Open a POS terminal with username + PIN (full session). */
+  posLogin(input: PosLoginRequest): Promise<LoginResponse>
+  /** Switch cashier mid-shift with a PIN (uses the current session). */
+  posSwitch(input: PosSwitchRequest): Promise<LoginResponse>
+  /** Set/change the current user's POS PIN. */
+  setPin(input: SetPinRequest): Promise<void>
 }

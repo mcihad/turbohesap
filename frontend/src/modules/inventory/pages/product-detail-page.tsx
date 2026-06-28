@@ -28,6 +28,7 @@ import { VariantsTab } from '../components/product-detail/variants-tab'
 import { StockTab } from '../components/product-detail/stock-tab'
 import { ChannelPricesTab } from '../components/product-detail/channel-prices-tab'
 import { PackagingsTab } from '../components/product-detail/packagings-tab'
+import { PosModifiersTab } from '../components/product-detail/pos-modifiers-tab'
 import { FileManager } from '@/modules/files/components/file-manager'
 import { money, productTypeLabel } from '../labels'
 
@@ -151,6 +152,7 @@ function ProductTabs({
     ...(product.trackStock ? [{ value: 'stok', label: 'Stok' }] : []),
     { value: 'fiyatlar', label: 'Kanal fiyatları' },
     { value: 'paketler', label: 'Paketler' },
+    { value: 'pos', label: 'POS' },
   ]
 
   return (
@@ -206,6 +208,10 @@ function ProductTabs({
 
       <TabsContent value="paketler">
         <PackagingsTab product={product} canWrite={canWrite} refetch={refetch} />
+      </TabsContent>
+
+      <TabsContent value="pos">
+        <PosModifiersTab product={product} />
       </TabsContent>
     </Tabs>
   )

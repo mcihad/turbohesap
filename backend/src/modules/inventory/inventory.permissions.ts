@@ -35,4 +35,14 @@ export const INVENTORY_PERMISSION_DEFS: PermissionDef[] = [
     description: 'Şube bazında stok miktarlarını düzenleme',
     group: 'products',
   },
+  {
+    key: InventoryPermissions.modifiersRead,
+    description: 'POS modifier gruplarını görüntüleme',
+    group: 'products',
+  },
+  {
+    key: InventoryPermissions.modifiersWrite,
+    description: 'POS modifier grup/seçenek yönetimi',
+    group: 'products',
+  },
 ]

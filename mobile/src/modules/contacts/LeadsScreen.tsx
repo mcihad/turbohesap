@@ -10,6 +10,7 @@ import {
   Badge,
   Button,
   EmptyState,
+  HeaderAction,
   ListCard,
   ListRow,
   PermissionRequired,
@@ -44,6 +45,12 @@ export function LeadsScreen() {
           title: 'Adaylar',
           large: !nav.canGoBack,
           onBack: nav.canGoBack ? nav.goBack : undefined,
+          right: canWrite ? (
+            <HeaderAction
+              icon="plus"
+              onPress={() => nav.navigate('contacts.contacts.form', { role: 'lead' }, 'Yeni aday')}
+            />
+          ) : undefined,
         }}
         onRefresh={queryResult.refetch}
         refreshing={queryResult.refreshing}
@@ -57,6 +64,8 @@ export function LeadsScreen() {
             icon="user-plus"
             title="Aday bulunamadı"
             description="Henüz potansiyel müşteri (aday) eklenmemiş."
+            actionLabel={canWrite ? 'Yeni aday' : undefined}
+            onAction={canWrite ? () => nav.navigate('contacts.contacts.form', { role: 'lead' }, 'Yeni aday') : undefined}
           />
         ) : (
           <>

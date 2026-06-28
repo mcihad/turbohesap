@@ -35,6 +35,12 @@ import { CategoryFormScreen } from '../modules/inventory/CategoryFormScreen'
 import { ProductDetailScreen } from '../modules/inventory/ProductDetailScreen'
 import { ProductFormScreen } from '../modules/inventory/ProductFormScreen'
 import { ProductsScreen } from '../modules/inventory/ProductsScreen'
+import { PosDashboardScreen } from '../modules/pos/PosDashboardScreen'
+import { PosRegistersScreen } from '../modules/pos/PosRegistersScreen'
+import { PosSellScreen } from '../modules/pos/PosSellScreen'
+import { PosTenderScreen } from '../modules/pos/PosTenderScreen'
+import { PosFloorsScreen } from '../modules/pos/PosFloorsScreen'
+import { PosModifierGroupsScreen } from '../modules/pos/PosModifierGroupsScreen'
 import { CashAccountsScreen } from '../modules/finance/CashAccountsScreen'
 import { CashAccountDetailScreen } from '../modules/finance/CashAccountDetailScreen'
 import { CashAccountFormScreen } from '../modules/finance/CashAccountFormScreen'
@@ -60,6 +66,10 @@ import { MyWorkScreen } from '../modules/contacts/MyWorkScreen'
 import { NotificationsScreen } from '../modules/contacts/NotificationsScreen'
 import { LeadsScreen } from '../modules/contacts/LeadsScreen'
 import { IntegrationsSettingsScreen } from '../modules/contacts/IntegrationsSettingsScreen'
+import { PipelineSettingsScreen } from '../modules/contacts/PipelineSettingsScreen'
+import { PipelineStageFormScreen } from '../modules/contacts/PipelineStageFormScreen'
+import { CrmFieldsSettingsScreen } from '../modules/contacts/CrmFieldsSettingsScreen'
+import { CrmFieldFormScreen } from '../modules/contacts/CrmFieldFormScreen'
 import { InvoicesScreen } from '../modules/invoices/InvoicesScreen'
 import { InvoiceDetailScreen } from '../modules/invoices/InvoiceDetailScreen'
 import { InvoiceEntryScreen } from '../modules/invoices/InvoiceEntryScreen'
@@ -112,6 +122,13 @@ export const SCREENS: Record<string, () => React.ReactElement> = {
   'iam.audit.entity': () => <EntityAuditScreen />,
   'iam.errors': () => <ErrorLogsScreen />,
   'iam.errors.detail': () => <ErrorDetailScreen />,
+  // POS (point of sale)
+  'pos.home': () => <PosDashboardScreen />,
+  'pos.registers': () => <PosRegistersScreen />,
+  'pos.sell': () => <PosSellScreen />,
+  'pos.tender': () => <PosTenderScreen />,
+  'pos.floors': () => <PosFloorsScreen />,
+  'pos.modifiers': () => <PosModifierGroupsScreen />,
   // Finans (finance)
   'finance.home': () => <ModuleHome moduleKey="finance" />,
   'finance.cash-accounts': () => <CashAccountsScreen />,
@@ -141,6 +158,10 @@ export const SCREENS: Record<string, () => React.ReactElement> = {
   'contacts.notifications': () => <NotificationsScreen />,
   'contacts.leads': () => <LeadsScreen />,
   'contacts.integrations': () => <IntegrationsSettingsScreen />,
+  'contacts.pipelines.settings': () => <PipelineSettingsScreen />,
+  'contacts.pipelines.stage.form': () => <PipelineStageFormScreen />,
+  'contacts.fields': () => <CrmFieldsSettingsScreen />,
+  'contacts.fields.form': () => <CrmFieldFormScreen />,
   // Fatura (invoices)
   'invoices.home': () => <ModuleHome moduleKey="invoices" />,
   'invoices.invoices': () => <InvoicesScreen />,

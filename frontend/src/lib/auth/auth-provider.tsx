@@ -71,6 +71,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [applyTokens, loadPerms],
   )
 
+  // POS terminal login (username + PIN). Stores the session exactly like a
+  // normal login so refresh/permissions/SessionWatcher all keep working.
+  const posLogin = React.useCallback(
+    async (username: string, pin: string) => {
+      const res = await api.auth.posLogin({ username, pin })
+      const { user: u, ...t } = res
+      saveTokens(t)
+      saveUser(u)
+      applyTokens(t)
+      setUser(u)
+      setStatus('authenticated')
+      await loadPerms()
+    },
+    [applyTokens, loadPerms],
+  )
+
+  // Swap the active cashier without re-entering the username (PIN only).
+  const posSwitch = React.useCallback(
+    async (pin: string) => {
+      const res = await api.auth.posSwitch({ pin })
+      const { user: u, ...t } = res
+      saveTokens(t)
+      saveUser(u)
+      applyTokens(t)
+      setUser(u)
+      setStatus('authenticated')
+      await loadPerms()
+    },
+    [applyTokens, loadPerms],
+  )
+
   const refresh = React.useCallback(async (): Promise<boolean> => {
     const current = tokensRef.current
     if (!current?.refreshToken) {
@@ -138,11 +169,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       hasAnyPermission: (req) => req.some((p) => permissions.includes(p)),
       hasAllPermissions: (req) => req.every((p) => permissions.includes(p)),
       login,
+      posLogin,
+      posSwitch,
       logout,
       refresh,
       expire,
     }),
-    [status, tokens, user, roles, permissions, login, logout, refresh, expire],
+    [status, tokens, user, roles, permissions, login, posLogin, posSwitch, logout, refresh, expire],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

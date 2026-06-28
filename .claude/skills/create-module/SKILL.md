@@ -26,7 +26,10 @@ frontend/src/modules/<mod>/    → UI (module.config + pages) + routes under rou
 > §7 (roles & permissions), and `frontend/src/components/components.md`. The
 > **canonical reference implementation is the `iam` module** (full CRUD across all
 > layers) and `genel` (a nav-only module); for grid pages copy
-> `org`/`inventory`. Copy their shape.
+> `org`/`inventory`. Copy their shape. The **`pos` module** is the current
+> worked example of the full 4-layer pattern end-to-end: shared `modules/pos/*`
+> (→ `api.pos.*`), backend `modules/pos/`, frontend `modules/pos/` +
+> `routes/_authed/pos/`, mobile `modules/pos/`.
 >
 > Paths below are relative to the repo root. Replace `<mod>` (module key, e.g.
 > `inventory`), `<res>` (plural resource, e.g. `products`), `<Res>` (PascalCase
@@ -153,6 +156,13 @@ export const <MOD>_PERMISSION_DEFS: PermissionDef[] = [
 
 `<res>.service.ts` — inject `@InjectRepository(<Res>)`, implement
 list/get/create/update/remove, map entity → `<Res>Dto` (dates → `.toISOString()`).
+**Don't trust client money/derived values.** On a write, resolve prices/names/tax
+server-side from ids; treat any client-supplied value as an *override* only. The
+POS order line resolves `name`/`unitPrice`/`taxRate` from `productId` + the
+register's sales-channel price (`pos-orders.service.ts` `writeLines`). Keep the
+pure pricing/math in a shared helper both server and clients import — see
+`shared/src/modules/pos/pos-pricing.helpers.ts` (tested by
+`backend/src/modules/pos/pos-pricing.spec.ts`).
 `<res>.controller.ts` — `@Controller('<mod>/<res>')`, one method per CRUD op, each
 decorated with `@RequirePermissions(<Mod>Permissions.<res>Read | …<res>Write)`
 (import `<Mod>Permissions` from `@turbohesap/shared`). **No `@UseGuards`** — the
@@ -184,8 +194,16 @@ and commit the file:
 make migration-generate NAME=Add<Mod><Res>     # backend/src/migrations/<ts>-Add<Mod><Res>.ts
 make migrate                                    # apply locally (also runs on boot)
 ```
-Review the generated SQL. Without this, the new table never gets created (no
-`synchronize` fallback). See AGENTS.md §5.1.
+Review the generated SQL **and strip unrelated drift** (e.g. CRM index renames the
+diff picks up) so the migration only contains your new schema. Without a migration
+the new table never gets created (no `synchronize` fallback). See AGENTS.md §5.1.
+
+> **Migrations run as the app DB role, via `DATABASE_URL`.** If it's unset,
+> `migration:generate|run` fall back to the `postgres` superuser and create tables
+> *owned by* `postgres` → the app role then hits `permission denied for table`.
+> Always pass it, e.g.
+> `DATABASE_URL=postgres://turbohesap:turbohesap@localhost:5432/turbohesap pnpm --filter @turbohesap/backend migration:run`
+> (the `make` targets already export it).
 
 ---
 

@@ -45,4 +45,12 @@ export class UpdateUserDto implements UpdateUserRequest {
   @IsOptional()
   @IsString()
   telegramChatId?: string | null
+
+  @IsOptional()
+  @IsBoolean()
+  isPosUser?: boolean
+
+  @IsOptional()
+  @IsString()
+  posPin?: string | null
 }

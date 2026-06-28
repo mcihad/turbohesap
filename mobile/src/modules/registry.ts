@@ -9,6 +9,7 @@ import { type Can, accessibleModules } from '../lib/auth/access'
 import { salesModule } from './sales/module.config'
 import { orgModule } from './org/module.config'
 import { inventoryModule } from './inventory/module.config'
+import { posModule } from './pos/module.config'
 import { financeModule } from './finance/module.config'
 import { contactsModule } from './contacts/module.config'
 import { invoicesModule } from './invoices/module.config'
@@ -79,6 +80,7 @@ export const APP_MODULES: MobileModule[] = [
   salesModule,
   orgModule,
   inventoryModule,
+  posModule,
   financeModule,
   contactsModule,
   invoicesModule,

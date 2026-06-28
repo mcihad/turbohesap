@@ -4,6 +4,9 @@ import type { CurrentUser } from '../iam/user.dto'
 import type {
   AuthTokens,
   LoginResponse,
+  PosLoginRequest,
+  PosSwitchRequest,
+  SetPinRequest,
   VerifyPasswordResponse,
 } from './auth.dto'
 import type { IAuthService } from './auth.service'
@@ -48,4 +51,19 @@ export class AuthApiClient implements IAuthService {
     )
     return data
   }
+
+  async posLogin(input: PosLoginRequest): Promise<LoginResponse> {
+    const { data } = await this.http.post<LoginResponse>('/auth/pos-login', input)
+    return data
+  }
+
+  async posSwitch(input: PosSwitchRequest): Promise<LoginResponse> {
+    const { data } = await this.http.post<LoginResponse>('/auth/pos-switch', input)
+    return data
+  }
+
+  async setPin(input: SetPinRequest): Promise<void> {
+    await this.http.post('/auth/pos-pin', input)
+  }
 }
+

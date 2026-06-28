@@ -10,12 +10,15 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as PosRouteImport } from './routes/_pos'
 import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
+import { Route as PosLoginRouteImport } from './routes/pos.login'
 import { Route as AuthedSettingsRouteImport } from './routes/_authed/settings'
 import { Route as AuthedProfileRouteImport } from './routes/_authed/profile'
 import { Route as AuthedHelpRouteImport } from './routes/_authed/help'
 import { Route as AuthedSplatRouteImport } from './routes/_authed/$'
+import { Route as PosPosIndexRouteImport } from './routes/_pos/pos.index'
 import { Route as AuthedSalesIndexRouteImport } from './routes/_authed/sales/index'
 import { Route as AuthedOrgIndexRouteImport } from './routes/_authed/org/index'
 import { Route as AuthedLookupsIndexRouteImport } from './routes/_authed/lookups/index'
@@ -36,6 +39,10 @@ import { Route as AuthedContactsCrmFieldsRouteImport } from './routes/_authed/co
 import { Route as AuthedContactsCrmDashboardRouteImport } from './routes/_authed/contacts/crm-dashboard'
 import { Route as AuthedContactsContactsImportRouteImport } from './routes/_authed/contacts/contacts-import'
 import { Route as AuthedSalesChannelsIndexRouteImport } from './routes/_authed/sales/channels.index'
+import { Route as AuthedPosRegistersIndexRouteImport } from './routes/_authed/pos/registers.index'
+import { Route as AuthedPosModifiersIndexRouteImport } from './routes/_authed/pos/modifiers.index'
+import { Route as AuthedPosFloorsIndexRouteImport } from './routes/_authed/pos/floors.index'
+import { Route as AuthedPosDashboardIndexRouteImport } from './routes/_authed/pos/dashboard.index'
 import { Route as AuthedOrgBranchesIndexRouteImport } from './routes/_authed/org/branches.index'
 import { Route as AuthedLookupsItemsIndexRouteImport } from './routes/_authed/lookups/items.index'
 import { Route as AuthedInvoicesInvoicesIndexRouteImport } from './routes/_authed/invoices/invoices.index'
@@ -51,6 +58,7 @@ import { Route as AuthedContactsPipelineIndexRouteImport } from './routes/_authe
 import { Route as AuthedContactsOpportunitiesIndexRouteImport } from './routes/_authed/contacts/opportunities.index'
 import { Route as AuthedContactsGroupsIndexRouteImport } from './routes/_authed/contacts/groups.index'
 import { Route as AuthedContactsContactsIndexRouteImport } from './routes/_authed/contacts/contacts.index'
+import { Route as PosPosSellRegisterIdRouteImport } from './routes/_pos/pos.sell.$registerId'
 import { Route as AuthedSalesChannelsIdRouteImport } from './routes/_authed/sales/channels.$id'
 import { Route as AuthedOrgBranchesIdRouteImport } from './routes/_authed/org/branches.$id'
 import { Route as AuthedInvoicesInvoicesNewRouteImport } from './routes/_authed/invoices/invoices.new'
@@ -73,6 +81,10 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PosRoute = PosRouteImport.update({
+  id: '/_pos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthedRoute = AuthedRouteImport.update({
   id: '/_authed',
   getParentRoute: () => rootRouteImport,
@@ -81,6 +93,11 @@ const AuthedIndexRoute = AuthedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthedRoute,
+} as any)
+const PosLoginRoute = PosLoginRouteImport.update({
+  id: '/pos/login',
+  path: '/pos/login',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthedSettingsRoute = AuthedSettingsRouteImport.update({
   id: '/settings',
@@ -101,6 +118,11 @@ const AuthedSplatRoute = AuthedSplatRouteImport.update({
   id: '/$',
   path: '/$',
   getParentRoute: () => AuthedRoute,
+} as any)
+const PosPosIndexRoute = PosPosIndexRouteImport.update({
+  id: '/pos/',
+  path: '/pos/',
+  getParentRoute: () => PosRoute,
 } as any)
 const AuthedSalesIndexRoute = AuthedSalesIndexRouteImport.update({
   id: '/sales/',
@@ -207,6 +229,26 @@ const AuthedSalesChannelsIndexRoute =
     path: '/sales/channels/',
     getParentRoute: () => AuthedRoute,
   } as any)
+const AuthedPosRegistersIndexRoute = AuthedPosRegistersIndexRouteImport.update({
+  id: '/pos/registers/',
+  path: '/pos/registers/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedPosModifiersIndexRoute = AuthedPosModifiersIndexRouteImport.update({
+  id: '/pos/modifiers/',
+  path: '/pos/modifiers/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedPosFloorsIndexRoute = AuthedPosFloorsIndexRouteImport.update({
+  id: '/pos/floors/',
+  path: '/pos/floors/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedPosDashboardIndexRoute = AuthedPosDashboardIndexRouteImport.update({
+  id: '/pos/dashboard/',
+  path: '/pos/dashboard/',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const AuthedOrgBranchesIndexRoute = AuthedOrgBranchesIndexRouteImport.update({
   id: '/org/branches/',
   path: '/org/branches/',
@@ -293,6 +335,11 @@ const AuthedContactsContactsIndexRoute =
     path: '/contacts/contacts/',
     getParentRoute: () => AuthedRoute,
   } as any)
+const PosPosSellRegisterIdRoute = PosPosSellRegisterIdRouteImport.update({
+  id: '/pos/sell/$registerId',
+  path: '/pos/sell/$registerId',
+  getParentRoute: () => PosRoute,
+} as any)
 const AuthedSalesChannelsIdRoute = AuthedSalesChannelsIdRouteImport.update({
   id: '/sales/channels/$id',
   path: '/sales/channels/$id',
@@ -391,6 +438,7 @@ export interface FileRoutesByFullPath {
   '/help': typeof AuthedHelpRoute
   '/profile': typeof AuthedProfileRoute
   '/settings': typeof AuthedSettingsRoute
+  '/pos/login': typeof PosLoginRoute
   '/contacts/contacts-import': typeof AuthedContactsContactsImportRoute
   '/contacts/crm-dashboard': typeof AuthedContactsCrmDashboardRoute
   '/contacts/crm-fields': typeof AuthedContactsCrmFieldsRoute
@@ -410,6 +458,7 @@ export interface FileRoutesByFullPath {
   '/lookups/': typeof AuthedLookupsIndexRoute
   '/org/': typeof AuthedOrgIndexRoute
   '/sales/': typeof AuthedSalesIndexRoute
+  '/pos/': typeof PosPosIndexRoute
   '/contacts/contacts/$id': typeof AuthedContactsContactsIdRoute
   '/contacts/groups/$id': typeof AuthedContactsGroupsIdRoute
   '/contacts/opportunities/$id': typeof AuthedContactsOpportunitiesIdRoute
@@ -425,6 +474,7 @@ export interface FileRoutesByFullPath {
   '/invoices/invoices/new': typeof AuthedInvoicesInvoicesNewRoute
   '/org/branches/$id': typeof AuthedOrgBranchesIdRoute
   '/sales/channels/$id': typeof AuthedSalesChannelsIdRoute
+  '/pos/sell/$registerId': typeof PosPosSellRegisterIdRoute
   '/contacts/contacts/': typeof AuthedContactsContactsIndexRoute
   '/contacts/groups/': typeof AuthedContactsGroupsIndexRoute
   '/contacts/opportunities/': typeof AuthedContactsOpportunitiesIndexRoute
@@ -440,16 +490,21 @@ export interface FileRoutesByFullPath {
   '/invoices/invoices/': typeof AuthedInvoicesInvoicesIndexRoute
   '/lookups/items/': typeof AuthedLookupsItemsIndexRoute
   '/org/branches/': typeof AuthedOrgBranchesIndexRoute
+  '/pos/dashboard/': typeof AuthedPosDashboardIndexRoute
+  '/pos/floors/': typeof AuthedPosFloorsIndexRoute
+  '/pos/modifiers/': typeof AuthedPosModifiersIndexRoute
+  '/pos/registers/': typeof AuthedPosRegistersIndexRoute
   '/sales/channels/': typeof AuthedSalesChannelsIndexRoute
   '/invoices/invoices/$id/edit': typeof AuthedInvoicesInvoicesIdEditRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof AuthedIndexRoute
   '/login': typeof LoginRoute
   '/$': typeof AuthedSplatRoute
   '/help': typeof AuthedHelpRoute
   '/profile': typeof AuthedProfileRoute
   '/settings': typeof AuthedSettingsRoute
-  '/': typeof AuthedIndexRoute
+  '/pos/login': typeof PosLoginRoute
   '/contacts/contacts-import': typeof AuthedContactsContactsImportRoute
   '/contacts/crm-dashboard': typeof AuthedContactsCrmDashboardRoute
   '/contacts/crm-fields': typeof AuthedContactsCrmFieldsRoute
@@ -469,6 +524,7 @@ export interface FileRoutesByTo {
   '/lookups': typeof AuthedLookupsIndexRoute
   '/org': typeof AuthedOrgIndexRoute
   '/sales': typeof AuthedSalesIndexRoute
+  '/pos': typeof PosPosIndexRoute
   '/contacts/contacts/$id': typeof AuthedContactsContactsIdRoute
   '/contacts/groups/$id': typeof AuthedContactsGroupsIdRoute
   '/contacts/opportunities/$id': typeof AuthedContactsOpportunitiesIdRoute
@@ -484,6 +540,7 @@ export interface FileRoutesByTo {
   '/invoices/invoices/new': typeof AuthedInvoicesInvoicesNewRoute
   '/org/branches/$id': typeof AuthedOrgBranchesIdRoute
   '/sales/channels/$id': typeof AuthedSalesChannelsIdRoute
+  '/pos/sell/$registerId': typeof PosPosSellRegisterIdRoute
   '/contacts/contacts': typeof AuthedContactsContactsIndexRoute
   '/contacts/groups': typeof AuthedContactsGroupsIndexRoute
   '/contacts/opportunities': typeof AuthedContactsOpportunitiesIndexRoute
@@ -499,17 +556,23 @@ export interface FileRoutesByTo {
   '/invoices/invoices': typeof AuthedInvoicesInvoicesIndexRoute
   '/lookups/items': typeof AuthedLookupsItemsIndexRoute
   '/org/branches': typeof AuthedOrgBranchesIndexRoute
+  '/pos/dashboard': typeof AuthedPosDashboardIndexRoute
+  '/pos/floors': typeof AuthedPosFloorsIndexRoute
+  '/pos/modifiers': typeof AuthedPosModifiersIndexRoute
+  '/pos/registers': typeof AuthedPosRegistersIndexRoute
   '/sales/channels': typeof AuthedSalesChannelsIndexRoute
   '/invoices/invoices/$id/edit': typeof AuthedInvoicesInvoicesIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authed': typeof AuthedRouteWithChildren
+  '/_pos': typeof PosRouteWithChildren
   '/login': typeof LoginRoute
   '/_authed/$': typeof AuthedSplatRoute
   '/_authed/help': typeof AuthedHelpRoute
   '/_authed/profile': typeof AuthedProfileRoute
   '/_authed/settings': typeof AuthedSettingsRoute
+  '/pos/login': typeof PosLoginRoute
   '/_authed/': typeof AuthedIndexRoute
   '/_authed/contacts/contacts-import': typeof AuthedContactsContactsImportRoute
   '/_authed/contacts/crm-dashboard': typeof AuthedContactsCrmDashboardRoute
@@ -530,6 +593,7 @@ export interface FileRoutesById {
   '/_authed/lookups/': typeof AuthedLookupsIndexRoute
   '/_authed/org/': typeof AuthedOrgIndexRoute
   '/_authed/sales/': typeof AuthedSalesIndexRoute
+  '/_pos/pos/': typeof PosPosIndexRoute
   '/_authed/contacts/contacts/$id': typeof AuthedContactsContactsIdRoute
   '/_authed/contacts/groups/$id': typeof AuthedContactsGroupsIdRoute
   '/_authed/contacts/opportunities/$id': typeof AuthedContactsOpportunitiesIdRoute
@@ -545,6 +609,7 @@ export interface FileRoutesById {
   '/_authed/invoices/invoices/new': typeof AuthedInvoicesInvoicesNewRoute
   '/_authed/org/branches/$id': typeof AuthedOrgBranchesIdRoute
   '/_authed/sales/channels/$id': typeof AuthedSalesChannelsIdRoute
+  '/_pos/pos/sell/$registerId': typeof PosPosSellRegisterIdRoute
   '/_authed/contacts/contacts/': typeof AuthedContactsContactsIndexRoute
   '/_authed/contacts/groups/': typeof AuthedContactsGroupsIndexRoute
   '/_authed/contacts/opportunities/': typeof AuthedContactsOpportunitiesIndexRoute
@@ -560,6 +625,10 @@ export interface FileRoutesById {
   '/_authed/invoices/invoices/': typeof AuthedInvoicesInvoicesIndexRoute
   '/_authed/lookups/items/': typeof AuthedLookupsItemsIndexRoute
   '/_authed/org/branches/': typeof AuthedOrgBranchesIndexRoute
+  '/_authed/pos/dashboard/': typeof AuthedPosDashboardIndexRoute
+  '/_authed/pos/floors/': typeof AuthedPosFloorsIndexRoute
+  '/_authed/pos/modifiers/': typeof AuthedPosModifiersIndexRoute
+  '/_authed/pos/registers/': typeof AuthedPosRegistersIndexRoute
   '/_authed/sales/channels/': typeof AuthedSalesChannelsIndexRoute
   '/_authed/invoices/invoices/$id/edit': typeof AuthedInvoicesInvoicesIdEditRoute
 }
@@ -572,6 +641,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/profile'
     | '/settings'
+    | '/pos/login'
     | '/contacts/contacts-import'
     | '/contacts/crm-dashboard'
     | '/contacts/crm-fields'
@@ -591,6 +661,7 @@ export interface FileRouteTypes {
     | '/lookups/'
     | '/org/'
     | '/sales/'
+    | '/pos/'
     | '/contacts/contacts/$id'
     | '/contacts/groups/$id'
     | '/contacts/opportunities/$id'
@@ -606,6 +677,7 @@ export interface FileRouteTypes {
     | '/invoices/invoices/new'
     | '/org/branches/$id'
     | '/sales/channels/$id'
+    | '/pos/sell/$registerId'
     | '/contacts/contacts/'
     | '/contacts/groups/'
     | '/contacts/opportunities/'
@@ -621,16 +693,21 @@ export interface FileRouteTypes {
     | '/invoices/invoices/'
     | '/lookups/items/'
     | '/org/branches/'
+    | '/pos/dashboard/'
+    | '/pos/floors/'
+    | '/pos/modifiers/'
+    | '/pos/registers/'
     | '/sales/channels/'
     | '/invoices/invoices/$id/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/login'
     | '/$'
     | '/help'
     | '/profile'
     | '/settings'
-    | '/'
+    | '/pos/login'
     | '/contacts/contacts-import'
     | '/contacts/crm-dashboard'
     | '/contacts/crm-fields'
@@ -650,6 +727,7 @@ export interface FileRouteTypes {
     | '/lookups'
     | '/org'
     | '/sales'
+    | '/pos'
     | '/contacts/contacts/$id'
     | '/contacts/groups/$id'
     | '/contacts/opportunities/$id'
@@ -665,6 +743,7 @@ export interface FileRouteTypes {
     | '/invoices/invoices/new'
     | '/org/branches/$id'
     | '/sales/channels/$id'
+    | '/pos/sell/$registerId'
     | '/contacts/contacts'
     | '/contacts/groups'
     | '/contacts/opportunities'
@@ -680,16 +759,22 @@ export interface FileRouteTypes {
     | '/invoices/invoices'
     | '/lookups/items'
     | '/org/branches'
+    | '/pos/dashboard'
+    | '/pos/floors'
+    | '/pos/modifiers'
+    | '/pos/registers'
     | '/sales/channels'
     | '/invoices/invoices/$id/edit'
   id:
     | '__root__'
     | '/_authed'
+    | '/_pos'
     | '/login'
     | '/_authed/$'
     | '/_authed/help'
     | '/_authed/profile'
     | '/_authed/settings'
+    | '/pos/login'
     | '/_authed/'
     | '/_authed/contacts/contacts-import'
     | '/_authed/contacts/crm-dashboard'
@@ -710,6 +795,7 @@ export interface FileRouteTypes {
     | '/_authed/lookups/'
     | '/_authed/org/'
     | '/_authed/sales/'
+    | '/_pos/pos/'
     | '/_authed/contacts/contacts/$id'
     | '/_authed/contacts/groups/$id'
     | '/_authed/contacts/opportunities/$id'
@@ -725,6 +811,7 @@ export interface FileRouteTypes {
     | '/_authed/invoices/invoices/new'
     | '/_authed/org/branches/$id'
     | '/_authed/sales/channels/$id'
+    | '/_pos/pos/sell/$registerId'
     | '/_authed/contacts/contacts/'
     | '/_authed/contacts/groups/'
     | '/_authed/contacts/opportunities/'
@@ -740,13 +827,19 @@ export interface FileRouteTypes {
     | '/_authed/invoices/invoices/'
     | '/_authed/lookups/items/'
     | '/_authed/org/branches/'
+    | '/_authed/pos/dashboard/'
+    | '/_authed/pos/floors/'
+    | '/_authed/pos/modifiers/'
+    | '/_authed/pos/registers/'
     | '/_authed/sales/channels/'
     | '/_authed/invoices/invoices/$id/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthedRoute: typeof AuthedRouteWithChildren
+  PosRoute: typeof PosRouteWithChildren
   LoginRoute: typeof LoginRoute
+  PosLoginRoute: typeof PosLoginRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -756,6 +849,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_pos': {
+      id: '/_pos'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof PosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authed': {
@@ -771,6 +871,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthedIndexRouteImport
       parentRoute: typeof AuthedRoute
+    }
+    '/pos/login': {
+      id: '/pos/login'
+      path: '/pos/login'
+      fullPath: '/pos/login'
+      preLoaderRoute: typeof PosLoginRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authed/settings': {
       id: '/_authed/settings'
@@ -799,6 +906,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$'
       preLoaderRoute: typeof AuthedSplatRouteImport
       parentRoute: typeof AuthedRoute
+    }
+    '/_pos/pos/': {
+      id: '/_pos/pos/'
+      path: '/pos'
+      fullPath: '/pos/'
+      preLoaderRoute: typeof PosPosIndexRouteImport
+      parentRoute: typeof PosRoute
     }
     '/_authed/sales/': {
       id: '/_authed/sales/'
@@ -940,6 +1054,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedSalesChannelsIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/pos/registers/': {
+      id: '/_authed/pos/registers/'
+      path: '/pos/registers'
+      fullPath: '/pos/registers/'
+      preLoaderRoute: typeof AuthedPosRegistersIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/pos/modifiers/': {
+      id: '/_authed/pos/modifiers/'
+      path: '/pos/modifiers'
+      fullPath: '/pos/modifiers/'
+      preLoaderRoute: typeof AuthedPosModifiersIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/pos/floors/': {
+      id: '/_authed/pos/floors/'
+      path: '/pos/floors'
+      fullPath: '/pos/floors/'
+      preLoaderRoute: typeof AuthedPosFloorsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/pos/dashboard/': {
+      id: '/_authed/pos/dashboard/'
+      path: '/pos/dashboard'
+      fullPath: '/pos/dashboard/'
+      preLoaderRoute: typeof AuthedPosDashboardIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/org/branches/': {
       id: '/_authed/org/branches/'
       path: '/org/branches'
@@ -1044,6 +1186,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/contacts/contacts/'
       preLoaderRoute: typeof AuthedContactsContactsIndexRouteImport
       parentRoute: typeof AuthedRoute
+    }
+    '/_pos/pos/sell/$registerId': {
+      id: '/_pos/pos/sell/$registerId'
+      path: '/pos/sell/$registerId'
+      fullPath: '/pos/sell/$registerId'
+      preLoaderRoute: typeof PosPosSellRegisterIdRouteImport
+      parentRoute: typeof PosRoute
     }
     '/_authed/sales/channels/$id': {
       id: '/_authed/sales/channels/$id'
@@ -1229,6 +1378,10 @@ interface AuthedRouteChildren {
   AuthedInvoicesInvoicesIndexRoute: typeof AuthedInvoicesInvoicesIndexRoute
   AuthedLookupsItemsIndexRoute: typeof AuthedLookupsItemsIndexRoute
   AuthedOrgBranchesIndexRoute: typeof AuthedOrgBranchesIndexRoute
+  AuthedPosDashboardIndexRoute: typeof AuthedPosDashboardIndexRoute
+  AuthedPosFloorsIndexRoute: typeof AuthedPosFloorsIndexRoute
+  AuthedPosModifiersIndexRoute: typeof AuthedPosModifiersIndexRoute
+  AuthedPosRegistersIndexRoute: typeof AuthedPosRegistersIndexRoute
   AuthedSalesChannelsIndexRoute: typeof AuthedSalesChannelsIndexRoute
 }
 
@@ -1288,15 +1441,33 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedInvoicesInvoicesIndexRoute: AuthedInvoicesInvoicesIndexRoute,
   AuthedLookupsItemsIndexRoute: AuthedLookupsItemsIndexRoute,
   AuthedOrgBranchesIndexRoute: AuthedOrgBranchesIndexRoute,
+  AuthedPosDashboardIndexRoute: AuthedPosDashboardIndexRoute,
+  AuthedPosFloorsIndexRoute: AuthedPosFloorsIndexRoute,
+  AuthedPosModifiersIndexRoute: AuthedPosModifiersIndexRoute,
+  AuthedPosRegistersIndexRoute: AuthedPosRegistersIndexRoute,
   AuthedSalesChannelsIndexRoute: AuthedSalesChannelsIndexRoute,
 }
 
 const AuthedRouteWithChildren =
   AuthedRoute._addFileChildren(AuthedRouteChildren)
 
+interface PosRouteChildren {
+  PosPosIndexRoute: typeof PosPosIndexRoute
+  PosPosSellRegisterIdRoute: typeof PosPosSellRegisterIdRoute
+}
+
+const PosRouteChildren: PosRouteChildren = {
+  PosPosIndexRoute: PosPosIndexRoute,
+  PosPosSellRegisterIdRoute: PosPosSellRegisterIdRoute,
+}
+
+const PosRouteWithChildren = PosRoute._addFileChildren(PosRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   AuthedRoute: AuthedRouteWithChildren,
+  PosRoute: PosRouteWithChildren,
   LoginRoute: LoginRoute,
+  PosLoginRoute: PosLoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

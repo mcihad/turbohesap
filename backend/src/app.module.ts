@@ -25,6 +25,7 @@ import { SettingsModule } from './modules/settings/settings.module'
 import { FinanceModule } from './modules/finance/finance.module'
 import { ContactsModule } from './modules/contacts/contacts.module'
 import { InvoicesModule } from './modules/invoices/invoices.module'
+import { PosModule } from './modules/pos/pos.module'
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { InvoicesModule } from './modules/invoices/invoices.module'
     FinanceModule,
     ContactsModule,
     InvoicesModule,
+    PosModule,
   ],
   controllers: [HealthController, DebugController],
   providers: [

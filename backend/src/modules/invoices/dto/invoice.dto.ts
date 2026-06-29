@@ -2,6 +2,7 @@ import { Type } from 'class-transformer'
 import {
   ArrayMinSize,
   IsArray,
+  IsBoolean,
   IsIn,
   IsInt,
   IsNotEmpty,
@@ -58,6 +59,7 @@ export class CreateInvoiceDto implements CreateInvoiceRequest {
   @IsOptional() @IsIn(['efatura', 'earsiv', 'none']) eDocType?: 'efatura' | 'earsiv' | 'none'
   @IsOptional() @IsString() notes?: string | null
   @IsOptional() @IsIn(['draft', 'issued']) status?: 'draft' | 'issued'
+  @IsOptional() @IsBoolean() postStock?: boolean
 }
 
 export class UpdateInvoiceDto implements UpdateInvoiceRequest {

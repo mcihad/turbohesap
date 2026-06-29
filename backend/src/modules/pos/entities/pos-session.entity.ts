@@ -34,6 +34,17 @@ export class PosSession extends BaseEntity {
   @Column('numeric', { precision: 18, scale: 2, nullable: true, transformer: decimalTransformer })
   countedCash!: number | null
 
+  @Column({ type: 'uuid', nullable: true })
+  closedById!: string | null
+
+  // Aggregated finance postings created at close (vezne). Cash/card are NOT
+  // posted per-order — they post once here when the session closes.
+  @Column({ type: 'uuid', nullable: true })
+  cashFinanceTxId!: string | null
+
+  @Column({ type: 'uuid', nullable: true })
+  cardFinanceTxId!: string | null
+
   @Index()
   @Column({ default: 'open' })
   status!: PosSessionStatus

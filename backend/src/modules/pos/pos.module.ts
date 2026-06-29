@@ -18,6 +18,7 @@ import { ProductVariant } from '../inventory/entities/product-variant.entity'
 import { ProductChannelPrice } from '../inventory/entities/product-channel-price.entity'
 import { ProductModifierOption } from '../inventory/entities/product-modifier-option.entity'
 import { ProductModifierGroup } from '../inventory/entities/product-modifier-group.entity'
+import { ProductBundleComponent } from '../inventory/entities/product-bundle-component.entity'
 import { Contact } from '../contacts/entities/contact.entity'
 import { ContactTransaction } from '../contacts/entities/contact-transaction.entity'
 import { FinanceTransaction } from '../finance/entities/finance-transaction.entity'
@@ -51,6 +52,7 @@ import { PosTablesController } from './pos-tables.controller'
       ProductChannelPrice,
       ProductModifierOption,
       ProductModifierGroup,
+      ProductBundleComponent,
       Contact,
       ContactTransaction,
       FinanceTransaction,

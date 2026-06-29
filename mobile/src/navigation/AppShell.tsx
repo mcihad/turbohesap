@@ -8,6 +8,7 @@
 import * as React from 'react'
 import { BackHandler, View } from 'react-native'
 
+import { FeedbackHost } from '../components/feedback/FeedbackHost'
 import { filterItems } from '../lib/auth/access'
 import { useAuth } from '../lib/auth/auth-context'
 import { getModule, visibleModules } from '../modules/registry'
@@ -40,7 +41,14 @@ export function AppShell() {
     content = <ModuleShell key={activeModuleKey} moduleKey={activeModuleKey} />
   }
 
-  return <ModuleNavProvider value={moduleNav}>{content}</ModuleNavProvider>
+  const pageKey =
+    activeModuleKey === null ? 'home' : activeModuleKey === PROFILE_KEY ? 'profile' : activeModuleKey
+
+  return (
+    <ModuleNavProvider value={moduleNav}>
+      <FeedbackHost pageKey={pageKey}>{content}</FeedbackHost>
+    </ModuleNavProvider>
+  )
 }
 
 function ModuleShell({ moduleKey }: { moduleKey: string }) {

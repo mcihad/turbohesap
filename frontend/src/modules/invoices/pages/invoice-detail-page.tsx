@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Ban, FileCheck, FileCode2, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Ban, FileCheck, FileCode2, Pencil, Plus, Printer, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -34,6 +34,7 @@ import {
 import { FileManager } from '@/modules/files/components/file-manager'
 import { formatMoney } from '../format'
 import { InvoicePaymentDialog } from '../components/invoice-payment-dialog'
+import { InvoicePrint } from '../components/invoice-print'
 
 // Fetch the UBL-TR XML and trigger a browser download.
 async function downloadXml(id: string, fileBase: string) {
@@ -110,6 +111,16 @@ export function InvoiceDetailPage() {
     onError: (e) => toast.error('İptal başarısız', { description: toApiError(e).message }),
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: () => api.invoices.remove(id),
+    onSuccess: () => {
+      toast.success('Fatura silindi')
+      void invalidate()
+      navigate({ to: '/invoices/invoices' })
+    },
+    onError: (e) => toast.error('Silme başarısız', { description: toApiError(e).message }),
+  })
+
   const invoice = query.data
 
   return (
@@ -163,6 +174,17 @@ export function InvoiceDetailPage() {
                         <FileCheck />
                         Faturayı Kes
                       </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={deleteMutation.isPending}
+                        onClick={() => {
+                          if (confirm('Taslak fatura silinsin mi? Bu işlem geri alınamaz.')) deleteMutation.mutate()
+                        }}
+                      >
+                        <Trash2 className="text-destructive" />
+                        Sil
+                      </Button>
                     </>
                   ) : null}
                   {canWrite && invoice.status === 'issued' ? (
@@ -183,6 +205,10 @@ export function InvoiceDetailPage() {
                       XML indir
                     </Button>
                   ) : null}
+                  <Button variant="outline" size="sm" onClick={() => window.print()}>
+                    <Printer />
+                    Yazdır
+                  </Button>
                   <Button variant="outline" size="sm" asChild>
                     <Link to="/invoices/invoices">
                       <ArrowLeft />
@@ -392,6 +418,9 @@ export function InvoiceDetailPage() {
                 void qc.invalidateQueries({ queryKey: ['invoices', id, 'payments'] })
               }}
             />
+
+            {/* Print-only A4 template (revealed by Yazdır → window.print()). */}
+            <InvoicePrint invoice={invoice} />
           </>
         )}
       </PageWrapper>

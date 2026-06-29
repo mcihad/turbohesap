@@ -6,9 +6,13 @@ import type {
 import type {
   CreateProductVariantRequest,
   GenerateVariantsRequest,
+  GenerateVariantsFromFeaturesRequest,
   ProductVariantDto,
   UpdateProductVariantRequest,
 } from './product-variant.dto'
+import type { ProductStatsDto, ProductStatsQuery } from './product-stats.dto'
+import type { SellableUnitDto } from './product-sellable.dto'
+import type { BarcodeMatchDto } from './product-barcode.dto'
 import type {
   CreateProductPackagingRequest,
   ProductPackagingDto,
@@ -32,6 +36,14 @@ export interface IProductsService {
   update(id: string, input: UpdateProductRequest): Promise<ProductDto>
   remove(id: string): Promise<void>
 
+  /** Flattened sellable units: each variant of a variant-product (parent hidden)
+   *  plus each variant-less product itself. Powers the stock list. */
+  sellable(categoryId?: string): Promise<SellableUnitDto[]>
+  /** Per-product sales/stock analytics (works even when trackStock is off). */
+  stats(id: string, query?: ProductStatsQuery): Promise<ProductStatsDto>
+  /** Resolve a scanned barcode to a product/variant/packaging (404 if unknown). */
+  byBarcode(code: string): Promise<BarcodeMatchDto>
+
   // Variants — /:id/variants
   createVariant(
     productId: string,
@@ -47,6 +59,11 @@ export interface IProductsService {
   generateVariants(
     productId: string,
     input?: GenerateVariantsRequest,
+  ): Promise<ProductVariantDto[]>
+  /** Set variantAttributes from category feature fields, then generate. */
+  generateVariantsFromFeatures(
+    productId: string,
+    input: GenerateVariantsFromFeaturesRequest,
   ): Promise<ProductVariantDto[]>
 
   // Packagings (unit multipliers) — /:id/packagings

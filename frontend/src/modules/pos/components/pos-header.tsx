@@ -38,48 +38,48 @@ export function PosHeader({ left }: { left?: React.ReactNode }) {
   })
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b bg-card px-3">
+    <header className="flex h-16 shrink-0 items-center justify-between border-b bg-card px-4">
       <div className="flex min-w-0 items-center gap-3">{left}</div>
       <div className="flex items-center gap-2">
         <span
           className={cn(
-            'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-2xs font-medium',
+            'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium',
             online ? 'bg-emerald-500/10 text-emerald-600' : 'bg-destructive/10 text-destructive',
           )}
           title={online ? 'Çevrimiçi' : 'Çevrimdışı'}
         >
-          {online ? <Wifi className="size-3.5" /> : <WifiOff className="size-3.5" />}
+          {online ? <Wifi className="size-4" /> : <WifiOff className="size-4" />}
           {online ? 'Çevrimiçi' : 'Çevrimdışı'}
         </span>
         <button
           type="button"
           onClick={() => setSwitchOpen(true)}
-          className="flex items-center gap-2 rounded-md border bg-background px-3 py-1.5 text-sm hover:bg-accent"
+          className="flex h-11 items-center gap-2 rounded-xl border bg-background px-3 text-sm transition-colors hover:bg-accent"
         >
-          <span className="flex size-7 items-center justify-center rounded-full bg-primary/10 text-2xs font-semibold text-primary">
+          <span className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
             {user ? initials(displayName(user)) : '?'}
           </span>
           <span className="max-w-32 truncate font-medium">{user ? displayName(user) : ''}</span>
-          <Repeat className="size-3.5 text-muted-foreground" />
+          <Repeat className="size-4 text-muted-foreground" />
         </button>
         <Button
           variant="ghost"
-          size="icon"
+          size="icon-lg"
           title="Yönetime dön"
           onClick={() => navigate({ to: '/pos/dashboard' })}
         >
-          <LayoutGrid className="size-4" />
+          <LayoutGrid className="size-5" />
         </Button>
         <Button
           variant="ghost"
-          size="icon"
+          size="icon-lg"
           title="Çıkış"
           onClick={async () => {
             await logout()
             navigate({ to: '/pos/login' })
           }}
         >
-          <LogOut className="size-4" />
+          <LogOut className="size-5" />
         </Button>
       </div>
 

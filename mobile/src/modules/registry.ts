@@ -3,7 +3,7 @@
 // from @turbohesap/shared. (The web-only `components` gallery is intentionally
 // omitted on mobile.)
 
-import { IamPermissions } from '@turbohesap/shared'
+import { IamPermissions, ReportsPermissions } from '@turbohesap/shared'
 
 import { type Can, accessibleModules } from '../lib/auth/access'
 import { salesModule } from './sales/module.config'
@@ -13,6 +13,10 @@ import { posModule } from './pos/module.config'
 import { financeModule } from './finance/module.config'
 import { contactsModule } from './contacts/module.config'
 import { invoicesModule } from './invoices/module.config'
+import { ordersModule } from './orders/module.config'
+import { stocktakeModule } from './stocktake/module.config'
+import { hrModule } from './hr/module.config'
+import { feedbackModule } from './feedback/module.config'
 import { lookupsModule } from './lookups/module.config'
 import type { MobileModule } from './types'
 
@@ -25,7 +29,55 @@ const genelModule: MobileModule = {
   home: 'genel.dashboard',
   dashboardScreen: 'genel.dashboard',
   items: [
-    { key: 'genel.analytics', title: 'Analiz', icon: 'bar-chart-2', description: 'Raporlar ve metrikler' },
+    {
+      key: 'genel.analytics',
+      title: 'Genel Analiz',
+      icon: 'bar-chart-2',
+      description: 'Tüm modüllerin özeti',
+      permission: ReportsPermissions.overview,
+    },
+    {
+      key: 'genel.analytics.pos',
+      title: 'POS Analizi',
+      icon: 'shopping-cart',
+      description: 'Satış noktası metrikleri',
+      permission: ReportsPermissions.pos,
+    },
+    {
+      key: 'genel.analytics.inventory',
+      title: 'Envanter Analizi',
+      icon: 'package',
+      description: 'Stok ve ürün metrikleri',
+      permission: ReportsPermissions.inventory,
+    },
+    {
+      key: 'genel.analytics.finance',
+      title: 'Finans Analizi',
+      icon: 'dollar-sign',
+      description: 'Kasa ve banka metrikleri',
+      permission: ReportsPermissions.finance,
+    },
+    {
+      key: 'genel.analytics.invoices',
+      title: 'Fatura Analizi',
+      icon: 'file-text',
+      description: 'Fatura ve KDV metrikleri',
+      permission: ReportsPermissions.invoices,
+    },
+    {
+      key: 'genel.analytics.contacts',
+      title: 'Cari Analizi',
+      icon: 'users',
+      description: 'Cari hesap metrikleri',
+      permission: ReportsPermissions.contacts,
+    },
+    {
+      key: 'genel.analytics.sales',
+      title: 'Satış Analizi',
+      icon: 'trending-up',
+      description: 'Satış kanalı metrikleri',
+      permission: ReportsPermissions.sales,
+    },
   ],
 }
 
@@ -84,6 +136,10 @@ export const APP_MODULES: MobileModule[] = [
   financeModule,
   contactsModule,
   invoicesModule,
+  ordersModule,
+  stocktakeModule,
+  hrModule,
+  feedbackModule,
   lookupsModule,
   iamModule,
 ]

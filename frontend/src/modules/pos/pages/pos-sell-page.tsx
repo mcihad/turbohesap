@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { useParams } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Clock, ScanBarcode, Table2, UtensilsCrossed } from 'lucide-react'
+import { Clock, ScanBarcode, Table2, Undo2, UtensilsCrossed, Wallet } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -23,6 +23,8 @@ import { ModifierSheet } from '../components/modifier-sheet'
 import { TenderDialog } from '../components/tender-dialog'
 import { TablePicker } from '../components/table-picker'
 import { HeldOrdersDialog } from '../components/held-orders-dialog'
+import { ReturnDialog } from '../components/return-dialog'
+import { SessionDialog } from '../components/session-dialog'
 import { ORDER_TYPE_LABELS, money } from '../labels'
 import { addLine, fromOrderLines, makeLine, toOrderLines, type CartLine } from '../lib/pos-cart'
 
@@ -38,6 +40,8 @@ export function PosSellPage() {
   const categoriesQuery = useQuery({ queryKey: ['inventory', 'categories'], queryFn: () => api.inventory.categories.list() })
   // productId → group ids: decides whether a tap needs the options sheet.
   const modifierMapQuery = useQuery({ queryKey: ['inventory', 'modifier-map'], queryFn: () => api.inventory.modifiers.productMap() })
+  // productId → bundle components: previewed as indented child lines in the cart.
+  const bundleMapQuery = useQuery({ queryKey: ['inventory', 'bundle-map'], queryFn: () => api.inventory.bundles.bundleMap() })
 
   const register = registerQuery.data
   const session = sessionQuery.data
@@ -58,6 +62,8 @@ export function PosSellPage() {
   const [currentOrderId, setCurrentOrderId] = React.useState<string | null>(null)
   const [tablePickerOpen, setTablePickerOpen] = React.useState(false)
   const [heldOpen, setHeldOpen] = React.useState(false)
+  const [returnOpen, setReturnOpen] = React.useState(false)
+  const [sessionOpen, setSessionOpen] = React.useState(false)
 
   // Held (open, unpaid) orders for this register — drives the "Bekleyenler" count.
   const heldQuery = useQuery({
@@ -69,6 +75,7 @@ export function PosSellPage() {
   const products = React.useMemo(() => productsQuery.data ?? [], [productsQuery.data])
   const categories = React.useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data])
   const modifierMap = modifierMapQuery.data ?? {}
+  const bundleMap = bundleMapQuery.data ?? {}
 
   const resetTab = () => {
     setLines([])
@@ -81,7 +88,7 @@ export function PosSellPage() {
     if ((modifierMap[p.id]?.length ?? 0) > 0) {
       setModifierProduct(p)
     } else {
-      setLines((cur) => addLine(cur, makeLine(p, channelId, [], 1)))
+      setLines((cur) => addLine(cur, makeLine(p, channelId, [], 1, bundleMap[p.id])))
     }
   }
 
@@ -196,10 +203,16 @@ export function PosSellPage() {
 
   const headerLeft = (
     <div className="flex min-w-0 items-center gap-2">
-      <span className="truncate font-semibold">{register.name}</span>
-      <span className="rounded bg-muted px-1.5 py-0.5 text-2xs text-muted-foreground">{register.code}</span>
+      <span className="truncate text-base font-semibold">{register.name}</span>
+      <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">{register.code}</span>
       {register.salesChannel ? (
-        <span className="hidden truncate text-2xs text-muted-foreground sm:inline">· {register.salesChannel.name}</span>
+        <span className="hidden truncate text-xs text-muted-foreground sm:inline">· {register.salesChannel.name}</span>
+      ) : null}
+      {session ? (
+        <Button variant="outline" className="ml-1 h-11" onClick={() => setSessionOpen(true)}>
+          <Wallet className="size-5" />
+          <span className="hidden sm:inline">Vardiya</span>
+        </Button>
       ) : null}
     </div>
   )
@@ -224,17 +237,17 @@ export function PosSellPage() {
 
   // Context bar: order type segmented control + (dine-in) table + recall.
   const contextBar = (
-    <div className="space-y-2">
-      <div className="grid grid-cols-3 gap-1 rounded-xl bg-muted p-1">
+    <div className="space-y-2.5">
+      <div className="grid grid-cols-3 gap-1.5 rounded-2xl bg-muted p-1.5">
         {(['dine_in', 'takeaway', 'delivery'] as PosOrderType[]).map((tp) => (
           <button
             key={tp}
             type="button"
             onClick={() => onChangeOrderType(tp)}
             className={cn(
-              'rounded-lg py-2 text-xs font-semibold transition-colors',
+              'rounded-xl py-3 text-sm font-semibold transition-all',
               orderType === tp
-                ? 'bg-card text-foreground shadow-sm'
+                ? 'bg-card text-foreground shadow-sm ring-1 ring-border'
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
@@ -246,22 +259,25 @@ export function PosSellPage() {
         {orderType === 'dine_in' ? (
           <Button
             variant={table ? 'secondary' : 'outline'}
-            size="sm"
-            className="flex-1"
+            className="h-12 flex-1 text-sm"
             onClick={() => setTablePickerOpen(true)}
           >
-            <Table2 className="size-4" />
+            <Table2 className="size-5" />
             {table ? table.name : 'Masa Seç'}
           </Button>
         ) : null}
-        <Button variant="outline" size="sm" className="relative flex-1" onClick={() => setHeldOpen(true)}>
-          <Clock className="size-4" />
+        <Button variant="outline" className="relative h-12 flex-1 text-sm" onClick={() => setHeldOpen(true)}>
+          <Clock className="size-5" />
           Bekleyenler
           {heldCount > 0 ? (
             <span className="ml-1 flex min-w-5 items-center justify-center rounded-full bg-primary px-1 text-2xs font-semibold text-primary-foreground">
               {heldCount}
             </span>
           ) : null}
+        </Button>
+        <Button variant="outline" className="h-12 flex-1 text-sm" onClick={() => setReturnOpen(true)}>
+          <Undo2 className="size-5" />
+          İade
         </Button>
       </div>
     </div>
@@ -315,13 +331,13 @@ export function PosSellPage() {
       <div className="flex min-h-0 flex-1">
         {cartSide === 'left' ? (
           <>
-            <div className="w-full max-w-[24rem] shrink-0 border-r bg-card shadow-sm">{cartPanel}</div>
+            <div className="w-full max-w-[27rem] shrink-0 border-r bg-card shadow-sm">{cartPanel}</div>
             {productArea}
           </>
         ) : (
           <>
             {productArea}
-            <div className="w-full max-w-[24rem] shrink-0 border-l bg-card shadow-sm">{cartPanel}</div>
+            <div className="w-full max-w-[27rem] shrink-0 border-l bg-card shadow-sm">{cartPanel}</div>
           </>
         )}
       </div>
@@ -330,6 +346,7 @@ export function PosSellPage() {
         product={modifierProduct}
         channelId={channelId}
         taxInclusive={taxInclusive}
+        bundle={modifierProduct ? bundleMap[modifierProduct.id] : undefined}
         onClose={() => setModifierProduct(null)}
         onAdd={(line) => setLines((cur) => addLine(cur, line))}
       />
@@ -349,6 +366,8 @@ export function PosSellPage() {
         onClose={() => setHeldOpen(false)}
         onPick={recallHeld}
       />
+      <ReturnDialog open={returnOpen} registerId={registerId} onClose={() => setReturnOpen(false)} />
+      <SessionDialog open={sessionOpen} session={session} registerId={registerId} onClose={() => setSessionOpen(false)} />
       <TablePicker
         open={tablePickerOpen}
         branchId={branchId}

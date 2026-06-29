@@ -55,8 +55,9 @@ export function TenderDialog({
   const [method, setMethod] = React.useState<PosPaymentMethod>('cash')
   const [splitMode, setSplitMode] = React.useState<SplitMode>('full')
   const [splitN, setSplitN] = React.useState(2)
-  // 'items' mode: charge a person for the cart lines they picked.
-  const [pickedLines, setPickedLines] = React.useState<Set<string>>(new Set())
+  // 'items' mode: charge a person for the individual UNITS they picked. A
+  // qty-N line is expanded into N selectable units keyed `${lineId}#${index}`.
+  const [pickedUnits, setPickedUnits] = React.useState<Set<string>>(new Set())
   const [amount, setAmount] = React.useState('')
   const [tendered, setTendered] = React.useState('')
   const [cashAccountId, setCashAccountId] = React.useState<string>('')
@@ -69,13 +70,45 @@ export function TenderDialog({
 
   const remaining = live ? Math.max(0, round2(live.grandTotal - live.paidTotal)) : 0
   const isPaid = !!live && live.status !== 'open'
-  // Sum of the cart lines this person picked (for the 'items' split mode).
+  // Bundle children grouped under their parent line (rendered indented, and
+  // their value travels with the parent in the 'items' split).
+  const childrenByParent = React.useMemo(() => {
+    const map = new Map<string, PosOrderDto['lines']>()
+    for (const l of live?.lines ?? []) {
+      if (!l.isBundleChild || !l.bundleParentLineId) continue
+      const list = map.get(l.bundleParentLineId) ?? []
+      list.push(l)
+      map.set(l.bundleParentLineId, list)
+    }
+    return map
+  }, [live])
+  const parentLines = React.useMemo(
+    () => (live?.lines ?? []).filter((l) => !l.isBundleChild),
+    [live],
+  )
+
+  // Per-unit price for a line: its total (plus its bundle children's value,
+  // which travels with the parent) divided across its N units.
+  const unitPriceOf = React.useCallback(
+    (l: PosOrderDto['lines'][number]) => {
+      const childTotal = (childrenByParent.get(l.id) ?? []).reduce((s, c) => s + c.lineTotal, 0)
+      return round2((l.lineTotal + childTotal) / Math.max(1, l.qty))
+    },
+    [childrenByParent],
+  )
+
+  // Sum of the individual units this person picked (for the 'items' split mode).
   const itemsTotal = React.useMemo(() => {
     if (!live) return 0
-    return round2(
-      live.lines.filter((l) => pickedLines.has(l.id)).reduce((s, l) => s + l.lineTotal, 0),
-    )
-  }, [live, pickedLines])
+    let sum = 0
+    for (const l of parentLines) {
+      const unit = unitPriceOf(l)
+      for (let i = 0; i < l.qty; i++) {
+        if (pickedUnits.has(`${l.id}#${i}`)) sum += unit
+      }
+    }
+    return round2(sum)
+  }, [live, pickedUnits, parentLines, unitPriceOf])
 
   // Default the amount to the split target whenever mode/remaining changes.
   React.useEffect(() => {
@@ -140,11 +173,12 @@ export function TenderDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => (o ? null : onClose())}>
-      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-md">
+      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-lg">
         <DialogHeader className="border-b px-5 py-4">
-          <DialogTitle>Tahsilat — {live?.orderNo}</DialogTitle>
-          <DialogDescription>
-            Toplam {money(live?.grandTotal, currency)} · Kalan {money(remaining, currency)}
+          <DialogTitle className="text-lg">Tahsilat — {live?.orderNo}</DialogTitle>
+          <DialogDescription className="text-sm">
+            Toplam {money(live?.grandTotal, currency)} · Kalan{' '}
+            <span className="font-semibold text-foreground">{money(remaining, currency)}</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -158,7 +192,7 @@ export function TenderDialog({
               <p className="text-sm text-muted-foreground">Para üstü: {money(live!.changeDue, currency)}</p>
             ) : null}
             <Button
-              className="mt-2 w-full"
+              className="mt-2 h-14 w-full text-base font-semibold"
               onClick={() => {
                 onPaid()
               }}
@@ -181,15 +215,15 @@ export function TenderDialog({
             ) : null}
 
             {/* split mode */}
-            <div className="flex gap-1.5">
+            <div className="flex gap-2">
               {splitModes.map((s) => (
                 <button
                   key={s.key}
                   type="button"
                   onClick={() => setSplitMode(s.key)}
                   className={cn(
-                    'flex-1 rounded-md border px-2 py-2 text-xs font-medium',
-                    splitMode === s.key ? 'border-primary bg-primary/10 text-primary' : 'bg-background hover:bg-accent',
+                    'h-12 flex-1 rounded-xl border px-2 text-sm font-medium transition-colors',
+                    splitMode === s.key ? 'border-primary bg-primary/10 text-primary shadow-sm' : 'bg-background hover:bg-accent',
                   )}
                 >
                   {s.label}
@@ -197,63 +231,87 @@ export function TenderDialog({
               ))}
             </div>
             {splitMode === 'items' ? (
-              <div className="space-y-1.5 rounded-md border p-2">
-                <p className="text-2xs text-muted-foreground">
-                  Bu kişinin ödeyeceği ürünleri seçin
+              <div className="space-y-2 rounded-xl border p-3">
+                <p className="text-xs text-muted-foreground">
+                  Bu kişinin ödeyeceği birimleri seçin
                 </p>
-                <div className="max-h-40 space-y-1 overflow-y-auto">
-                  {live?.lines.map((l) => {
-                    const on = pickedLines.has(l.id)
+                <div className="max-h-64 space-y-1.5 overflow-y-auto">
+                  {parentLines.map((l) => {
+                    const children = childrenByParent.get(l.id) ?? []
+                    const unit = unitPriceOf(l)
+                    const multi = l.qty > 1
                     return (
-                      <button
-                        key={l.id}
-                        type="button"
-                        onClick={() =>
-                          setPickedLines((cur) => {
-                            const next = new Set(cur)
-                            if (next.has(l.id)) next.delete(l.id)
-                            else next.add(l.id)
-                            return next
-                          })
-                        }
-                        className={cn(
-                          'flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-sm',
-                          on ? 'bg-primary/10 text-primary' : 'hover:bg-accent',
-                        )}
-                      >
-                        <span className="flex items-center gap-2">
-                          <span
-                            className={cn(
-                              'flex size-4 items-center justify-center rounded-sm border',
-                              on ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
-                            )}
+                      <div key={l.id} className="space-y-1">
+                        {multi ? (
+                          <p className="px-1 text-xs font-medium text-muted-foreground">{l.name}</p>
+                        ) : null}
+                        {Array.from({ length: l.qty }).map((_, i) => {
+                          const uk = `${l.id}#${i}`
+                          const on = pickedUnits.has(uk)
+                          return (
+                            <button
+                              key={uk}
+                              type="button"
+                              onClick={() =>
+                                setPickedUnits((cur) => {
+                                  const next = new Set(cur)
+                                  if (next.has(uk)) next.delete(uk)
+                                  else next.add(uk)
+                                  return next
+                                })
+                              }
+                              className={cn(
+                                'flex min-h-12 w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-colors',
+                                on ? 'border-primary bg-primary/10 text-primary' : 'border-transparent hover:bg-accent',
+                              )}
+                            >
+                              <span className="flex items-center gap-2.5">
+                                <span
+                                  className={cn(
+                                    'flex size-5 items-center justify-center rounded-md border',
+                                    on ? 'border-primary bg-primary text-primary-foreground' : 'border-input',
+                                  )}
+                                >
+                                  {on ? <Check className="size-3.5" /> : null}
+                                </span>
+                                <span className="truncate">
+                                  {multi ? `${l.name} · ${i + 1}/${l.qty}` : l.name}
+                                </span>
+                              </span>
+                              <span className="font-medium tabular-nums">{money(unit, currency)}</span>
+                            </button>
+                          )
+                        })}
+                        {children.map((c) => (
+                          <div
+                            key={c.id}
+                            className="flex items-center justify-between border-l-2 border-dashed py-0.5 pl-5 pr-2 text-2xs text-muted-foreground"
                           >
-                            {on ? <Check className="size-3" /> : null}
-                          </span>
-                          <span className="truncate">
-                            {l.qty}× {l.name}
-                          </span>
-                        </span>
-                        <span className="tabular-nums">{money(l.lineTotal, currency)}</span>
-                      </button>
+                            <span className="truncate">+ {c.qty}× {c.name}</span>
+                            <span className="tabular-nums">
+                              {c.lineTotal > 0 ? 'birime dahil' : 'Ücretsiz'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     )
                   })}
                 </div>
-                <div className="flex justify-between text-sm font-medium">
+                <div className="flex justify-between border-t pt-2 text-base font-semibold">
                   <span>Seçilen</span>
                   <span className="tabular-nums">{money(itemsTotal, currency)}</span>
                 </div>
               </div>
             ) : null}
             {splitMode === 'equal' ? (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <span className="text-sm text-muted-foreground">Kişi sayısı</span>
                 <Input
                   type="number"
                   min={2}
                   value={splitN}
                   onChange={(e) => setSplitN(Math.max(2, Number(e.target.value) || 2))}
-                  className="h-9 w-20"
+                  className="h-12 w-24 text-center text-lg font-semibold tabular-nums"
                 />
                 <span className="text-sm text-muted-foreground">
                   → kişi başı {money(round2(remaining / Math.max(1, splitN)), currency)}
@@ -262,7 +320,7 @@ export function TenderDialog({
             ) : null}
 
             {/* method */}
-            <div className="flex gap-1.5">
+            <div className="flex gap-2">
               {methods.map((m) => {
                 const Icon = m.icon
                 return (
@@ -271,11 +329,11 @@ export function TenderDialog({
                     type="button"
                     onClick={() => setMethod(m.key)}
                     className={cn(
-                      'flex flex-1 flex-col items-center gap-1 rounded-md border px-2 py-2.5 text-xs font-medium',
-                      method === m.key ? 'border-primary bg-primary/10 text-primary' : 'bg-background hover:bg-accent',
+                      'flex h-20 flex-1 flex-col items-center justify-center gap-1.5 rounded-xl border text-sm font-medium transition-all',
+                      method === m.key ? 'border-primary bg-primary/10 text-primary shadow-sm' : 'bg-background hover:bg-accent',
                     )}
                   >
-                    <Icon className="size-5" />
+                    <Icon className="size-7" />
                     {PAYMENT_METHOD_LABELS[m.key]}
                   </button>
                 )
@@ -294,36 +352,36 @@ export function TenderDialog({
             ) : null}
 
             {/* amount + tendered */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2.5">
               <label className="space-y-1">
-                <span className="text-2xs text-muted-foreground">Tutar</span>
+                <span className="text-xs text-muted-foreground">Tutar</span>
                 <Input
                   type="number"
                   step="0.01"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="h-11 text-base font-semibold tabular-nums"
+                  className="h-14 text-xl font-semibold tabular-nums"
                 />
               </label>
               {method === 'cash' ? (
                 <label className="space-y-1">
-                  <span className="text-2xs text-muted-foreground">Verilen (para üstü için)</span>
+                  <span className="text-xs text-muted-foreground">Verilen (para üstü için)</span>
                   <Input
                     type="number"
                     step="0.01"
                     value={tendered}
                     onChange={(e) => setTendered(e.target.value)}
                     placeholder={amount}
-                    className="h-11 text-base tabular-nums"
+                    className="h-14 text-xl tabular-nums"
                   />
                 </label>
               ) : null}
             </div>
             {change > 0 ? (
-              <p className="text-right text-sm font-medium">Para üstü: {money(change, currency)}</p>
+              <p className="text-right text-base font-medium">Para üstü: {money(change, currency)}</p>
             ) : null}
 
-            <Button className="h-12 w-full text-base" disabled={pay.isPending} onClick={() => pay.mutate()}>
+            <Button className="h-16 w-full text-lg font-semibold" disabled={pay.isPending} onClick={() => pay.mutate()}>
               {pay.isPending ? 'İşleniyor…' : `Tahsil Et · ${money(Number(amount || 0), currency)}`}
             </Button>
           </div>
@@ -346,9 +404,9 @@ function AccountSelect({
 }) {
   return (
     <label className="block space-y-1">
-      <span className="text-2xs text-muted-foreground">{label}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="h-10 w-full">
+        <SelectTrigger className="h-12 w-full">
           <SelectValue placeholder={`${label} seçin`} />
         </SelectTrigger>
         <SelectContent>

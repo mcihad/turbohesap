@@ -21,6 +21,7 @@ import { PosOrdersService } from './pos-orders.service'
 import {
   AddPosPaymentDto,
   CreatePosOrderDto,
+  ReturnPosOrderDto,
   SplitPosOrderDto,
   UpdatePosOrderDto,
   VoidPosOrderDto,
@@ -87,6 +88,12 @@ export class PosOrdersController {
   @RequirePermissions(PosPermissions.void)
   void(@Param('id') id: string, @Body() dto: VoidPosOrderDto): Promise<PosOrderDto> {
     return this.orders.void(id, dto)
+  }
+
+  @Post(':id/return')
+  @RequirePermissions(PosPermissions.refund)
+  returnLines(@Param('id') id: string, @Body() dto: ReturnPosOrderDto): Promise<PosOrderDto> {
+    return this.orders.returnLines(id, dto)
   }
 
   @Delete(':id')

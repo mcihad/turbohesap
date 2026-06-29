@@ -26,6 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ProductFormDialog } from '../components/product-form-dialog'
 import { VariantsTab } from '../components/product-detail/variants-tab'
 import { StockTab } from '../components/product-detail/stock-tab'
+import { AnalysisTab } from '../components/product-detail/analysis-tab'
 import { ChannelPricesTab } from '../components/product-detail/channel-prices-tab'
 import { PackagingsTab } from '../components/product-detail/packagings-tab'
 import { PosModifiersTab } from '../components/product-detail/pos-modifiers-tab'
@@ -150,6 +151,7 @@ function ProductTabs({
     ...(dynamicFields.length ? [{ value: 'ozellikler', label: 'Özellikler' }] : []),
     ...(product.hasVariants ? [{ value: 'varyantlar', label: `Varyantlar (${product.variantCount})` }] : []),
     ...(product.trackStock ? [{ value: 'stok', label: 'Stok' }] : []),
+    { value: 'analiz', label: 'Analiz' },
     { value: 'fiyatlar', label: 'Kanal fiyatları' },
     { value: 'paketler', label: 'Paketler' },
     { value: 'pos', label: 'POS' },
@@ -201,6 +203,10 @@ function ProductTabs({
           <StockTab product={product} canStock={canStock} refetch={refetch} />
         </TabsContent>
       ) : null}
+
+      <TabsContent value="analiz">
+        <AnalysisTab product={product} />
+      </TabsContent>
 
       <TabsContent value="fiyatlar">
         <ChannelPricesTab product={product} canWrite={canWrite} refetch={refetch} />

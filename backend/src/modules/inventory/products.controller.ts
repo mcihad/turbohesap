@@ -13,11 +13,15 @@ import {
 
 import {
   InventoryPermissions,
+  type BarcodeMatchDto,
   type ProductChannelPriceDto,
   type ProductDto,
   type ProductPackagingDto,
+  type ProductStatsDto,
+  type ProductStatsQuery,
   type ProductStockDto,
   type ProductVariantDto,
+  type SellableUnitDto,
 } from '@turbohesap/shared'
 
 import { RequirePermissions } from '../../common/decorators/permissions.decorator'
@@ -26,8 +30,10 @@ import { UpdateProductDto } from './dto/update-product.dto'
 import {
   CreateProductVariantDto,
   GenerateVariantsDto,
+  GenerateVariantsFromFeaturesDto,
   UpdateProductVariantDto,
 } from './dto/product-variant.dto'
+import { ProductStatsService } from './product-stats.service'
 import {
   CreateProductPackagingDto,
   UpdateProductPackagingDto,
@@ -38,7 +44,10 @@ import { ProductsService } from './products.service'
 
 @Controller('inventory/products')
 export class ProductsController {
-  constructor(private readonly products: ProductsService) {}
+  constructor(
+    private readonly products: ProductsService,
+    private readonly stats: ProductStatsService,
+  ) {}
 
   @Get()
   @RequirePermissions(InventoryPermissions.productsRead)
@@ -46,10 +55,35 @@ export class ProductsController {
     return this.products.list(categoryId)
   }
 
+  // Declared BEFORE :id so "sellable" is not captured as a product id.
+  @Get('sellable')
+  @RequirePermissions(InventoryPermissions.productsRead)
+  sellable(@Query('categoryId') categoryId?: string): Promise<SellableUnitDto[]> {
+    return this.products.sellable(categoryId)
+  }
+
+  // BEFORE :id — resolve a scanned barcode to a product/variant/packaging.
+  @Get('barcode/:code')
+  @RequirePermissions(InventoryPermissions.productsRead)
+  byBarcode(@Param('code') code: string): Promise<BarcodeMatchDto> {
+    return this.products.byBarcode(code)
+  }
+
   @Get(':id')
   @RequirePermissions(InventoryPermissions.productsRead)
   get(@Param('id') id: string): Promise<ProductDto> {
     return this.products.get(id)
+  }
+
+  @Get(':id/stats')
+  @RequirePermissions(InventoryPermissions.productsRead)
+  getStats(
+    @Param('id') id: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('granularity') granularity?: ProductStatsQuery['granularity'],
+  ): Promise<ProductStatsDto> {
+    return this.stats.stats(id, { from, to, granularity })
   }
 
   @Post()
@@ -83,6 +117,15 @@ export class ProductsController {
     @Body() dto: GenerateVariantsDto,
   ): Promise<ProductVariantDto[]> {
     return this.products.generateVariants(id, dto)
+  }
+
+  @Post(':id/variants/from-features')
+  @RequirePermissions(InventoryPermissions.productsWrite)
+  generateVariantsFromFeatures(
+    @Param('id') id: string,
+    @Body() dto: GenerateVariantsFromFeaturesDto,
+  ): Promise<ProductVariantDto[]> {
+    return this.products.generateVariantsFromFeatures(id, dto)
   }
 
   @Post(':id/variants')

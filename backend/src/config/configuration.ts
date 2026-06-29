@@ -46,6 +46,30 @@ export interface AppConfig {
       forcePathStyle: boolean
     }
   }
+  /** Analytics/report cache — in-memory by default; redis/memcached via env. */
+  cache: {
+    store: 'memory' | 'redis' | 'memcached'
+    /** Default time-to-live for cached entries, in seconds. */
+    ttl: number
+    /** Key prefix (namespacing a shared redis/memcached). */
+    prefix: string
+    /** Max entries for the in-memory store (LRU-ish cap). */
+    memoryMax: number
+    redis: {
+      /** Full connection URL (redis://…); takes precedence over host/port. */
+      url?: string
+      host: string
+      port: number
+      password?: string
+      db: number
+    }
+    memcached: {
+      /** Comma-separated host:port list. */
+      servers: string
+      username?: string
+      password?: string
+    }
+  }
 }
 
 const DEFAULT_ACCESS_SECRET = 'dev-access-secret-change-me'
@@ -106,6 +130,29 @@ export function configuration(): AppConfig {
         secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
         endpoint: process.env.S3_ENDPOINT || undefined,
         forcePathStyle: bool(process.env.S3_FORCE_PATH_STYLE, false),
+      },
+    },
+    cache: {
+      store:
+        process.env.CACHE_STORE === 'redis'
+          ? 'redis'
+          : process.env.CACHE_STORE === 'memcached'
+            ? 'memcached'
+            : 'memory',
+      ttl: int(process.env.CACHE_TTL, 60),
+      prefix: process.env.CACHE_PREFIX || 'th:',
+      memoryMax: int(process.env.CACHE_MEMORY_MAX, 1000),
+      redis: {
+        url: process.env.REDIS_URL || undefined,
+        host: process.env.REDIS_HOST || '127.0.0.1',
+        port: int(process.env.REDIS_PORT, 6379),
+        password: process.env.REDIS_PASSWORD || undefined,
+        db: int(process.env.REDIS_DB, 0),
+      },
+      memcached: {
+        servers: process.env.MEMCACHED_SERVERS || '127.0.0.1:11211',
+        username: process.env.MEMCACHED_USERNAME || undefined,
+        password: process.env.MEMCACHED_PASSWORD || undefined,
       },
     },
   }

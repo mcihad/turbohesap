@@ -16,6 +16,10 @@ export function filterItems(items: MobileNavItem[], can: Can): MobileNavItem[] {
 export function accessibleModules(modules: MobileModule[], can: Can): MobileModule[] {
   return modules.filter((m) => {
     if (m.permission && !can(m.permission)) return false
+    // A module with its own dashboard (e.g. Genel) stays visible even when all
+    // its permission-gated sub-items are filtered out — the dashboard is its
+    // always-accessible landing page.
+    if (m.dashboardScreen) return true
     return filterItems(m.items, can).length > 0 || m.items.length === 0
   })
 }

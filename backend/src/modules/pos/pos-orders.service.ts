@@ -23,15 +23,25 @@ import { ProductVariant } from '../inventory/entities/product-variant.entity'
 import { ProductChannelPrice } from '../inventory/entities/product-channel-price.entity'
 import { ProductModifierOption } from '../inventory/entities/product-modifier-option.entity'
 import { ProductModifierGroup } from '../inventory/entities/product-modifier-group.entity'
+import { ProductBundleComponent } from '../inventory/entities/product-bundle-component.entity'
 import { Contact } from '../contacts/entities/contact.entity'
 import { ContactTransaction } from '../contacts/entities/contact-transaction.entity'
 import { FinanceTransaction } from '../finance/entities/finance-transaction.entity'
 import { StockMovementsService } from '../inventory/stock-movements.service'
 import { StockMovementTypesService } from '../inventory/stock-movement-types.service'
-import type { AddPosPaymentDto, CreatePosOrderDto, UpdatePosOrderDto, VoidPosOrderDto } from './dto/pos.dto'
+import type {
+  AddPosPaymentDto,
+  CreatePosOrderDto,
+  ReturnPosOrderDto,
+  UpdatePosOrderDto,
+  VoidPosOrderDto,
+} from './dto/pos.dto'
 
 function round2(n: number): number {
   return Math.round((n + Number.EPSILON) * 100) / 100
+}
+function round4(n: number): number {
+  return Math.round((n + Number.EPSILON) * 10000) / 10000
 }
 function newRef(): string {
   return 'srv-' + Math.random().toString(36).slice(2) + Date.now().toString(36)
@@ -51,6 +61,7 @@ export class PosOrdersService {
     @InjectRepository(ProductChannelPrice) private readonly channelPrices: Repository<ProductChannelPrice>,
     @InjectRepository(ProductModifierOption) private readonly modifierOptions: Repository<ProductModifierOption>,
     @InjectRepository(ProductModifierGroup) private readonly modifierGroups: Repository<ProductModifierGroup>,
+    @InjectRepository(ProductBundleComponent) private readonly bundleComponents: Repository<ProductBundleComponent>,
     @InjectRepository(Contact) private readonly contacts: Repository<Contact>,
     private readonly stockMovements: StockMovementsService,
     private readonly movementTypes: StockMovementTypesService,
@@ -262,6 +273,55 @@ export class PosOrdersService {
     return this.get(id)
   }
 
+  /**
+   * Return returnable line units back to stock (geri giriş). Posts an inbound
+   * stock movement for each returned line and records returnedQty. Optionally
+   * refunds the value (cash drawer). Used for unconsumed packaged items.
+   */
+  async returnLines(id: string, dto: ReturnPosOrderDto): Promise<PosOrderDto> {
+    const o = await this.findOrFail(id)
+    if (o.status !== 'paid') throw new BadRequestException('Yalnızca kapanmış (ödenmiş) siparişten iade alınabilir')
+    if (!dto.lines?.length) throw new BadRequestException('İade edilecek satır seçilmedi')
+    await this.orders.manager.transaction(async (em) => {
+      const lineRepo = em.getRepository(PosOrderLine)
+      const lines = await lineRepo.find({ where: { id: In(dto.lines.map((l) => l.lineId)), orderId: id } })
+      const lineMap = new Map(lines.map((l) => [l.id, l]))
+      const today = new Date().toISOString().slice(0, 10)
+      const typeId = await this.movementTypes.systemTypeId('Satış İadesi', 'in')
+      const productIds = [...new Set(lines.map((l) => l.productId).filter((x): x is string => !!x))]
+      const products = productIds.length
+        ? await em.getRepository(Product).find({ where: { id: In(productIds) } })
+        : []
+      const trackMap = new Map(products.map((p) => [p.id, p.trackStock]))
+      for (const req of dto.lines) {
+        const l = lineMap.get(req.lineId)
+        if (!l) throw new BadRequestException('Geçersiz satır')
+        if (!l.returnable) throw new BadRequestException(`"${l.name}" iade edilemez`)
+        const maxQty = round4(l.qty - l.returnedQty)
+        if (req.qty > maxQty + 0.0001) throw new BadRequestException(`"${l.name}" için en fazla ${maxQty} iade edilebilir`)
+        if (l.productId && l.deductStock !== false && trackMap.get(l.productId) !== false) {
+          await this.stockMovements.post(em, {
+            productId: l.productId,
+            variantId: l.variantId,
+            branchId: o.branchId,
+            movementTypeId: typeId,
+            direction: 'in',
+            quantity: req.qty,
+            date: today,
+            description: `POS ${o.orderNo} iade`,
+            sourceModule: 'pos-return',
+            sourceId: o.id,
+          })
+        }
+        l.returnedQty = round4(l.returnedQty + req.qty)
+        await lineRepo.save(l)
+      }
+      if (dto.reason) o.notes = [o.notes, `İade: ${dto.reason}`].filter(Boolean).join(' | ')
+      await em.getRepository(PosOrder).save(o)
+    })
+    return this.get(id)
+  }
+
   async remove(id: string): Promise<void> {
     const o = await this.findOrFail(id)
     if (o.status === 'paid' || o.status === 'refunded') {
@@ -295,8 +355,16 @@ export class PosOrdersService {
         inputs.flatMap((l) => (l.modifiers ?? []).map((m) => m.optionId).filter((x): x is string => !!x)),
       ),
     ]
-    const products = productIds.length
-      ? await em.getRepository(Product).find({ where: { id: In(productIds) } })
+    // Bundle components for the parent products (auto-added as child lines).
+    const bundles = productIds.length
+      ? await em
+          .getRepository(ProductBundleComponent)
+          .find({ where: { productId: In(productIds) }, order: { sortOrder: 'ASC' } })
+      : []
+    const bundleComponentProductIds = [...new Set(bundles.map((b) => b.componentProductId))]
+    const allProductIds = [...new Set([...productIds, ...bundleComponentProductIds])]
+    const products = allProductIds.length
+      ? await em.getRepository(Product).find({ where: { id: In(allProductIds) } })
       : []
     const variants = variantIds.length
       ? await em.getRepository(ProductVariant).find({ where: { id: In(variantIds) } })
@@ -319,9 +387,16 @@ export class PosOrdersService {
     const variantMap = new Map(variants.map((v) => [v.id, v]))
     const optionMap = new Map(options.map((o) => [o.id, o]))
     const groupMap = new Map(groups.map((g) => [g.id, g]))
+    const bundlesByParent = new Map<string, ProductBundleComponent[]>()
+    for (const b of bundles) {
+      ;(bundlesByParent.get(b.productId) ?? bundlesByParent.set(b.productId, []).get(b.productId)!).push(b)
+    }
 
     let i = 0
     for (const li of inputs) {
+      // Skip any client-sent bundle child — the server is authoritative and
+      // re-expands components below, so children never round-trip.
+      if (li.isBundleChild) continue
       const product = li.productId ? productMap.get(li.productId) ?? null : null
       const variant = li.variantId ? variantMap.get(li.variantId) ?? null : null
       if (!product && (li.name == null || li.unitPrice == null)) {
@@ -337,6 +412,12 @@ export class PosOrdersService {
           groupNameSnapshot: m.groupName ?? grp?.name ?? '',
           optionNameSnapshot: m.optionName ?? opt?.name ?? '',
           priceDelta: m.priceDelta ?? opt?.priceDelta ?? 0,
+          // Stock-consumption snapshot (frozen at sale time).
+          stockProductId: opt?.stockProductId ?? null,
+          stockVariantId: opt?.stockVariantId ?? null,
+          consumeQty: opt?.consumeQty ?? 1,
+          deductStock: opt ? !!opt.deductStock && !!opt.stockProductId : false,
+          returnable: opt ? !!opt.returnable && !!opt.stockProductId : false,
         }
       })
       const channelPrice = product
@@ -369,12 +450,50 @@ export class PosOrdersService {
           lineTotal: total,
           kitchenStatus: 'new',
           notes: li.notes ?? null,
+          isBundleChild: false,
+          bundleParentLineId: null,
+          deductStock: true,
+          // Sold product lines can be returned to stock (geri giriş); bundle
+          // components carry their own returnable flag.
+          returnable: true,
+          returnedQty: 0,
           sortOrder: i++,
         }),
       )
       if (mods.length) {
         await em.getRepository(PosOrderLineModifier).save(
           mods.map((m) => em.getRepository(PosOrderLineModifier).create({ lineId: line.id, ...m })),
+        )
+      }
+      // Expand bundle components for this parent product into child lines.
+      const comps = li.productId ? bundlesByParent.get(li.productId) ?? [] : []
+      for (const b of comps) {
+        const cp = productMap.get(b.componentProductId) ?? null
+        const childQty = round4(b.qty * li.qty)
+        const childUnit = b.isFree ? 0 : b.unitPrice ?? cp?.salePrice ?? 0
+        const childTax = cp?.taxRate ?? 0
+        const childGross = lineGross(childUnit, childQty, 0, 0)
+        const { total: childTotal } = taxBreakdown(childGross, childTax, taxInclusive)
+        await em.getRepository(PosOrderLine).save(
+          em.getRepository(PosOrderLine).create({
+            orderId,
+            productId: b.componentProductId,
+            variantId: b.componentVariantId ?? null,
+            name: cp?.name ?? '',
+            qty: childQty,
+            unitPrice: childUnit,
+            discount: 0,
+            taxRate: childTax,
+            lineTotal: childTotal,
+            kitchenStatus: 'new',
+            notes: null,
+            isBundleChild: true,
+            bundleParentLineId: line.id,
+            deductStock: b.deductStock,
+            returnable: b.returnable,
+            returnedQty: 0,
+            sortOrder: i++,
+          }),
         )
       }
     }
@@ -407,7 +526,12 @@ export class PosOrdersService {
     return round2(rows.reduce((s, p) => s + p.changeGiven, 0))
   }
 
-  /** Post stock + finance + cari once, mark paid. */
+  /**
+   * Settle: post stock (real-time) + cari for account tenders (real-time), and
+   * mark paid. Cash/card are NOT posted to kasa/banka here — they are aggregated
+   * once when the session is closed (vezne). Modifier-driven stock (e.g. "ekstra
+   * ketçap") and bundle children are deducted too, respecting their flags.
+   */
   private async settleInTx(em: EntityManager, o: PosOrder): Promise<void> {
     const lines = await em.getRepository(PosOrderLine).find({ where: { orderId: o.id } })
     const productIds = [...new Set(lines.map((l) => l.productId).filter((x): x is string => !!x))]
@@ -418,7 +542,8 @@ export class PosOrdersService {
     const today = new Date().toISOString().slice(0, 10)
     const typeId = await this.movementTypes.systemTypeId('Satış Çıkışı', 'out')
     for (const l of lines) {
-      if (l.productId && trackMap.get(l.productId) !== false) {
+      // Main/component line stock (bundle children opt out via deductStock).
+      if (l.productId && l.deductStock !== false && trackMap.get(l.productId) !== false) {
         await this.stockMovements.post(em, {
           productId: l.productId,
           variantId: l.variantId,
@@ -431,24 +556,27 @@ export class PosOrdersService {
           sourceId: o.id,
         })
       }
+      // Modifier-driven stock consumption (e.g. "Ekstra ketçap" → deduct ketchup).
+      const mods = await em.getRepository(PosOrderLineModifier).find({ where: { lineId: l.id } })
+      for (const m of mods) {
+        if (!m.deductStock || !m.stockProductId) continue
+        await this.stockMovements.post(em, {
+          productId: m.stockProductId,
+          variantId: m.stockVariantId,
+          branchId: o.branchId,
+          movementTypeId: typeId,
+          direction: 'out',
+          quantity: round4((m.consumeQty || 1) * l.qty),
+          date: today,
+          sourceModule: 'pos',
+          sourceId: o.id,
+        })
+      }
     }
+    // Only account (veresiye) tenders post in real time — as cari debt.
     const pays = await em.getRepository(PosPayment).find({ where: { orderId: o.id } })
     for (const p of pays) {
-      if (p.method === 'cash' || p.method === 'card') {
-        const fin = await em.getRepository(FinanceTransaction).save(
-          em.getRepository(FinanceTransaction).create({
-            cashAccountId: p.method === 'cash' ? p.cashAccountId : null,
-            bankAccountId: p.method === 'card' ? p.bankAccountId : null,
-            contactId: o.contactId,
-            type: 'in',
-            amount: p.amount,
-            date: new Date(),
-            description: `POS ${o.orderNo} tahsilat`,
-          }),
-        )
-        p.financeTransactionId = fin.id
-        await em.getRepository(PosPayment).save(p)
-      } else if (p.method === 'account') {
+      if (p.method === 'account') {
         const contactId = p.contactId ?? o.contactId
         if (contactId) {
           const tx = await em.getRepository(ContactTransaction).save(
@@ -476,9 +604,14 @@ export class PosOrdersService {
   }
 
   private async reverseSettle(em: EntityManager, o: PosOrder): Promise<void> {
+    // Reverses all 'pos' stock for this order (main lines + modifier consumption).
     await this.stockMovements.reverseSource(em, 'pos', o.id)
+    // Re-add any returned units that were posted back as inbound (geri giriş).
+    await this.stockMovements.reverseSource(em, 'pos-return', o.id)
     const pays = await em.getRepository(PosPayment).find({ where: { orderId: o.id } })
     for (const p of pays) {
+      // Cash/card no longer post per-order (session-close vezne); only legacy or
+      // account (cari) transactions need deleting here.
       if (p.financeTransactionId) await em.getRepository(FinanceTransaction).delete({ id: p.financeTransactionId })
       if (p.contactTransactionId) await em.getRepository(ContactTransaction).delete({ id: p.contactTransactionId })
     }
@@ -518,6 +651,10 @@ export class PosOrdersService {
       kitchenStatus: l.kitchenStatus,
       stationId: l.stationId,
       notes: l.notes,
+      isBundleChild: l.isBundleChild,
+      bundleParentLineId: l.bundleParentLineId,
+      returnable: l.returnable,
+      returnedQty: l.returnedQty,
       modifiers: mods
         .filter((m) => m.lineId === l.id)
         .map((m) => ({
@@ -528,6 +665,11 @@ export class PosOrdersService {
           priceDelta: m.priceDelta,
           groupId: m.groupId,
           optionId: m.optionId,
+          stockProductId: m.stockProductId,
+          stockVariantId: m.stockVariantId,
+          consumeQty: m.consumeQty,
+          deductStock: m.deductStock,
+          returnable: m.returnable,
         })),
     }))
     const paymentDtos: PosPaymentDto[] = payments.map((p) => ({

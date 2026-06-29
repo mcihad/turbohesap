@@ -15,6 +15,17 @@ export interface ProductModifierOptionDto {
   isDefault: boolean
   sortOrder: number
   isActive: boolean
+  /** When set, choosing this option ALSO consumes stock of this product
+   *  (e.g. "Ekstra ketçap" → deduct 1 from the ketchup product). Optional. */
+  stockProductId: string | null
+  /** Optional variant of the consumed stock product. */
+  stockVariantId: string | null
+  /** How many units of the stock product to consume per line unit (default 1). */
+  consumeQty: number
+  /** When false, the stock product is NOT deducted even if linked. */
+  deductStock: boolean
+  /** When true, this consumed item can be returned to stock (geri giriş). */
+  returnable: boolean
 }
 
 export interface ProductModifierGroupDto {
@@ -39,6 +50,11 @@ export interface CreateModifierOptionRequest {
   isDefault?: boolean
   sortOrder?: number
   isActive?: boolean
+  stockProductId?: string | null
+  stockVariantId?: string | null
+  consumeQty?: number
+  deductStock?: boolean
+  returnable?: boolean
 }
 export type UpdateModifierOptionRequest = Partial<CreateModifierOptionRequest>
 

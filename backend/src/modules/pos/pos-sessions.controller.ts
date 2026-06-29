@@ -44,7 +44,11 @@ export class PosSessionsController {
 
   @Post(':id/close')
   @RequirePermissions(PosPermissions.sessionClose)
-  close(@Param('id') id: string, @Body() dto: CloseSessionDto): Promise<PosSessionDto> {
-    return this.sessions.close(id, dto)
+  close(
+    @Param('id') id: string,
+    @Body() dto: CloseSessionDto,
+    @CurrentUser() user: AuthUser,
+  ): Promise<PosSessionDto> {
+    return this.sessions.close(id, dto, user.sub)
   }
 }

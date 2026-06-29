@@ -3,6 +3,7 @@ import type {
   CreatePosOrderRequest,
   PosOrderDto,
   PosOrderListQuery,
+  ReturnPosOrderRequest,
   SplitPosOrderRequest,
   UpdatePosOrderRequest,
   VoidPosOrderRequest,
@@ -23,5 +24,7 @@ export interface IPosOrdersService {
   split(id: string, input: SplitPosOrderRequest): Promise<PosOrderDto>
   /** Void (open) or refund (paid) — reverses stock/finance/cari. */
   void(id: string, input: VoidPosOrderRequest): Promise<PosOrderDto>
+  /** Return returnable line units back to stock (geri giriş); optional refund. */
+  returnLines(id: string, input: ReturnPosOrderRequest): Promise<PosOrderDto>
   remove(id: string): Promise<void>
 }

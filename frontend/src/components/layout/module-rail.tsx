@@ -2,9 +2,12 @@ import * as React from 'react'
 import { Link } from '@tanstack/react-router'
 import { LifeBuoy, MessageSquarePlus, type LucideIcon } from 'lucide-react'
 
+import { FeedbackPermissions } from '@turbohesap/shared'
+
 import { cn } from '@/lib/utils'
 import { useActiveModule } from '@/lib/layout/use-active-module'
 import { useAuth } from '@/lib/auth/auth-context'
+import { Can } from '@/lib/auth/permission-gate'
 import { accessibleModules } from '@/lib/auth/access'
 import { APP_MODULES } from '@/modules/registry'
 import {
@@ -65,11 +68,13 @@ export function ModuleRail() {
       {/* Pinned to the bottom: help + feedback */}
       <div className="mt-auto flex flex-col items-center gap-1">
         <RailLink icon={LifeBuoy} label="Yardım ve Dokümanlar" to="/help" />
-        <RailButton
-          icon={MessageSquarePlus}
-          label="Geri bildirim gönder"
-          onClick={() => setFeedbackOpen(true)}
-        />
+        <Can permission={FeedbackPermissions.create}>
+          <RailButton
+            icon={MessageSquarePlus}
+            label="Geri bildirim gönder"
+            onClick={() => setFeedbackOpen(true)}
+          />
+        </Can>
       </div>
 
       <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
@@ -110,7 +115,13 @@ function RailButton({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button type="button" aria-label={label} onClick={onClick} className={itemClass}>
+        <button
+          type="button"
+          data-feedback-ignore
+          aria-label={label}
+          onClick={onClick}
+          className={itemClass}
+        >
           <Icon className="size-5" />
         </button>
       </TooltipTrigger>

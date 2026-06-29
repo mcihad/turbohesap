@@ -74,6 +74,11 @@ export class ProductModifiersService {
             isDefault: o.isDefault ?? false,
             sortOrder: o.sortOrder ?? i,
             isActive: o.isActive ?? true,
+            stockProductId: o.stockProductId ?? null,
+            stockVariantId: o.stockVariantId ?? null,
+            consumeQty: o.consumeQty ?? 1,
+            deductStock: o.deductStock ?? true,
+            returnable: o.returnable ?? true,
           }),
         ),
       )
@@ -112,6 +117,11 @@ export class ProductModifiersService {
         isDefault: dto.isDefault ?? false,
         sortOrder: dto.sortOrder ?? count,
         isActive: dto.isActive ?? true,
+        stockProductId: dto.stockProductId ?? null,
+        stockVariantId: dto.stockVariantId ?? null,
+        consumeQty: dto.consumeQty ?? 1,
+        deductStock: dto.deductStock ?? true,
+        returnable: dto.returnable ?? true,
       }),
     )
     return toOptionDto(saved)
@@ -129,6 +139,11 @@ export class ProductModifiersService {
     if (dto.isDefault !== undefined) o.isDefault = dto.isDefault
     if (dto.sortOrder !== undefined) o.sortOrder = dto.sortOrder
     if (dto.isActive !== undefined) o.isActive = dto.isActive
+    if (dto.stockProductId !== undefined) o.stockProductId = dto.stockProductId ?? null
+    if (dto.stockVariantId !== undefined) o.stockVariantId = dto.stockVariantId ?? null
+    if (dto.consumeQty !== undefined) o.consumeQty = dto.consumeQty
+    if (dto.deductStock !== undefined) o.deductStock = dto.deductStock
+    if (dto.returnable !== undefined) o.returnable = dto.returnable
     return toOptionDto(await this.options.save(o))
   }
 
@@ -199,6 +214,11 @@ export function toOptionDto(o: ProductModifierOption): ProductModifierOptionDto 
     isDefault: o.isDefault,
     sortOrder: o.sortOrder,
     isActive: o.isActive,
+    stockProductId: o.stockProductId ?? null,
+    stockVariantId: o.stockVariantId ?? null,
+    consumeQty: o.consumeQty ?? 1,
+    deductStock: o.deductStock ?? true,
+    returnable: o.returnable ?? true,
   }
 }
 

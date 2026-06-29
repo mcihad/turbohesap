@@ -294,6 +294,12 @@ fatal bug in finance, inventory pricing, tax, etc.
   ```
   Use `scale: 2` for currency; widen scale for unit prices/quantities as needed
   (`numeric(18,4)`). Quantities that can be fractional follow the same rule.
+- **ALWAYS set transformer columns explicitly in `repo.create({…})`.** A column
+  with a `transformer` is *always* included in the INSERT, and `transformer.to(undefined)`
+  → `NULL`, so an unset `NOT NULL` numeric column throws `null value in column "x"
+  violates not-null constraint` — the entity/DB `default` never applies. Real bug:
+  a new `returnedQty` left unset in `pos-orders.service writeLines` crashed every
+  POS sale. Pass `returnedQty: 0` (and every other transformer column) in `create()`.
 - Confirm the generated migration emits `numeric(18,2)` — **not** `double
   precision`. If it shows `double precision`, the entity is wrong; fix it and
   regenerate.
@@ -334,6 +340,20 @@ a price-override permission (`pos.price.override`). See
   (`resolveUnitPrice` / `lineGross` / `taxBreakdown` / `modifierDeltaSum`) and is
   used by BOTH server and clients, so previews match the posted total to the kuruş.
   Never duplicate pricing math per platform.
+
+### 7.5 Aggregations & raw SQL — snake_case columns, bound clients
+- **camelCase entity properties are NOT translated inside raw SQL fragments**
+  (`.select("…")`, function calls like `to_char(...)` / `EXTRACT(...)`, raw
+  `where`). Postgres folds the unquoted name to lowercase → `column o.createdat
+  does not exist`. Use the **quoted snake_case** column: `o."created_at"`. Inside a
+  double-quoted `.select("…")` string the SQL `"…"` quotes collide — use a
+  **backtick** JS string: `` .select(`to_char(o."created_at", 'YYYY-MM-DD')`, 'period') ``.
+  Coerce numeric `getRawMany()` strings via a `num()` helper. Pattern:
+  `backend/src/modules/inventory/product-stats.service.ts` and `backend/src/modules/reports/*`.
+- **Never pass a shared API-client method as a bare callback** (`fetcher={api.reports.pos}`):
+  a regular method loses `this` → `Cannot read properties of undefined (reading 'get')`,
+  thrown *before* any HTTP request. Wrap it `(q) => api.reports.pos(q)`, or make the
+  client's methods bound arrow-properties (as `ReportsApiClient` now does).
 
 ---
 
@@ -692,6 +712,12 @@ If any box is unchecked, the task is **not done** — say exactly what remains.
 - ❌ Claim "done" without the §13 HTTP token tests.
 - ❌ Leave a build/typecheck red and move on.
 - ❌ Store money/quantity as `double precision`/`float`/`real` (§7.1).
+- ❌ Leave a `decimalTransformer` numeric column unset in `repo.create({…})` — it
+  inserts `NULL` and violates the not-null constraint (§7.1).
+- ❌ Use camelCase entity properties in raw QueryBuilder SQL — quote snake_case
+  (`o."created_at"`); in `.select()` use a backtick string (§7.5).
+- ❌ Pass a shared API-client method as an unbound callback — `this` is lost; wrap
+  it `(q)=>api.x.y(q)` (§7.5).
 - ❌ Ship master-data tables only and omit the transactions/movements + balances
   the feature exists for (rule 12), without explicitly reporting the deferral.
 - ❌ Skip the mobile layer of a user-facing module without explicit user approval
@@ -739,6 +765,10 @@ If any box is unchecked, the task is **not done** — say exactly what remains.
 | **AI — pluggable provider layer** | `backend/.../contacts/ai/ai-provider.ts` (`runAi`); provider catalog + model variants in shared `AI_PROVIDERS` (`integrations.dto.ts`). **To add an AI agent see §19.** |
 | a full-screen / template-independent surface | `frontend/src/routes/_pos.tsx` (gated own-chrome layout) + public `pos.login.tsx`; module config `home` stays in-shell (§11, §18.6) |
 | server-authoritative pricing + settle/post-to-ledger | `backend/src/modules/pos/pos-orders.service.ts` (one `manager.transaction`, `reverseSource`); shared math `shared/src/modules/pos/pos-pricing.helpers.ts`; mirrors `invoices.service`. See `docs/pos.md` |
+| per-module analytics (KPIs + charts, cached) | `backend/src/modules/reports/*` (one cache-wrapped `*-stats.service.ts` per module, QueryBuilder), shared generic `report.dto.ts` (`ModuleStatsDto`); web `frontend/src/modules/genel/components/module-analytics-view.tsx`; mobile uses `react-native-gifted-charts` |
+| pluggable cache (memory default / redis / memcached) | `backend/src/cache/*` (`CacheDriver` + `CACHE_DRIVER` token + `@Global() CacheModule`); chosen by `CACHE_STORE` — mirrors the files `STORAGE_DRIVER` `useFactory`. Wrap reads in `cache.wrap(key, ttl, fn)` |
+| in-app feedback (screenshot + on-image annotation) | `backend/src/modules/feedback/*` (reuses files for the screenshot); web `frontend/src/components/feedback/*` (modern-screenshot + canvas editor); mobile `mobile/src/components/feedback/*` (Skia `makeImageFromView`) |
+| reusable product picker (draggable/resizable, filters, multi-select) | `frontend/src/components/product-picker/*` (DataGrid `selection` + `AdvancedFilterPanel`) — use everywhere a product is chosen |
 
 > Work like the agent before you and the agent after you will read your diff and
 > have to extend it. Same shapes, same gates, same tests. Every time.

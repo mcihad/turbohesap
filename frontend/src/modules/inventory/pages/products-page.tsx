@@ -1,8 +1,7 @@
 import * as React from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Layers, Pencil, Plus, SlidersHorizontal, Trash2, X } from 'lucide-react'
-import { toast } from 'sonner'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Package, Plus, SlidersHorizontal, X } from 'lucide-react'
 
 import {
   EMPTY_PRODUCT_FILTERS,
@@ -14,9 +13,9 @@ import {
   distinctValues,
   filterProducts,
   filterableFields,
-  toApiError,
   type ProductDto,
   type ProductFilters,
+  type SellableUnitDto,
 } from '@turbohesap/shared'
 
 import { api } from '@/lib/api'
@@ -39,11 +38,18 @@ export function ProductsPage() {
   const navigate = useNavigate()
   const { hasPermission } = useAuth()
   const canWrite = hasPermission(InventoryPermissions.productsWrite)
-  const canDelete = hasPermission(InventoryPermissions.productsDelete)
 
   const productsQuery = useQuery({
     queryKey: ['inventory', 'products'],
     queryFn: () => api.inventory.products.list(),
+    enabled: hasPermission(InventoryPermissions.productsRead),
+  })
+  // Flat "sellable unit" list: one row per variant (parent hidden), variant-less
+  // products show themselves. This is the displayed grid; the ProductDto list
+  // above still powers the advanced filter facets.
+  const sellableQuery = useQuery({
+    queryKey: ['inventory', 'products', 'sellable'],
+    queryFn: () => api.inventory.products.sellable(),
     enabled: hasPermission(InventoryPermissions.productsRead),
   })
   const categoriesQuery = useQuery({
@@ -90,13 +96,8 @@ export function ProductsPage() {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['inventory', 'products'] })
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.inventory.products.remove(id),
-    onSuccess: () => { toast.success('Ürün silindi'); void invalidate() },
-    onError: (e) => toast.error('Silme başarısız', { description: toApiError(e).message }),
-  })
-
   const products = productsQuery.data ?? []
+  const sellable = sellableQuery.data ?? []
   const categories = categoriesQuery.data ?? []
   const channels = (channelsQuery.data ?? []).map((c) => ({ id: c.id, name: c.name }))
 
@@ -129,50 +130,62 @@ export function ProductsPage() {
     [products, filters.search, filters.categoryIds, categories],
   )
   const facets = React.useMemo(() => attrFacets(baseSubset, fields), [baseSubset, fields])
-  const filtered = React.useMemo(
-    () => filterProducts(products, filters, categories),
+
+  // Advanced filters (category + attributes, search excluded) → allowed product
+  // ids; the flat sellable rows are then narrowed to those ids and the search.
+  const allowedIds = React.useMemo(
+    () => new Set(filterProducts(products, { ...filters, search: '' }, categories).map((p) => p.id)),
     [products, filters, categories],
+  )
+  const q = filters.search.trim().toLocaleLowerCase('tr')
+  const rows = React.useMemo(
+    () =>
+      sellable.filter((r) => {
+        if (!allowedIds.has(r.productId)) return false
+        if (q) {
+          const hay = `${r.label} ${r.code} ${r.barcode} ${r.categoryName ?? ''}`.toLocaleLowerCase('tr')
+          if (!hay.includes(q)) return false
+        }
+        return true
+      }),
+    [sellable, allowedIds, q],
   )
 
   const advCount = advancedFilterCount(filters)
   const anyFilter = !!filters.search.trim() || advCount > 0
 
-  // All stock-card fields as grid columns (users hide/reorder/pin/persist).
-  const columns: ColumnDef<ProductDto>[] = [
-    { id: 'code', accessorKey: 'code', header: 'Kod', size: 120, cell: ({ row }) => <span className="font-mono text-xs">{row.original.code}</span> },
+  // One row per sellable unit (variant or variant-less product). Users
+  // hide/reorder/pin/persist; clicking a row opens the parent product detail.
+  const columns: ColumnDef<SellableUnitDto>[] = [
     {
-      id: 'name', accessorKey: 'name', header: 'Ad', size: 240,
+      id: 'code', accessorKey: 'code', header: 'Kod', size: 130,
       cell: ({ row }) => (
-        <span className="inline-flex items-center gap-1.5 font-medium">
-          {row.original.name}
-          {row.original.hasVariants ? <Badge variant="outline" className="gap-1 px-1.5 py-0 text-2xs font-normal"><Layers className="size-3" />{row.original.variantCount}</Badge> : null}
+        <span className="inline-flex items-center gap-2">
+          <span className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground/60">
+            {row.original.imageUrl ? <img src={row.original.imageUrl} alt="" className="size-full object-cover" /> : <Package className="size-3.5" />}
+          </span>
+          <span className="font-mono text-xs">{row.original.code}</span>
         </span>
       ),
     },
-    { id: 'category', accessorFn: (p) => p.category?.name ?? '', header: 'Kategori', size: 160, enableGrouping: true, cell: ({ row }) => row.original.category ? <Badge variant="secondary">{row.original.category.name}</Badge> : <span className="text-muted-foreground">—</span> },
-    { id: 'type', accessorKey: 'type', header: 'Tür', size: 120, enableGrouping: true, cell: ({ row }) => productTypeLabel(row.original.type) },
+    { id: 'label', accessorKey: 'label', header: 'Ad', size: 260, cell: ({ row }) => <span className="font-medium">{row.original.label}</span> },
+    { id: 'category', accessorFn: (r) => r.categoryName ?? '', header: 'Kategori', size: 160, enableGrouping: true, cell: ({ row }) => row.original.categoryName ? <Badge variant="secondary">{row.original.categoryName}</Badge> : <span className="text-muted-foreground">—</span> },
+    { id: 'type', accessorKey: 'type', header: 'Tür', size: 120, enableGrouping: true, cell: ({ row }) => productTypeLabel(row.original.type as ProductDto['type']) },
     { id: 'brand', accessorKey: 'brand', header: 'Marka', size: 130, enableGrouping: true, cell: ({ row }) => row.original.brand || '—' },
     { id: 'barcode', accessorKey: 'barcode', header: 'Barkod', size: 140, cell: ({ row }) => <span className="font-mono text-xs text-muted-foreground">{row.original.barcode || '—'}</span> },
     { id: 'unit', accessorKey: 'unit', header: 'Birim', size: 90, cell: ({ row }) => row.original.unit || '—' },
-    { id: 'salePrice', accessorKey: 'salePrice', header: 'Satış', size: 120, cell: ({ row }) => <span className="tabular-nums">{money(row.original.salePrice, row.original.currency)}</span> },
-    { id: 'purchasePrice', accessorKey: 'purchasePrice', header: 'Alış', size: 120, cell: ({ row }) => <span className="tabular-nums">{money(row.original.purchasePrice, row.original.currency)}</span> },
+    { id: 'salePrice', accessorKey: 'salePrice', header: 'Satış', size: 120, cell: ({ row }) => <span className="tabular-nums">{row.original.salePrice == null ? '—' : money(row.original.salePrice, row.original.currency)}</span> },
+    { id: 'purchasePrice', accessorKey: 'purchasePrice', header: 'Alış', size: 120, cell: ({ row }) => <span className="tabular-nums">{row.original.purchasePrice == null ? '—' : money(row.original.purchasePrice, row.original.currency)}</span> },
     { id: 'taxRate', accessorKey: 'taxRate', header: 'KDV', size: 80, cell: ({ row }) => row.original.taxRate == null ? '—' : `%${row.original.taxRate}` },
     { id: 'currency', accessorKey: 'currency', header: 'Döviz', size: 80, enableGrouping: true },
-    { id: 'totalStock', accessorKey: 'totalStock', header: 'Stok', size: 110, cell: ({ row }) => row.original.trackStock ? <span className={`tabular-nums ${row.original.totalStock <= row.original.minQuantity ? 'text-destructive' : ''}`}>{row.original.totalStock}{row.original.unit ? ` ${row.original.unit}` : ''}</span> : <span className="text-muted-foreground">—</span> },
+    {
+      id: 'totalStock', accessorKey: 'totalStock', header: 'Stok', size: 110,
+      cell: ({ row }) => row.original.trackStock
+        ? <span className={`tabular-nums ${row.original.totalStock <= row.original.minQuantity ? 'text-destructive' : ''}`}>{row.original.totalStock}{row.original.unit ? ` ${row.original.unit}` : ''}</span>
+        : <span className="text-muted-foreground">—</span>,
+    },
     { id: 'minQuantity', accessorKey: 'minQuantity', header: 'Min', size: 80, cell: ({ row }) => <span className="tabular-nums">{row.original.minQuantity}</span> },
-    { id: 'weight', accessorKey: 'weight', header: 'Ağırlık', size: 100, cell: ({ row }) => row.original.weight == null ? '—' : `${row.original.weight} kg` },
     { id: 'isActive', accessorKey: 'isActive', header: 'Durum', size: 100, enableGrouping: true, cell: ({ row }) => <Badge variant={row.original.isActive ? 'success' : 'outline'}>{row.original.isActive ? 'Aktif' : 'Pasif'}</Badge> },
-    ...(canWrite || canDelete
-      ? [{
-          id: 'actions', header: '', size: 90, enableSorting: false, enableHiding: false, enableColumnFilter: false, enableGrouping: false,
-          cell: ({ row }) => (
-            <div className="flex justify-end gap-1">
-              {canWrite ? <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); setEditing(row.original); setOpen(true) }} aria-label="Düzenle"><Pencil className="size-4" /></Button> : null}
-              {canDelete ? <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); if (confirm(`"${row.original.name}" silinsin mi?`)) deleteMutation.mutate(row.original.id) }} aria-label="Sil"><Trash2 className="size-4 text-destructive" /></Button> : null}
-            </div>
-          ),
-        } as ColumnDef<ProductDto>]
-      : []),
   ]
 
   return (
@@ -183,12 +196,12 @@ export function ProductsPage() {
           <div className="flex min-w-0 flex-1 flex-col">
             <DataGrid
               fillHeight
-              gridId="inventory.products"
-              data={filtered}
+              gridId="inventory.products.sellable"
+              data={rows}
               columns={columns}
-              getRowId={(p) => p.id}
-              loading={productsQuery.isLoading}
-              onRowClick={(p) => navigate({ to: '/inventory/products/$id', params: { id: p.id } })}
+              getRowId={(r) => r.id}
+              loading={productsQuery.isLoading || sellableQuery.isLoading}
+              onRowClick={(r) => navigate({ to: '/inventory/products/$id', params: { id: r.productId } })}
               emptyText={anyFilter ? 'Filtreyle eşleşen ürün yok.' : 'Ürün yok.'}
               search={{
                 value: filters.search,

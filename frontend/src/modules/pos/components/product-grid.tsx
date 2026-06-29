@@ -74,7 +74,7 @@ export function ProductGrid({
   }
 
   return (
-    <div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))] content-start gap-2.5 overflow-y-auto p-3">
+    <div className="grid flex-1 auto-rows-min grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] content-start gap-3.5 overflow-y-auto p-4">
       {filtered.map((p) => {
         const price = resolveUnitPrice(p, null, channelId)
         return (
@@ -83,14 +83,30 @@ export function ProductGrid({
             type="button"
             onClick={() => onPick(p)}
             className={cn(
-              'flex h-32 flex-col justify-between gap-2 overflow-hidden rounded-xl border bg-card p-3 text-left shadow-xs transition-all',
-              'hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md active:translate-y-0 active:scale-[0.98]',
+              'flex h-52 flex-col overflow-hidden rounded-2xl border bg-card text-left shadow-xs transition-all',
+              'hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-lg active:translate-y-0 active:scale-[0.97]',
             )}
           >
-            <span className="line-clamp-3 text-sm font-medium leading-snug">{p.name}</span>
-            <span className="inline-flex w-fit items-center rounded-md bg-primary/10 px-2 py-0.5 text-sm font-bold tabular-nums text-primary">
-              {money(price, p.currency)}
-            </span>
+            <div className="relative aspect-square w-full overflow-hidden bg-muted/50">
+              {p.imageUrl ? (
+                <img
+                  src={p.imageUrl}
+                  alt={p.name}
+                  loading="lazy"
+                  className="size-full object-cover"
+                />
+              ) : (
+                <div className="flex size-full items-center justify-center text-muted-foreground/40">
+                  <Package className="size-11" />
+                </div>
+              )}
+            </div>
+            <div className="flex flex-1 flex-col justify-between gap-1.5 p-3">
+              <span className="line-clamp-2 text-[0.95rem] font-medium leading-snug">{p.name}</span>
+              <span className="inline-flex w-fit items-center rounded-lg bg-primary/10 px-2.5 py-1 text-base font-bold tabular-nums text-primary">
+                {money(price, p.currency)}
+              </span>
+            </div>
           </button>
         )
       })}

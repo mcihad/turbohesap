@@ -56,10 +56,10 @@ export function CategoryStrip({
   }
 
   const pill =
-    'flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors'
+    'flex h-13 shrink-0 items-center gap-2 rounded-full border px-5 text-base font-medium transition-colors'
 
   return (
-    <div className="flex items-center gap-2 border-b bg-card px-3 py-2.5">
+    <div className="flex items-center gap-2.5 border-b bg-card px-3 py-3">
       {parent ? (
         <button
           type="button"
@@ -70,7 +70,7 @@ export function CategoryStrip({
           }}
           className={cn(pill, 'bg-background hover:bg-accent')}
         >
-          <ChevronLeft className="size-4" />
+          <ChevronLeft className="size-5" />
           <span className="max-w-28 truncate">{parent.name}</span>
         </button>
       ) : (
@@ -80,11 +80,11 @@ export function CategoryStrip({
           className={cn(
             pill,
             activeId === null
-              ? 'border-primary/60 bg-primary/10 text-primary'
+              ? 'border-primary/60 bg-primary/10 text-primary shadow-sm'
               : 'bg-background hover:bg-accent',
           )}
         >
-          <LayoutGrid className="size-4" />
+          <LayoutGrid className="size-5" />
           Tümü
         </button>
       )}
@@ -110,18 +110,26 @@ export function CategoryStrip({
               })}
               className={cn(
                 pill,
+                'pl-2',
                 isActive
-                  ? 'border-primary/60 bg-primary/10 text-primary'
+                  ? 'border-primary/60 bg-primary/10 text-primary shadow-sm'
                   : 'bg-background hover:bg-accent',
               )}
             >
+              <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted text-muted-foreground">
+                {c.imageUrl ? (
+                  <img src={c.imageUrl} alt="" className="size-full object-cover" />
+                ) : (
+                  <LayoutGrid className="size-4" />
+                )}
+              </span>
               <span className="max-w-40 truncate">{c.name}</span>
-              {drillable ? <ChevronRight className="size-3.5 shrink-0 opacity-50" /> : null}
+              {drillable ? <ChevronRight className="size-4 shrink-0 opacity-50" /> : null}
             </button>
           )
         })}
         {visible.length === 0 ? (
-          <span className="flex h-10 items-center px-2 text-sm text-muted-foreground">Alt kategori yok</span>
+          <span className="flex h-13 items-center px-2 text-sm text-muted-foreground">Alt kategori yok</span>
         ) : null}
       </div>
     </div>

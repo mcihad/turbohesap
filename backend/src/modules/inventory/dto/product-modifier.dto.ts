@@ -28,6 +28,11 @@ export class CreateModifierOptionDto implements CreateModifierOptionRequest {
   @IsOptional() @IsBoolean() isDefault?: boolean
   @IsOptional() @IsInt() sortOrder?: number
   @IsOptional() @IsBoolean() isActive?: boolean
+  @IsOptional() @IsString() stockProductId?: string | null
+  @IsOptional() @IsString() stockVariantId?: string | null
+  @IsOptional() @IsNumber() @Min(0) consumeQty?: number
+  @IsOptional() @IsBoolean() deductStock?: boolean
+  @IsOptional() @IsBoolean() returnable?: boolean
 }
 
 export class UpdateModifierOptionDto implements UpdateModifierOptionRequest {
@@ -36,6 +41,11 @@ export class UpdateModifierOptionDto implements UpdateModifierOptionRequest {
   @IsOptional() @IsBoolean() isDefault?: boolean
   @IsOptional() @IsInt() sortOrder?: number
   @IsOptional() @IsBoolean() isActive?: boolean
+  @IsOptional() @IsString() stockProductId?: string | null
+  @IsOptional() @IsString() stockVariantId?: string | null
+  @IsOptional() @IsNumber() @Min(0) consumeQty?: number
+  @IsOptional() @IsBoolean() deductStock?: boolean
+  @IsOptional() @IsBoolean() returnable?: boolean
 }
 
 export class CreateModifierGroupDto implements CreateModifierGroupRequest {

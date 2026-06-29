@@ -4,6 +4,7 @@ import { Minus, Plus } from 'lucide-react'
 
 import {
   resolveUnitPrice,
+  type ProductBundleComponentDto,
   type ProductDto,
   type ProductModifierGroupDto,
 } from '@turbohesap/shared'
@@ -35,12 +36,14 @@ export function ModifierSheet({
   product,
   channelId,
   taxInclusive,
+  bundle,
   onClose,
   onAdd,
 }: {
   product: ProductDto | null
   channelId: string | null
   taxInclusive: boolean
+  bundle?: ProductBundleComponentDto[]
   onClose: () => void
   onAdd: (line: CartLine) => void
 }) {
@@ -87,13 +90,14 @@ export function ModifierSheet({
 
   const previewLine = React.useMemo<CartLine | null>(() => {
     if (!product) return null
-    return makeLine(product, channelId, buildModifiers(groups, selected), qty)
-  }, [product, channelId, groups, selected, qty])
+    return makeLine(product, channelId, buildModifiers(groups, selected), qty, bundle)
+  }, [product, channelId, groups, selected, qty, bundle])
   const previewTotal = previewLine ? cartTotals([previewLine], taxInclusive).grandTotal : 0
 
   const submit = () => {
     if (!product || !canAdd) return
-    onAdd(makeLine(product, channelId, buildModifiers(groups, selected), qty))
+    // One merged qty-N line; per-unit splitting happens at tender time.
+    onAdd(makeLine(product, channelId, buildModifiers(groups, selected), qty, bundle))
     onClose()
   }
 
@@ -140,8 +144,8 @@ export function ModifierSheet({
                           type="button"
                           onClick={() => toggle(g, o.id)}
                           className={cn(
-                            'flex items-center justify-between rounded-md border px-3 py-2.5 text-left text-sm transition-colors',
-                            on ? 'border-primary bg-primary/10 text-primary' : 'bg-background hover:bg-accent',
+                            'flex min-h-13 items-center justify-between rounded-xl border px-3.5 py-3 text-left text-sm transition-colors',
+                            on ? 'border-primary bg-primary/10 text-primary shadow-sm' : 'bg-background hover:bg-accent',
                           )}
                         >
                           <span className="truncate">{o.name}</span>
@@ -161,16 +165,16 @@ export function ModifierSheet({
         </div>
 
         <DialogFooter className="flex-row items-center justify-between gap-3 border-t px-5 py-4 sm:justify-between">
-          <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" size="icon" onClick={() => setQty((q) => Math.max(1, q - 1))}>
-              <Minus className="size-4" />
+          <div className="flex items-center gap-1">
+            <Button type="button" variant="outline" size="icon-lg" onClick={() => setQty((q) => Math.max(1, q - 1))}>
+              <Minus className="size-5" />
             </Button>
-            <span className="w-8 text-center text-base font-semibold tabular-nums">{qty}</span>
-            <Button type="button" variant="outline" size="icon" onClick={() => setQty((q) => q + 1)}>
-              <Plus className="size-4" />
+            <span className="w-10 text-center text-lg font-semibold tabular-nums">{qty}</span>
+            <Button type="button" variant="outline" size="icon-lg" onClick={() => setQty((q) => q + 1)}>
+              <Plus className="size-5" />
             </Button>
           </div>
-          <Button type="button" className="flex-1" disabled={!canAdd} onClick={submit}>
+          <Button type="button" className="h-14 flex-1 text-base font-semibold" disabled={!canAdd} onClick={submit}>
             Sepete Ekle · {money(previewTotal, product?.currency)}
           </Button>
         </DialogFooter>

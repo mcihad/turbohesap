@@ -12,6 +12,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard'
 import { PermissionsGuard } from './common/guards/permissions.guard'
 import { configuration } from './config/configuration'
 import { DatabaseModule } from './database/database.module'
+import { CacheModule } from './cache/cache.module'
 import { DebugController } from './modules/debug/debug.controller'
 import { HealthController } from './health/health.controller'
 import { AuthModule } from './modules/auth/auth.module'
@@ -25,7 +26,12 @@ import { SettingsModule } from './modules/settings/settings.module'
 import { FinanceModule } from './modules/finance/finance.module'
 import { ContactsModule } from './modules/contacts/contacts.module'
 import { InvoicesModule } from './modules/invoices/invoices.module'
+import { OrdersModule } from './modules/orders/orders.module'
 import { PosModule } from './modules/pos/pos.module'
+import { FeedbackModule } from './modules/feedback/feedback.module'
+import { ReportsModule } from './modules/reports/reports.module'
+import { HrModule } from './modules/hr/hr.module'
+import { StocktakeModule } from './modules/stocktake/stocktake.module'
 
 @Module({
   imports: [
@@ -46,6 +52,7 @@ import { PosModule } from './modules/pos/pos.module'
       },
     ]),
     DatabaseModule,
+    CacheModule,
     IamModule,
     AuthModule,
     SalesModule,
@@ -57,7 +64,12 @@ import { PosModule } from './modules/pos/pos.module'
     FinanceModule,
     ContactsModule,
     InvoicesModule,
+    OrdersModule,
     PosModule,
+    FeedbackModule,
+    ReportsModule,
+    HrModule,
+    StocktakeModule,
   ],
   controllers: [HealthController, DebugController],
   providers: [

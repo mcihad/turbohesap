@@ -41,6 +41,7 @@ import {
   StockSection,
   VariantsSection,
 } from './product-detail-sections'
+import { PosSection } from './product-pos-section'
 
 export function ProductDetailScreen() {
   const t = useTheme()
@@ -50,6 +51,7 @@ export function ProductDetailScreen() {
   const canDelete = hasPermission(InventoryPermissions.productsDelete)
   const canAudit = hasPermission(IamPermissions.auditRead)
   const canFiles = hasPermission(FilesPermissions.write)
+  const canModifiers = hasPermission(InventoryPermissions.modifiersRead)
   const id = String(nav.current.params?.id ?? '')
   const product = useAsync(() => api.inventory.products.get(id), [id], {
     enabled: hasPermission(InventoryPermissions.productsRead) && !!id,
@@ -134,6 +136,7 @@ export function ProductDetailScreen() {
             ...(p.trackStock ? [{ value: 'stok', label: 'Stok', icon: 'archive' } as DetailTab] : []),
             { value: 'fiyatlar', label: 'Kanal fiyatları', icon: 'tag' },
             { value: 'paketler', label: 'Paketler', icon: 'package' },
+            ...(canModifiers ? [{ value: 'pos', label: 'POS', icon: 'sliders' } as DetailTab] : []),
           ]
           const active = tabs.some((x) => x.value === tab) ? tab : 'genel'
 
@@ -254,6 +257,7 @@ export function ProductDetailScreen() {
               {active === 'stok' ? <StockSection product={p} onChanged={product.refetch} /> : null}
               {active === 'fiyatlar' ? <ChannelPricesSection product={p} onChanged={product.refetch} /> : null}
               {active === 'paketler' ? <PackagingsSection product={p} onChanged={product.refetch} /> : null}
+              {active === 'pos' ? <PosSection product={p} onChanged={product.refetch} /> : null}
             </>
           )
         })()

@@ -65,7 +65,7 @@ export function HeldOrdersDialog({
                         </div>
                         <p className="flex items-center gap-1 text-2xs text-muted-foreground">
                           <Clock className="size-3" />
-                          {new Date(o.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(o.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Istanbul' })}
                           {' · '}
                           {itemCount} ürün
                         </p>

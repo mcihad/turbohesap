@@ -29,5 +29,7 @@ import { InvoicesService } from './invoices.service'
   ],
   controllers: [InvoicesController],
   providers: [InvoicesService],
+  // Exported so the orders module can convert a document into a draft invoice.
+  exports: [InvoicesService],
 })
 export class InvoicesModule {}

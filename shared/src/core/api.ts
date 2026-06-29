@@ -28,6 +28,8 @@ import { ProductsApiClient } from '../modules/inventory/products.client'
 import type { IProductsService } from '../modules/inventory/products.service'
 import { ProductModifiersApiClient } from '../modules/inventory/product-modifiers.client'
 import type { IProductModifiersService } from '../modules/inventory/product-modifiers.service'
+import { ProductBundlesApiClient } from '../modules/inventory/product-bundles.client'
+import type { IProductBundlesService } from '../modules/inventory/product-bundles.service'
 import { StockMovementTypesApiClient } from '../modules/inventory/stock-movement-types.client'
 import type { IStockMovementTypesService } from '../modules/inventory/stock-movement-types.service'
 import { StockMovementsApiClient } from '../modules/inventory/stock-movements.client'
@@ -74,6 +76,30 @@ import { PosTablesApiClient } from '../modules/pos/tables.client'
 import type { IPosTablesService } from '../modules/pos/tables.service'
 import { InvoicesApiClient } from '../modules/invoices/invoices.client'
 import type { IInvoicesService } from '../modules/invoices/invoices.service'
+import { FeedbackApiClient } from '../modules/feedback/feedback.client'
+import type { IFeedbackService } from '../modules/feedback/feedback.service'
+import { ReportsApiClient } from '../modules/reports/reports.client'
+import type { IReportsService } from '../modules/reports/reports.service'
+import { OrdersApiClient } from '../modules/orders/orders.client'
+import type { IOrdersService } from '../modules/orders/orders.service'
+import {
+  EmployeesApiClient,
+  LeaveTypesApiClient,
+  LeaveRequestsApiClient,
+  TimesheetsApiClient,
+  PayrollApiClient,
+  PayrollParamsApiClient,
+} from '../modules/hr/hr.client'
+import type {
+  IEmployeesService,
+  ILeaveTypesService,
+  ILeaveRequestsService,
+  ITimesheetsService,
+  IPayrollService,
+  IPayrollParamsService,
+} from '../modules/hr/hr.service'
+import { StocktakeApiClient } from '../modules/stocktake/stocktake.client'
+import type { IStocktakeService } from '../modules/stocktake/stocktake.service'
 import { createHttpClient, type HttpClientConfig } from './http'
 
 // Resources are grouped by module — `api.<module>.<resource>` — mirroring the
@@ -100,6 +126,7 @@ export interface InventoryApi {
   categories: ICategoriesService
   products: IProductsService
   modifiers: IProductModifiersService
+  bundles: IProductBundlesService
   movementTypes: IStockMovementTypesService
   stockMovements: IStockMovementsService
 }
@@ -132,6 +159,15 @@ export interface ContactsApi {
   integrations: IIntegrationsService
 }
 
+export interface HrApi {
+  employees: IEmployeesService
+  leaveTypes: ILeaveTypesService
+  leaveRequests: ILeaveRequestsService
+  timesheets: ITimesheetsService
+  payroll: IPayrollService
+  params: IPayrollParamsService
+}
+
 // TurbohesapApi bundles every module's service client behind its interface.
 // Consumers depend on these interfaces, not the concrete axios classes. Add new
 // modules here (a new top-level key, or grouped like `iam`).
@@ -148,6 +184,16 @@ export interface TurbohesapApi {
   pos: PosApi
   /** Fatura (invoices): sales/purchase invoices with KDV + tevkifat. */
   invoices: IInvoicesService
+  /** In-app feedback (istek/talep/öneri/hata) with annotated screenshots. */
+  feedback: IFeedbackService
+  /** Per-module analytics/statistics (cached server-side). */
+  reports: IReportsService
+  /** Sipariş yönetimi: Teklif → Sipariş → İrsaliye → Fatura (sales & purchase). */
+  orders: IOrdersService
+  /** İK & Bordro: personel, izin, puantaj, bordro (Türkiye payroll). */
+  hr: HrApi
+  /** Stok/Envanter Sayımı (stocktake): count sessions → posted stock adjustments. */
+  stocktake: IStocktakeService
   /** Generic key/value reference-data lists. */
   lookups: ILookupsService
   /** Generic file uploads/attachments (images + files for any entity). */
@@ -188,6 +234,7 @@ export function createTurbohesapApi(
       categories: new CategoriesApiClient(http),
       products: new ProductsApiClient(http),
       modifiers: new ProductModifiersApiClient(http),
+      bundles: new ProductBundlesApiClient(http),
       movementTypes: new StockMovementTypesApiClient(http),
       stockMovements: new StockMovementsApiClient(http),
     },
@@ -217,6 +264,18 @@ export function createTurbohesapApi(
       tables: new PosTablesApiClient(http),
     },
     invoices: new InvoicesApiClient(http),
+    feedback: new FeedbackApiClient(http),
+    reports: new ReportsApiClient(http),
+    orders: new OrdersApiClient(http),
+    hr: {
+      employees: new EmployeesApiClient(http),
+      leaveTypes: new LeaveTypesApiClient(http),
+      leaveRequests: new LeaveRequestsApiClient(http),
+      timesheets: new TimesheetsApiClient(http),
+      payroll: new PayrollApiClient(http),
+      params: new PayrollParamsApiClient(http),
+    },
+    stocktake: new StocktakeApiClient(http),
     lookups: new LookupsApiClient(http),
     files: new FilesApiClient(http),
     settings: new SettingsApiClient(http),

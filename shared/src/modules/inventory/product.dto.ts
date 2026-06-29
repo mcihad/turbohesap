@@ -9,6 +9,7 @@ import type { ProductVariantDto } from './product-variant.dto'
 import type { ProductPackagingDto } from './product-packaging.dto'
 import type { ProductStockDto } from './product-stock.dto'
 import type { ProductChannelPriceDto } from './product-channel-price.dto'
+import type { ProductBundleComponentDto } from './product-bundle.dto'
 
 // Stockable goods vs services vs consumables (no stock tracking).
 export type ProductType = 'stockable' | 'service' | 'consumable'
@@ -81,6 +82,9 @@ export interface ProductDto {
   packagings: ProductPackagingDto[]
   stock: ProductStockDto[]
   channelPrices: ProductChannelPriceDto[]
+  /** POS bundle components handed out with this product (populated on GET /:id).
+   *  The POS cart previews these as separate child lines. */
+  bundleComponents: ProductBundleComponentDto[]
 
   createdAt: string
   updatedAt: string

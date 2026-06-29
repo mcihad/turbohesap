@@ -12,6 +12,10 @@ MODULE := turbohesap
 -include .env
 export
 
+# Local upload directory (mirrors the backend FILE_LOCAL_DIR; relative paths
+# are resolved under backend/). Used by `make reset` to wipe uploaded files.
+FILE_LOCAL_DIR ?= storage/uploads
+
 .DEFAULT_GOAL := help
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -124,6 +128,25 @@ migration-generate: ## Generate a migration from entity changes (NAME=AddThing)
 .PHONY: migration-revert
 migration-revert: ## Revert the most recently applied migration
 	$(PNPM) --filter @turbohesap/backend migration:revert
+
+.PHONY: reset
+reset: ## DANGER: wipe the database AND uploads — back to point zero (asks twice)
+	@echo ""
+	@echo "  \033[1;31m⚠  DIKKAT — GERI ALINAMAZ ISLEM\033[0m"
+	@echo "  Bu komut '$(MODULE)' veritabanindaki TUM verileri siler ve yuklenen"
+	@echo "  dosyalari (backend/$(FILE_LOCAL_DIR)) kaldirir. Program 0 noktasina doner."
+	@echo "  Veritabani: \033[33m$(DATABASE_URL)\033[0m"
+	@echo ""
+	@printf "  1/2 — Devam etmek istediginizden emin misiniz? [evet/hayir]: "; \
+	read a1; [ "$$a1" = "evet" ] || { echo "  Iptal edildi."; exit 1; }; \
+	printf "  2/2 — TUM veriler KALICI olarak silinecek. Onaylamak icin 'SIFIRLA' yazin: "; \
+	read a2; [ "$$a2" = "SIFIRLA" ] || { echo "  Iptal edildi."; exit 1; }; \
+	echo ""; echo "  -> Veritabani semasi siliniyor…"; \
+	psql "$(DATABASE_URL)" -v ON_ERROR_STOP=1 -c 'DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;' \
+	  || { echo "  psql basarisiz — Postgres calisiyor mu, DATABASE_URL dogru mu?"; exit 1; }; \
+	case "$(FILE_LOCAL_DIR)" in /*) d="$(FILE_LOCAL_DIR)";; *) d="backend/$(FILE_LOCAL_DIR)";; esac; \
+	echo "  -> Yuklenen dosyalar siliniyor ($$d)…"; rm -rf "$$d"; \
+	echo ""; echo "  \033[1;32m✓ Sifirlandi.\033[0m Ilk acilista sema migrasyonla kurulur ve admin tohumlanir (make run / make dev)."
 
 ##@ Quality
 .PHONY: lint

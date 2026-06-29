@@ -9,8 +9,13 @@ import { PosRegister } from './entities/pos-register.entity'
 import { PosOrder } from './entities/pos-order.entity'
 import { PosPayment } from './entities/pos-payment.entity'
 import { User } from '../iam/entities/user.entity'
+import { FinanceTransaction } from '../finance/entities/finance-transaction.entity'
 import { displayName } from '../contacts/user-name.util'
 import type { CloseSessionDto, OpenSessionDto } from './dto/pos.dto'
+
+function round2(n: number): number {
+  return Math.round((n + Number.EPSILON) * 100) / 100
+}
 
 @Injectable()
 export class PosSessionsService {
@@ -20,6 +25,7 @@ export class PosSessionsService {
     @InjectRepository(PosOrder) private readonly orders: Repository<PosOrder>,
     @InjectRepository(PosPayment) private readonly payments: Repository<PosPayment>,
     @InjectRepository(User) private readonly users: Repository<User>,
+    @InjectRepository(FinanceTransaction) private readonly finance: Repository<FinanceTransaction>,
   ) {}
 
   async list(query?: SessionListQuery): Promise<PosSessionDto[]> {
@@ -58,33 +64,93 @@ export class PosSessionsService {
     return this.toDto(saved)
   }
 
-  async close(id: string, dto: CloseSessionDto): Promise<PosSessionDto> {
+  // Vezne: on close, aggregate the session's cash and card takings into a single
+  // finance transaction each (cash → kasa, card → banka). Cash/card are NOT
+  // posted per order — this is the one place they hit finance. The aggregate
+  // links back to the session (sourceModule 'pos-session') for drill-down.
+  async close(id: string, dto: CloseSessionDto, userId?: string): Promise<PosSessionDto> {
     const s = await this.findOrFail(id)
     if (s.status === 'closed') throw new BadRequestException('Vardiya zaten kapalı')
-    s.status = 'closed'
-    s.closedAt = new Date()
-    s.countedCash = dto.countedCash ?? null
-    s.closingCash = dto.countedCash ?? null
-    if (dto.notes !== undefined) s.notes = dto.notes
-    await this.sessions.save(s)
+    await this.sessions.manager.transaction(async (em) => {
+      const register = await em.getRepository(PosRegister).findOne({ where: { id: s.registerId } })
+      const paidOrders = await em
+        .getRepository(PosOrder)
+        .find({ where: { sessionId: s.id, status: 'paid' } })
+      if (paidOrders.length) {
+        const pays = await em
+          .getRepository(PosPayment)
+          .find({ where: { orderId: In(paidOrders.map((o) => o.id)) } })
+        const cashPays = pays.filter((p) => p.method === 'cash')
+        const cardPays = pays.filter((p) => p.method === 'card')
+        const cashSum = round2(cashPays.reduce((sum, p) => sum + p.amount, 0))
+        const cardSum = round2(cardPays.reduce((sum, p) => sum + p.amount, 0))
+        const dateStr = new Date().toISOString().slice(0, 10)
+        const finRepo = em.getRepository(FinanceTransaction)
+        if (cashSum > 0) {
+          const cashAccountId =
+            register?.defaultCashAccountId ?? cashPays.find((p) => p.cashAccountId)?.cashAccountId ?? null
+          const fin = await finRepo.save(
+            finRepo.create({
+              cashAccountId,
+              bankAccountId: null,
+              contactId: null,
+              type: 'in',
+              amount: cashSum,
+              date: new Date(),
+              description: `POS ${register?.name ?? ''} ${dateStr} kapanış (nakit)`,
+              sourceModule: 'pos-session',
+              sourceId: s.id,
+            }),
+          )
+          s.cashFinanceTxId = fin.id
+        }
+        if (cardSum > 0) {
+          const bankAccountId = cardPays.find((p) => p.bankAccountId)?.bankAccountId ?? null
+          const fin = await finRepo.save(
+            finRepo.create({
+              cashAccountId: null,
+              bankAccountId,
+              contactId: null,
+              type: 'in',
+              amount: cardSum,
+              date: new Date(),
+              description: `POS ${register?.name ?? ''} ${dateStr} kapanış (kart)`,
+              sourceModule: 'pos-session',
+              sourceId: s.id,
+            }),
+          )
+          s.cardFinanceTxId = fin.id
+        }
+      }
+      s.status = 'closed'
+      s.closedAt = new Date()
+      s.closedById = userId ?? null
+      s.countedCash = dto.countedCash ?? null
+      s.closingCash = dto.countedCash ?? null
+      if (dto.notes !== undefined) s.notes = dto.notes
+      await em.getRepository(PosSession).save(s)
+    })
     return this.toDto(s)
   }
 
   private async toDto(s: PosSession): Promise<PosSessionDto> {
-    const [register, opener, paidOrders] = await Promise.all([
+    const [register, opener, closer, paidOrders] = await Promise.all([
       this.registers.findOne({ where: { id: s.registerId } }),
       this.users.findOne({ where: { id: s.openedById } }),
+      s.closedById ? this.users.findOne({ where: { id: s.closedById } }) : Promise.resolve(null),
       this.orders.find({ where: { sessionId: s.id, status: In(['paid', 'refunded']) } }),
     ])
     const salesTotal = paidOrders
       .filter((o) => o.status === 'paid')
       .reduce((sum, o) => sum + o.grandTotal, 0)
     let cashIn = 0
+    let cardTotal = 0
     if (paidOrders.length) {
       const pays = await this.payments.find({
-        where: { orderId: In(paidOrders.map((o) => o.id)), method: 'cash' },
+        where: { orderId: In(paidOrders.map((o) => o.id)) },
       })
-      cashIn = pays.reduce((sum, p) => sum + p.amount, 0)
+      cashIn = pays.filter((p) => p.method === 'cash').reduce((sum, p) => sum + p.amount, 0)
+      cardTotal = pays.filter((p) => p.method === 'card').reduce((sum, p) => sum + p.amount, 0)
     }
     return {
       id: s.id,
@@ -97,11 +163,16 @@ export class PosSessionsService {
       openingCash: s.openingCash,
       closedAt: s.closedAt ? s.closedAt.toISOString() : null,
       closingCash: s.closingCash,
-      expectedCash: Math.round((s.openingCash + cashIn) * 100) / 100,
+      closedById: s.closedById,
+      closedByName: closer ? displayName(closer) : null,
+      expectedCash: round2(s.openingCash + cashIn),
       countedCash: s.countedCash,
       status: s.status,
-      salesTotal: Math.round(salesTotal * 100) / 100,
+      salesTotal: round2(salesTotal),
+      cardTotal: round2(cardTotal),
       orderCount: paidOrders.filter((o) => o.status === 'paid').length,
+      cashFinanceTxId: s.cashFinanceTxId,
+      cardFinanceTxId: s.cardFinanceTxId,
       notes: s.notes,
       createdAt: s.createdAt.toISOString(),
       updatedAt: s.updatedAt.toISOString(),

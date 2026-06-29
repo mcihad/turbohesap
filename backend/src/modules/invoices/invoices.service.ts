@@ -267,6 +267,7 @@ export class InvoicesService {
       faturaTipi: dto.faturaTipi ?? (totals.withholdingTotal > 0 ? 'TEVKIFAT' : 'SATIS'),
       senaryo: dto.senaryo ?? 'TEMELFATURA',
       notes: dto.notes ?? null,
+      postsStock: dto.postStock ?? true,
       ...totals,
     })
     const saved = await this.invoices.save(invoice)
@@ -369,8 +370,10 @@ export class InvoicesService {
         }),
       )
 
-      // Post stock movements for stock-tracked products.
-      await this.postInvoiceStock(em, invoice)
+      // Post stock movements for stock-tracked products — unless the stock was
+      // already moved upstream by an İrsaliye (orders chain), in which case the
+      // invoice is created with postsStock=false to avoid double-counting.
+      if (invoice.postsStock) await this.postInvoiceStock(em, invoice)
       return invoice.id
     }).then((invId) => this.get(invId))
   }

@@ -24,6 +24,8 @@ import {
   type OpenSessionRequest,
   type PosOrderType,
   type PosPaymentMethod,
+  type ReturnPosOrderLineInput,
+  type ReturnPosOrderRequest,
   type SplitPosOrderRequest,
   type UpdatePosRegisterRequest,
   type VoidPosOrderRequest,
@@ -76,6 +78,7 @@ export class CreatePosOrderLineDto implements CreatePosOrderLineInput {
   @IsOptional() @IsNumber() @Min(0) discount?: number
   @IsOptional() @IsNumber() @Min(0) taxRate?: number
   @IsOptional() @IsString() notes?: string | null
+  @IsOptional() @IsBoolean() isBundleChild?: boolean
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
@@ -119,6 +122,18 @@ export class SplitPosOrderDto implements SplitPosOrderRequest {
   @IsArray() @IsString({ each: true }) lineIds!: string[]
 }
 export class VoidPosOrderDto implements VoidPosOrderRequest {
+  @IsOptional() @IsString() reason?: string | null
+  @IsOptional() @IsBoolean() refund?: boolean
+}
+export class ReturnPosOrderLineDto implements ReturnPosOrderLineInput {
+  @IsString() @IsNotEmpty() lineId!: string
+  @IsNumber() @Min(0.0001) qty!: number
+}
+export class ReturnPosOrderDto implements ReturnPosOrderRequest {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ReturnPosOrderLineDto)
+  lines!: ReturnPosOrderLineDto[]
   @IsOptional() @IsString() reason?: string | null
   @IsOptional() @IsBoolean() refund?: boolean
 }

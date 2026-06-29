@@ -34,4 +34,13 @@ export class FinanceTransaction extends BaseEntity {
 
   @Column({ default: '' })
   description!: string
+
+  // Source document that produced this transaction (e.g. a POS session close,
+  // 'pos-session' + sessionId), for drill-down and reversal. Optional.
+  @Index()
+  @Column({ type: 'varchar', nullable: true })
+  sourceModule!: string | null
+
+  @Column({ type: 'uuid', nullable: true })
+  sourceId!: string | null
 }

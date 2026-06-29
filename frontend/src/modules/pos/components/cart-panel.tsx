@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Minus, PauseCircle, Plus, ShoppingCart, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, PauseCircle, ShoppingCart, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { money } from '../labels'
@@ -70,41 +70,67 @@ export function CartPanel({
           <ul className="divide-y">
             {lines.map((l) => (
               <li key={l.key} className="px-3 py-3">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="truncate text-sm font-medium">{l.name}</span>
-                  <span className="shrink-0 text-sm font-semibold tabular-nums">
-                    {money(lineTotal(l, taxInclusive), currency)}
-                  </span>
-                </div>
-                {l.modifiers.length ? (
-                  <p className="mt-0.5 truncate text-2xs text-muted-foreground">
-                    {l.modifiers.map((m) => m.optionName).join(', ')}
-                  </p>
-                ) : null}
-                <div className="mt-2 flex items-center gap-2">
-                  <div className="flex items-center rounded-lg border">
-                    <button
-                      type="button"
-                      onClick={() => onQty(l.key, -1)}
-                      className="flex size-8 items-center justify-center rounded-l-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                    >
-                      <Minus className="size-3.5" />
-                    </button>
-                    <span className="w-8 text-center text-sm font-semibold tabular-nums">{l.qty}</span>
-                    <button
-                      type="button"
-                      onClick={() => onQty(l.key, 1)}
-                      className="flex size-8 items-center justify-center rounded-r-lg text-primary transition-colors hover:bg-primary/10"
-                    >
-                      <Plus className="size-3.5" />
-                    </button>
-                  </div>
+                <div className="flex items-stretch gap-2.5">
+                  {/* < decrease (removes the line at qty 1) */}
                   <button
                     type="button"
-                    onClick={() => onRemove(l.key)}
-                    className="ml-auto text-muted-foreground transition-colors hover:text-destructive"
+                    onClick={() => onQty(l.key, -1)}
+                    aria-label="Azalt"
+                    className="flex w-12 shrink-0 items-center justify-center rounded-xl border bg-background text-muted-foreground transition-all hover:bg-accent hover:text-foreground active:scale-95"
                   >
-                    <Trash2 className="size-4" />
+                    <ChevronLeft className="size-6" />
+                  </button>
+
+                  {/* Item body: name, line total, qty badge, modifiers */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="truncate text-[0.95rem] font-medium leading-tight">{l.name}</span>
+                      <span className="shrink-0 text-base font-semibold tabular-nums">
+                        {money(lineTotal(l, taxInclusive), currency)}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <span className="inline-flex h-7 min-w-11 items-center justify-center rounded-lg bg-primary/10 px-2 text-sm font-bold tabular-nums text-primary">
+                        × {l.qty}
+                      </span>
+                      {l.modifiers.length ? (
+                        <span className="truncate text-xs text-muted-foreground">
+                          {l.modifiers.map((m) => m.optionName).join(', ')}
+                        </span>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => onRemove(l.key)}
+                        aria-label="Satırı sil"
+                        className="ml-auto flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
+                    {l.bundleChildren.length ? (
+                      <ul className="mt-1.5 space-y-0.5 border-l-2 border-dashed pl-2.5">
+                        {l.bundleChildren.map((c, i) => (
+                          <li key={i} className="flex items-baseline justify-between gap-2 text-2xs text-muted-foreground">
+                            <span className="truncate">
+                              + {c.qty * l.qty}× {c.name}
+                            </span>
+                            <span className="shrink-0 tabular-nums">
+                              {c.isFree ? 'Ücretsiz' : money(c.unitPrice * c.qty * l.qty, currency)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+
+                  {/* > increase */}
+                  <button
+                    type="button"
+                    onClick={() => onQty(l.key, 1)}
+                    aria-label="Artır"
+                    className="flex w-12 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/5 text-primary transition-all hover:bg-primary/10 active:scale-95"
+                  >
+                    <ChevronRight className="size-6" />
                   </button>
                 </div>
               </li>
@@ -128,22 +154,22 @@ export function CartPanel({
         <div className="flex items-end justify-between px-4 pt-2">
           <div>
             <p className="text-2xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Toplam</p>
-            <p className="text-3xl font-bold leading-none tracking-tight text-primary tabular-nums">
+            <p className="text-4xl font-bold leading-none tracking-tight text-primary tabular-nums">
               {money(totals.grandTotal, currency)}
             </p>
           </div>
-          <span className="rounded-full bg-card px-2.5 py-1 text-2xs font-medium text-muted-foreground tabular-nums">
+          <span className="rounded-full bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground tabular-nums">
             {totals.itemCount} ürün
           </span>
         </div>
-        <div className="grid grid-cols-[1fr_1.7fr] gap-2 p-4 pt-3">
-          <Button type="button" variant="outline" className="h-14" disabled={empty || busy} onClick={onPark}>
-            <PauseCircle className="size-4" />
+        <div className="grid grid-cols-[1fr_1.7fr] gap-2.5 p-4 pt-3">
+          <Button type="button" variant="outline" className="h-16 text-base" disabled={empty || busy} onClick={onPark}>
+            <PauseCircle className="size-5" />
             Beklet
           </Button>
           <Button
             type="button"
-            className="h-14 text-base font-semibold"
+            className="h-16 text-lg font-semibold"
             disabled={empty || busy || checkoutDisabled}
             onClick={onCheckout}
           >

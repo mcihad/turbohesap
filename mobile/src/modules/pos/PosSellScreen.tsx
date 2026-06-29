@@ -15,6 +15,7 @@
 
 import * as React from 'react'
 import { Alert, Modal, Pressable, ScrollView, View } from 'react-native'
+import { Image } from 'expo-image'
 
 import {
   lineGross,
@@ -23,6 +24,7 @@ import {
   taxBreakdown,
   type PosOrderDto,
   type PosOrderType,
+  type ProductBundleComponentDto,
   type ProductDto,
   type ProductModifierGroupDto,
   type PosFloorLayoutDto,
@@ -35,6 +37,7 @@ import {
   Card,
   EmptyState,
   Icon,
+  type IconName,
   Input,
   Screen,
   SegmentedControl,
@@ -70,24 +73,43 @@ interface CartLine {
 let uidSeq = 0
 const uid = () => `cl-${Date.now()}-${++uidSeq}`
 
-/** Map a persisted POS order's lines back into editable cart lines. */
+/** Stable signature for merging cart lines: a line merges with another only
+ *  when it's the same product with the same set of modifier options. */
+function lineSignature(productId: string, modifiers: CartModifier[]): string {
+  const mods = modifiers
+    .map((m) => `${m.groupId ?? ''}:${m.optionId ?? ''}`)
+    .sort()
+    .join('|')
+  return `${productId}#${mods}`
+}
+
+/** Map a persisted POS order's lines back into editable cart lines.
+ *  Server-generated bundle children (isBundleChild) are excluded — they are
+ *  re-derived for preview from the bundle map. Each real line stays a single
+ *  merged qty-N cart line (NOT expanded into per-unit lines). */
 function cartFromOrder(order: PosOrderDto): CartLine[] {
-  return order.lines.map((line) => ({
-    key: line.id,
-    productId: line.productId ?? '',
-    name: line.name,
-    unitPrice: line.unitPrice,
-    taxRate: line.taxRate,
-    currency: order.currencyCode || 'TRY',
-    qty: line.qty,
-    modifiers: line.modifiers.map((m) => ({
+  const out: CartLine[] = []
+  for (const line of order.lines) {
+    if (line.isBundleChild) continue
+    const modifiers = line.modifiers.map((m) => ({
       groupId: m.groupId,
       optionId: m.optionId,
       groupName: m.groupNameSnapshot,
       optionName: m.optionNameSnapshot,
       priceDelta: m.priceDelta,
-    })),
-  }))
+    }))
+    out.push({
+      key: line.id,
+      productId: line.productId ?? '',
+      name: line.name,
+      unitPrice: line.unitPrice,
+      taxRate: line.taxRate,
+      currency: order.currencyCode || 'TRY',
+      qty: Math.max(1, Math.round(line.qty)),
+      modifiers,
+    })
+  }
+  return out
 }
 
 /** "14:32" from an ISO timestamp (best-effort). */
@@ -110,6 +132,9 @@ export function PosSellScreen() {
   const products = useAsync(() => api.inventory.products.list(), [])
   const categories = useAsync(() => api.inventory.categories.list(), [])
   const modifierMap = useAsync(() => api.inventory.modifiers.productMap(), [])
+  // Bundle components per product → preview them as indented child lines in the
+  // cart. The server re-expands bundles authoritatively, so these are read-only.
+  const bundleMap = useAsync(() => api.inventory.bundles.bundleMap(), [])
 
   const channelId = register.data?.salesChannelId ?? null
   const taxInclusive = register.data?.settings.taxInclusive ?? true
@@ -197,12 +222,41 @@ export function PosSellScreen() {
     [taxInclusive],
   )
 
+  // Bundle components handed out with a product (preview only).
+  const childrenFor = React.useCallback(
+    (productId: string): ProductBundleComponentDto[] => bundleMap.data?.[productId] ?? [],
+    [bundleMap.data],
+  )
+  const childPrice = React.useCallback(
+    (c: ProductBundleComponentDto) => (c.isFree ? 0 : c.unitPrice ?? 0),
+    [],
+  )
+  // Priced bundle components add to the preview total (free ones are ₺0).
+  const lineExtras = React.useCallback(
+    (l: CartLine) => childrenFor(l.productId).reduce((s, c) => s + childPrice(c) * c.qty, 0) * l.qty,
+    [childrenFor, childPrice],
+  )
+
   const grandTotal = React.useMemo(
-    () => cart.reduce((s, l) => s + lineTotal(l), 0),
-    [cart, lineTotal],
+    () => cart.reduce((s, l) => s + lineTotal(l) + lineExtras(l), 0),
+    [cart, lineTotal, lineExtras],
   )
   const itemCount = cart.reduce((s, l) => s + l.qty, 0)
   const currency = cart[0]?.currency ?? 'TRY'
+
+  // Merge a unit into the cart: same product + same modifiers bumps the qty of
+  // the existing line; otherwise a new qty-N line is appended.
+  const mergeIntoCart = (line: Omit<CartLine, 'key'>) =>
+    setCart((cur) => {
+      const sig = lineSignature(line.productId, line.modifiers)
+      const idx = cur.findIndex((l) => lineSignature(l.productId, l.modifiers) === sig)
+      if (idx >= 0) {
+        const next = [...cur]
+        next[idx] = { ...next[idx], qty: next[idx].qty + line.qty }
+        return next
+      }
+      return [...cur, { ...line, key: uid() }]
+    })
 
   // ── add-to-cart decision ──
   const onProductPress = (p: ProductDto) => {
@@ -211,32 +265,26 @@ export function PosSellScreen() {
       setModifierProduct(p)
       return
     }
-    setCart((cur) => {
-      const i = cur.findIndex((l) => l.productId === p.id && l.modifiers.length === 0)
-      if (i >= 0) {
-        const next = [...cur]
-        next[i] = { ...next[i], qty: next[i].qty + 1 }
-        return next
-      }
-      return [
-        ...cur,
-        {
-          key: p.id,
-          productId: p.id,
-          name: p.name,
-          unitPrice: resolveUnitPrice(p, null, channelId),
-          taxRate: p.taxRate ?? 0,
-          currency: p.currency,
-          qty: 1,
-          modifiers: [],
-        },
-      ]
+    // Plain product → merge into its existing line (qty +1) or start a new one.
+    mergeIntoCart({
+      productId: p.id,
+      name: p.name,
+      unitPrice: resolveUnitPrice(p, null, channelId),
+      taxRate: p.taxRate ?? 0,
+      currency: p.currency,
+      qty: 1,
+      modifiers: [],
     })
   }
 
-  const addConfigured = (line: CartLine) => setCart((cur) => [...cur, line])
-  const changeQty = (key: string, d: number) =>
-    setCart((cur) => cur.map((l) => (l.key === key ? { ...l, qty: l.qty + d } : l)).filter((l) => l.qty > 0))
+  const addConfigured = (line: Omit<CartLine, 'key'>) => mergeIntoCart(line)
+  // Adjust a line's qty by ±1; reaching 0 removes it from the cart.
+  const changeQty = (key: string, delta: number) =>
+    setCart((cur) =>
+      cur
+        .map((l) => (l.key === key ? { ...l, qty: l.qty + delta } : l))
+        .filter((l) => l.qty > 0),
+    )
   const removeLine = (key: string) => setCart((cur) => cur.filter((l) => l.key !== key))
 
   const resetOrder = () => {
@@ -255,6 +303,9 @@ export function PosSellScreen() {
 
   // Persist the cart as a POS order (create new, or update the table's open one).
   const persistOrder = async (): Promise<string> => {
+    // One merged qty-N line per cart entry. Bundle children are never in the
+    // cart — the server re-expands them from each parent product, so we don't
+    // send them.
     const lines = cart.map((l) => ({
       productId: l.productId,
       qty: l.qty,
@@ -507,6 +558,7 @@ export function PosSellScreen() {
             <CategoryPill
               key={c.id}
               label={c.name}
+              imageUrl={c.imageUrl}
               active={selectedCat === c.id}
               onPress={() => setSelectedCat((cur) => (cur === c.id ? null : c.id))}
             />
@@ -527,40 +579,67 @@ export function PosSellScreen() {
               </Text>
             </Pressable>
           </View>
-          {cart.map((l) => (
-            <View key={l.key} style={{ gap: t.spacing[1] }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing[2] }}>
-                <View style={{ flex: 1 }}>
-                  <Text variant="body" weight="medium" numberOfLines={1}>
-                    {l.name}
-                  </Text>
-                  {l.modifiers.length > 0 ? (
-                    <Text variant="caption" tone="muted" numberOfLines={2}>
-                      {l.modifiers.map((m) => m.optionName).join(', ')}
+          {cart.map((l) => {
+            const children = childrenFor(l.productId)
+            return (
+              <View key={l.key} style={{ gap: t.spacing[1] }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing[2] }}>
+                  <View style={{ flex: 1 }}>
+                    <Text variant="body" weight="medium" numberOfLines={1}>
+                      {l.name}
                     </Text>
-                  ) : null}
+                    {l.modifiers.length > 0 ? (
+                      <Text variant="caption" tone="muted" numberOfLines={2}>
+                        {l.modifiers.map((m) => m.optionName).join(', ')}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Text variant="label" weight="semibold" style={{ minWidth: 72, textAlign: 'right' }}>
+                    {formatMoney(lineTotal(l), l.currency)}
+                  </Text>
                 </View>
-                <Text variant="label" weight="semibold" style={{ minWidth: 72, textAlign: 'right' }}>
-                  {formatMoney(lineTotal(l), l.currency)}
-                </Text>
+                {/* Bundle components — read-only preview, indented under the parent. */}
+                {children.map((c) => (
+                  <View
+                    key={c.id}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: t.spacing[2],
+                      paddingLeft: t.spacing[3],
+                    }}
+                  >
+                    <Icon name="corner-down-right" size={13} color={t.colors.mutedForeground} />
+                    <Text variant="caption" tone="muted" style={{ flex: 1 }} numberOfLines={1}>
+                      {c.qty}× {c.componentName}
+                    </Text>
+                    <Text variant="caption" tone={c.isFree ? 'success' : 'muted'} weight="medium">
+                      {c.isFree ? 'Hediye' : formatMoney(childPrice(c) * c.qty, l.currency)}
+                    </Text>
+                  </View>
+                ))}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing[3] }}>
+                  <Pressable onPress={() => changeQty(l.key, -1)} hitSlop={8}>
+                    <Icon
+                      name={l.qty <= 1 ? 'trash-2' : 'minus-circle'}
+                      size={24}
+                      color={l.qty <= 1 ? t.colors.mutedForeground : t.colors.mutedForeground}
+                    />
+                  </Pressable>
+                  <Text variant="label" weight="bold" style={{ minWidth: 24, textAlign: 'center' }}>
+                    {l.qty}
+                  </Text>
+                  <Pressable onPress={() => changeQty(l.key, 1)} hitSlop={8}>
+                    <Icon name="plus-circle" size={24} color={t.colors.primary} />
+                  </Pressable>
+                  <View style={{ flex: 1 }} />
+                  <Pressable onPress={() => removeLine(l.key)} hitSlop={8}>
+                    <Icon name="trash-2" size={18} color={t.colors.mutedForeground} />
+                  </Pressable>
+                </View>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing[2] }}>
-                <Pressable onPress={() => changeQty(l.key, -1)} hitSlop={8}>
-                  <Icon name="minus-circle" size={26} color={t.colors.mutedForeground} />
-                </Pressable>
-                <Text variant="label" weight="bold" style={{ minWidth: 26, textAlign: 'center' }}>
-                  {l.qty}
-                </Text>
-                <Pressable onPress={() => changeQty(l.key, 1)} hitSlop={8}>
-                  <Icon name="plus-circle" size={26} color={t.colors.primary} />
-                </Pressable>
-                <View style={{ flex: 1 }} />
-                <Pressable onPress={() => removeLine(l.key)} hitSlop={8}>
-                  <Icon name="trash-2" size={18} color={t.colors.mutedForeground} />
-                </Pressable>
-              </View>
-            </View>
-          ))}
+            )
+          })}
         </Card>
       ) : null}
 
@@ -568,6 +647,7 @@ export function PosSellScreen() {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.spacing[2.5] }}>
         {filtered.map((p) => {
           const hasMods = (modifierMap.data?.[p.id] ?? []).length > 0
+          const hasBundle = (bundleMap.data?.[p.id] ?? []).length > 0
           return (
             <Pressable
               key={p.id}
@@ -575,22 +655,35 @@ export function PosSellScreen() {
               style={({ pressed }) => ({
                 width: '48%',
                 flexGrow: 1,
-                padding: t.spacing[3],
+                padding: t.spacing[2.5],
                 borderRadius: t.radius.lg,
                 borderWidth: 1,
                 borderColor: t.colors.border,
                 backgroundColor: pressed ? t.colors.muted : t.colors.card,
                 gap: t.spacing[2],
                 minHeight: 96,
-                justifyContent: 'space-between',
               })}
             >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: t.spacing[1] }}>
-                <Text variant="body" weight="medium" numberOfLines={2} style={{ flex: 1 }}>
-                  {p.name}
-                </Text>
-                {hasMods ? <Icon name="sliders" size={14} color={t.colors.mutedForeground} /> : null}
+              <View style={{ position: 'relative' }}>
+                <Thumb uri={p.imageUrl} fallback="package" size="tile" />
+                {hasMods || hasBundle ? (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      top: t.spacing[1],
+                      right: t.spacing[1],
+                      flexDirection: 'row',
+                      gap: t.spacing[1],
+                    }}
+                  >
+                    {hasBundle ? <TileBadge icon="gift" color={t.colors.success} /> : null}
+                    {hasMods ? <TileBadge icon="sliders" color={t.colors.primary} /> : null}
+                  </View>
+                ) : null}
               </View>
+              <Text variant="body" weight="medium" numberOfLines={2}>
+                {p.name}
+              </Text>
               <Text variant="label" weight="bold" tone="primary">
                 {formatMoney(resolveUnitPrice(p, null, channelId), p.currency)}
               </Text>
@@ -636,24 +729,109 @@ export function PosSellScreen() {
   )
 }
 
-function CategoryPill({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+function CategoryPill({
+  label,
+  active,
+  onPress,
+  imageUrl,
+}: {
+  label: string
+  active: boolean
+  onPress: () => void
+  imageUrl?: string
+}) {
   const t = useTheme()
+  const hasImage = !!imageUrl?.trim()
   return (
     <Pressable
       onPress={onPress}
       style={{
-        paddingHorizontal: t.spacing[3.5],
-        paddingVertical: t.spacing[2],
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: t.spacing[1.5],
+        paddingLeft: hasImage ? t.spacing[1] : t.spacing[3.5],
+        paddingRight: t.spacing[3.5],
+        paddingVertical: hasImage ? t.spacing[1] : t.spacing[2],
         borderRadius: t.radius.full,
         borderWidth: 1,
         borderColor: active ? t.colors.primary : t.colors.inputBorder,
         backgroundColor: active ? t.colors.primary : t.colors.card,
       }}
     >
+      {hasImage ? (
+        <Image
+          source={{ uri: imageUrl }}
+          style={{ width: 24, height: 24, borderRadius: 999 }}
+          contentFit="cover"
+          transition={120}
+        />
+      ) : null}
       <Text variant="label" weight={active ? 'semibold' : 'medium'} tone={active ? 'onPrimary' : 'default'}>
         {label}
       </Text>
     </Pressable>
+  )
+}
+
+// Product/category thumbnail with a graceful icon fallback when no image URL.
+function Thumb({
+  uri,
+  fallback,
+  size,
+}: {
+  uri?: string
+  fallback: IconName
+  size: 'tile' | 'sm'
+}) {
+  const t = useTheme()
+  const has = !!uri?.trim()
+  const dim = size === 'tile' ? undefined : 44
+  const radius = t.radius.md
+  const common = {
+    borderRadius: radius,
+    backgroundColor: t.colors.muted,
+  } as const
+  if (size === 'tile') {
+    return has ? (
+      <Image
+        source={{ uri }}
+        style={{ width: '100%', aspectRatio: 1.4, ...common }}
+        contentFit="cover"
+        transition={150}
+      />
+    ) : (
+      <View style={{ width: '100%', aspectRatio: 1.4, alignItems: 'center', justifyContent: 'center', ...common }}>
+        <Icon name={fallback} size={26} color={t.colors.mutedForeground} />
+      </View>
+    )
+  }
+  return has ? (
+    <Image source={{ uri }} style={{ width: dim, height: dim, ...common }} contentFit="cover" transition={150} />
+  ) : (
+    <View style={{ width: dim, height: dim, alignItems: 'center', justifyContent: 'center', ...common }}>
+      <Icon name={fallback} size={20} color={t.colors.mutedForeground} />
+    </View>
+  )
+}
+
+// Small floating glyph chip shown over a product thumbnail (mods / bundle).
+function TileBadge({ icon, color }: { icon: IconName; color: string }) {
+  const t = useTheme()
+  return (
+    <View
+      style={{
+        width: 22,
+        height: 22,
+        borderRadius: 999,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: t.colors.card,
+        borderWidth: 1,
+        borderColor: t.colors.border,
+      }}
+    >
+      <Icon name={icon} size={12} color={color} />
+    </View>
   )
 }
 
@@ -669,7 +847,7 @@ function ModifierSheet({
   channelId: string | null
   taxInclusive: boolean
   onClose: () => void
-  onAdd: (line: CartLine) => void
+  onAdd: (line: Omit<CartLine, 'key'>) => void
 }) {
   const t = useTheme()
   const groupsQ = useAsync(() => api.inventory.modifiers.listForProduct(product.id), [product.id])
@@ -747,8 +925,9 @@ function ModifierSheet({
         }
       }
     }
+    // Emit one merged qty-N line; the cart merges it with any identical
+    // (same product + same modifiers) line already present.
     onAdd({
-      key: uid(),
       productId: product.id,
       name: product.name,
       unitPrice: base,

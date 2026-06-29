@@ -1,5 +1,7 @@
 import { PartialType } from '@nestjs/swagger'
+import { Type } from 'class-transformer'
 import {
+  IsArray,
   IsBoolean,
   IsInt,
   IsNotEmpty,
@@ -9,11 +11,13 @@ import {
   IsString,
   Min,
   ValidateIf,
+  ValidateNested,
 } from 'class-validator'
 
 import type {
   CreateProductVariantRequest,
   GenerateVariantsRequest,
+  GenerateVariantsFromFeaturesRequest,
   UpdateProductVariantRequest,
 } from '@turbohesap/shared'
 
@@ -65,6 +69,23 @@ export class UpdateProductVariantDto
   implements UpdateProductVariantRequest {}
 
 export class GenerateVariantsDto implements GenerateVariantsRequest {
+  @IsOptional()
+  @IsBoolean()
+  pruneInvalid?: boolean
+}
+
+export class VariantFeatureAxisDto {
+  @IsString() @IsNotEmpty() name!: string
+  @IsOptional() @IsString() lookupList?: string
+  @IsArray() @IsString({ each: true }) values!: string[]
+}
+
+export class GenerateVariantsFromFeaturesDto implements GenerateVariantsFromFeaturesRequest {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => VariantFeatureAxisDto)
+  fields!: VariantFeatureAxisDto[]
+
   @IsOptional()
   @IsBoolean()
   pruneInvalid?: boolean

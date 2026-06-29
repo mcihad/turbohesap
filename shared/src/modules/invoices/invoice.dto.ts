@@ -155,6 +155,10 @@ export interface CreateInvoiceRequest {
   notes?: string | null
   /** Create directly as 'draft' (default) or 'issued'. */
   status?: Extract<InvoiceStatus, 'draft' | 'issued'>
+  /** When false, issuing this invoice does NOT post stock movements — used when
+   *  the stock was already moved by a prior İrsaliye (delivery note) so the
+   *  order→delivery→invoice chain never double-counts. Defaults to true. */
+  postStock?: boolean
 }
 
 export type UpdateInvoiceRequest = Partial<CreateInvoiceRequest>

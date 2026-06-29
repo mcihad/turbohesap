@@ -8,9 +8,13 @@ import type {
 import type {
   CreateProductVariantRequest,
   GenerateVariantsRequest,
+  GenerateVariantsFromFeaturesRequest,
   ProductVariantDto,
   UpdateProductVariantRequest,
 } from './product-variant.dto'
+import type { ProductStatsDto, ProductStatsQuery } from './product-stats.dto'
+import type { SellableUnitDto } from './product-sellable.dto'
+import type { BarcodeMatchDto } from './product-barcode.dto'
 import type {
   CreateProductPackagingRequest,
   ProductPackagingDto,
@@ -56,6 +60,28 @@ export class ProductsApiClient implements IProductsService {
     await this.http.delete(`/inventory/products/${id}`)
   }
 
+  async sellable(categoryId?: string): Promise<SellableUnitDto[]> {
+    return (
+      await this.http.get<SellableUnitDto[]>('/inventory/products/sellable', {
+        params: categoryId ? { categoryId } : undefined,
+      })
+    ).data
+  }
+
+  async stats(id: string, query?: ProductStatsQuery): Promise<ProductStatsDto> {
+    return (
+      await this.http.get<ProductStatsDto>(`/inventory/products/${id}/stats`, {
+        params: query,
+      })
+    ).data
+  }
+
+  async byBarcode(code: string): Promise<BarcodeMatchDto> {
+    return (
+      await this.http.get<BarcodeMatchDto>(`/inventory/products/barcode/${encodeURIComponent(code)}`)
+    ).data
+  }
+
   // Variants ---------------------------------------------------------------
   async createVariant(
     productId: string,
@@ -96,6 +122,18 @@ export class ProductsApiClient implements IProductsService {
       await this.http.post<ProductVariantDto[]>(
         `/inventory/products/${productId}/variants/generate`,
         input ?? {},
+      )
+    ).data
+  }
+
+  async generateVariantsFromFeatures(
+    productId: string,
+    input: GenerateVariantsFromFeaturesRequest,
+  ): Promise<ProductVariantDto[]> {
+    return (
+      await this.http.post<ProductVariantDto[]>(
+        `/inventory/products/${productId}/variants/from-features`,
+        input,
       )
     ).data
   }

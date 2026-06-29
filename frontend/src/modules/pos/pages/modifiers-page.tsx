@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ListChecks, Pencil, Plus, SlidersHorizontal, Star, Trash2, X } from 'lucide-react'
+import { ListChecks, Package, Pencil, Plus, SlidersHorizontal, Star, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ProductPickerField } from '@/components/product-picker/product-picker-field'
 import { money } from '../labels'
 
 export function ModifiersPage() {
@@ -221,6 +222,13 @@ interface DraftOption {
   name: string
   priceDelta: number
   isDefault: boolean
+  stockProductId: string | null
+  stockVariantId: string | null
+  consumeQty: number
+  deductStock: boolean
+  returnable: boolean
+  /** UI-only: whether the stock editor is expanded for this option. */
+  stockOpen: boolean
 }
 
 function GroupDialog({
@@ -238,7 +246,18 @@ function GroupDialog({
   const [minSelect, setMinSelect] = React.useState(group?.minSelect ?? 0)
   const [maxSelect, setMaxSelect] = React.useState<number | null>(group?.maxSelect ?? null)
   const [options, setOptions] = React.useState<DraftOption[]>(
-    group?.options.map((o) => ({ id: o.id, name: o.name, priceDelta: o.priceDelta, isDefault: o.isDefault })) ?? [],
+    group?.options.map((o) => ({
+      id: o.id,
+      name: o.name,
+      priceDelta: o.priceDelta,
+      isDefault: o.isDefault,
+      stockProductId: o.stockProductId,
+      stockVariantId: o.stockVariantId,
+      consumeQty: o.consumeQty ?? 1,
+      deductStock: o.deductStock,
+      returnable: o.returnable,
+      stockOpen: !!o.stockProductId,
+    })) ?? [],
   )
 
   const save = useMutation({
@@ -250,11 +269,21 @@ function GroupDialog({
         minSelect,
         maxSelect: selectionType === 'multi' ? maxSelect : null,
       }
+      const optionPayload = (o: DraftOption) => ({
+        name: o.name.trim(),
+        priceDelta: o.priceDelta,
+        isDefault: o.isDefault,
+        stockProductId: o.stockProductId,
+        stockVariantId: o.stockProductId ? o.stockVariantId : null,
+        consumeQty: o.consumeQty || 1,
+        deductStock: o.stockProductId ? o.deductStock : false,
+        returnable: o.stockProductId ? o.returnable : false,
+      })
       if (!group) {
         // create group with its initial options in one call
         await api.inventory.modifiers.createGroup({
           ...base,
-          options: options.map((o) => ({ name: o.name.trim(), priceDelta: o.priceDelta, isDefault: o.isDefault })),
+          options: options.map(optionPayload),
         })
         return
       }
@@ -267,17 +296,9 @@ function GroupDialog({
       }
       for (const o of options) {
         if (o.id) {
-          await api.inventory.modifiers.updateOption(group.id, o.id, {
-            name: o.name.trim(),
-            priceDelta: o.priceDelta,
-            isDefault: o.isDefault,
-          })
+          await api.inventory.modifiers.updateOption(group.id, o.id, optionPayload(o))
         } else {
-          await api.inventory.modifiers.addOption(group.id, {
-            name: o.name.trim(),
-            priceDelta: o.priceDelta,
-            isDefault: o.isDefault,
-          })
+          await api.inventory.modifiers.addOption(group.id, optionPayload(o))
         }
       }
     },
@@ -288,7 +309,11 @@ function GroupDialog({
     onError: (e) => toast.error('Kaydedilemedi', { description: toApiError(e).message }),
   })
 
-  const addOption = () => setOptions((cur) => [...cur, { name: '', priceDelta: 0, isDefault: false }])
+  const addOption = () =>
+    setOptions((cur) => [
+      ...cur,
+      { name: '', priceDelta: 0, isDefault: false, stockProductId: null, stockVariantId: null, consumeQty: 1, deductStock: true, returnable: false, stockOpen: false },
+    ])
   const updateOption = (i: number, patch: Partial<DraftOption>) =>
     setOptions((cur) => cur.map((o, idx) => (idx === i ? { ...o, ...patch } : o)))
   const removeOption = (i: number) => setOptions((cur) => cur.filter((_, idx) => idx !== i))
@@ -358,37 +383,93 @@ function GroupDialog({
             </div>
             <div className="max-h-56 space-y-2 overflow-y-auto rounded-xl border bg-muted/30 p-2">
               {options.map((o, i) => (
-                <div key={o.id ?? i} className="flex items-center gap-2 rounded-lg bg-card p-1.5 shadow-xs">
-                  <Input
-                    value={o.name}
-                    onChange={(e) => updateOption(i, { name: e.target.value })}
-                    placeholder="Seçenek adı"
-                    className="flex-1"
-                  />
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={o.priceDelta}
-                    onChange={(e) => updateOption(i, { priceDelta: Number(e.target.value) || 0 })}
-                    className="w-24 tabular-nums"
-                    title="Fiyat farkı (±)"
-                  />
-                  <label
-                    className="flex items-center gap-1.5 px-1 text-2xs text-muted-foreground"
-                    title="Varsayılan olarak seçili gelsin"
-                  >
-                    <Star className="size-3.5" />
-                    <Switch checked={o.isDefault} onCheckedChange={(v) => updateOption(i, { isDefault: v })} />
-                  </label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-8 shrink-0"
-                    onClick={() => removeOption(i)}
-                  >
-                    <X className="size-4" />
-                  </Button>
+                <div key={o.id ?? i} className="space-y-1.5 rounded-lg bg-card p-1.5 shadow-xs">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={o.name}
+                      onChange={(e) => updateOption(i, { name: e.target.value })}
+                      placeholder="Seçenek adı"
+                      className="flex-1"
+                    />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={o.priceDelta}
+                      onChange={(e) => updateOption(i, { priceDelta: Number(e.target.value) || 0 })}
+                      className="w-24 tabular-nums"
+                      title="Fiyat farkı (±)"
+                    />
+                    <label
+                      className="flex items-center gap-1.5 px-1 text-2xs text-muted-foreground"
+                      title="Varsayılan olarak seçili gelsin"
+                    >
+                      <Star className="size-3.5" />
+                      <Switch checked={o.isDefault} onCheckedChange={(v) => updateOption(i, { isDefault: v })} />
+                    </label>
+                    <Button
+                      type="button"
+                      variant={o.stockOpen || o.stockProductId ? 'secondary' : 'ghost'}
+                      size="icon"
+                      className="size-8 shrink-0"
+                      title="Stoktan düş"
+                      onClick={() => updateOption(i, { stockOpen: !o.stockOpen })}
+                    >
+                      <Package className="size-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 shrink-0"
+                      onClick={() => removeOption(i)}
+                    >
+                      <X className="size-4" />
+                    </Button>
+                  </div>
+                  {o.stockOpen ? (
+                    <div className="space-y-2 rounded-md border bg-muted/40 p-2">
+                      <div className="flex items-center gap-2">
+                        <div className="min-w-0 flex-1">
+                          <ProductPickerField
+                            value={o.stockProductId}
+                            onChange={(u) =>
+                              updateOption(i, {
+                                stockProductId: u?.productId ?? null,
+                                stockVariantId: u?.variantId ?? null,
+                              })
+                            }
+                            placeholder="Stok ürünü seç…"
+                            title="Stok ürünü seç"
+                          />
+                        </div>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min={0}
+                          value={o.consumeQty}
+                          onChange={(e) => updateOption(i, { consumeQty: Number(e.target.value) || 0 })}
+                          className="h-8 w-20 tabular-nums"
+                          title="Tüketilen miktar"
+                        />
+                      </div>
+                      {o.stockProductId ? (
+                        <div className="flex flex-wrap gap-3">
+                          <label className="flex items-center gap-1.5 text-2xs text-muted-foreground">
+                            <Switch checked={o.deductStock} onCheckedChange={(v) => updateOption(i, { deductStock: v })} />
+                            Stoktan düş
+                          </label>
+                          <label className="flex items-center gap-1.5 text-2xs text-muted-foreground">
+                            <Switch checked={o.returnable} onCheckedChange={(v) => updateOption(i, { returnable: v })} />
+                            İade edilebilir
+                          </label>
+                        </div>
+                      ) : (
+                        <p className="text-2xs text-muted-foreground">
+                          Seçenek seçildiğinde bu üründen stok düşülür.
+                        </p>
+                      )}
+                    </div>
+                  ) : null}
                 </div>
               ))}
               {options.length === 0 ? (

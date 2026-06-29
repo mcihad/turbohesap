@@ -47,3 +47,12 @@ export interface GenerateVariantsRequest {
   /** When true, deactivate variants whose combination is no longer valid. */
   pruneInvalid?: boolean
 }
+
+// Derive variant axes from selected category custom fields (list-type), set them
+// as the product's variantAttributes, then generate the cartesian combinations.
+export interface GenerateVariantsFromFeaturesRequest {
+  /** Axes built from chosen category feature fields, e.g.
+   *  [{ name: "Renk", values: ["Kırmızı","Siyah"] }]. */
+  fields: { name: string; lookupList?: string; values: string[] }[]
+  pruneInvalid?: boolean
+}

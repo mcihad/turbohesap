@@ -7,14 +7,17 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { In, IsNull, Repository } from 'typeorm'
 
 import type {
+  BarcodeMatchDto,
   BranchSummary,
   CategorySummary,
+  ProductBundleComponentDto,
   ProductChannelPriceDto,
   ProductDto,
   ProductPackagingDto,
   ProductStockDto,
   ProductVariantDto,
   SalesChannelSummary,
+  SellableUnitDto,
   VariantAttribute,
 } from '@turbohesap/shared'
 
@@ -32,8 +35,10 @@ import type { UpdateProductDto } from './dto/update-product.dto'
 import type {
   CreateProductVariantDto,
   GenerateVariantsDto,
+  GenerateVariantsFromFeaturesDto,
   UpdateProductVariantDto,
 } from './dto/product-variant.dto'
+import { ProductBundlesService } from './product-bundles.service'
 import type {
   CreateProductPackagingDto,
   UpdateProductPackagingDto,
@@ -58,6 +63,7 @@ export class ProductsService {
     @InjectRepository(Branch) private readonly branches: Repository<Branch>,
     @InjectRepository(SalesChannel)
     private readonly channels: Repository<SalesChannel>,
+    private readonly bundles: ProductBundlesService,
   ) {}
 
   // List — lightweight: embeds are empty, but `totalStock` and `variantCount`
@@ -182,6 +188,8 @@ export class ProductsService {
       ),
     )
 
+    const bundleComponents = await this.bundles.getForProduct(id)
+
     const totalStock = stockRows.length
       ? stockRows.reduce((sum, s) => sum + s.quantity, 0)
       : product.quantity
@@ -202,11 +210,150 @@ export class ProductsService {
       packagings,
       stock,
       channelPrices,
+      bundleComponents,
       totalStock,
       variantCount: variantRows.length,
       barcodes,
       channelIds,
     })
+  }
+
+  // Resolve a scanned barcode to a concrete unit (variant > packaging > product).
+  // Used by fast in-app scanning (e.g. the stocktake counter).
+  async byBarcode(code: string): Promise<BarcodeMatchDto> {
+    const c = (code ?? '').trim()
+    if (!c) throw new NotFoundException('Barkod boş olamaz')
+
+    const variant = await this.variants.findOne({ where: { barcode: c } })
+    if (variant) {
+      const product = await this.products.findOne({ where: { id: variant.productId } })
+      return {
+        productId: variant.productId,
+        variantId: variant.id,
+        packagingId: null,
+        packQty: 1,
+        code: variant.code,
+        name: product
+          ? `${product.name} — ${variantLabel(variant.attributeValues ?? {}, product.variantAttributes)}`
+          : variant.code,
+        unit: product?.unit ?? 'Adet',
+        barcode: c,
+      }
+    }
+
+    const pack = await this.packagings.findOne({ where: { barcode: c } })
+    if (pack) {
+      const product = await this.products.findOne({ where: { id: pack.productId } })
+      return {
+        productId: pack.productId,
+        variantId: pack.variantId,
+        packagingId: pack.id,
+        packQty: pack.quantity,
+        code: product?.code ?? pack.name,
+        name: product ? `${product.name} (${pack.name})` : pack.name,
+        unit: pack.unit || product?.unit || 'Adet',
+        barcode: c,
+      }
+    }
+
+    const product = await this.products.findOne({ where: { barcode: c } })
+    if (product) {
+      return {
+        productId: product.id,
+        variantId: null,
+        packagingId: null,
+        packQty: 1,
+        code: product.code,
+        name: product.name,
+        unit: product.unit,
+        barcode: c,
+      }
+    }
+    throw new NotFoundException('Barkod bulunamadı')
+  }
+
+  // Flattened sellable units for the stock list: each ACTIVE variant of a
+  // variant-product (the parent row is hidden) plus each variant-less product.
+  async sellable(categoryId?: string): Promise<SellableUnitDto[]> {
+    const rows = await this.products.find({
+      where: categoryId ? { categoryId } : {},
+      order: { name: 'ASC' },
+    })
+    if (rows.length === 0) return []
+    const ids = rows.map((p) => p.id)
+    const cats = await this.categoryMap(rows.map((p) => p.categoryId))
+
+    const [variantRows, stockRows] = await Promise.all([
+      this.variants.find({ where: { productId: In(ids) }, order: { sortOrder: 'ASC', code: 'ASC' } }),
+      this.stocks.find({ where: { productId: In(ids) } }),
+    ])
+    const variantsByProduct = new Map<string, ProductVariant[]>()
+    for (const v of variantRows) {
+      ;(variantsByProduct.get(v.productId) ?? variantsByProduct.set(v.productId, []).get(v.productId)!).push(v)
+    }
+    // On-hand: product-level (variantId null) and per-variant.
+    const stockByProduct = new Map<string, number>()
+    const stockByVariant = new Map<string, number>()
+    for (const s of stockRows) {
+      if (s.variantId) stockByVariant.set(s.variantId, (stockByVariant.get(s.variantId) ?? 0) + s.quantity)
+      else stockByProduct.set(s.productId, (stockByProduct.get(s.productId) ?? 0) + s.quantity)
+    }
+
+    const out: SellableUnitDto[] = []
+    for (const p of rows) {
+      const cat = p.categoryId ? cats.get(p.categoryId) ?? null : null
+      const vs = (variantsByProduct.get(p.id) ?? []).filter((v) => v.isActive)
+      if (p.hasVariants && vs.length) {
+        for (const v of vs) {
+          out.push({
+            id: v.id,
+            productId: p.id,
+            variantId: v.id,
+            code: v.code,
+            label: `${p.name} — ${variantLabel(v.attributeValues ?? {}, p.variantAttributes)}`,
+            barcode: v.barcode || p.barcode,
+            unit: p.unit,
+            categoryId: p.categoryId,
+            categoryName: cat?.name ?? null,
+            type: p.type,
+            brand: p.brand,
+            trackStock: p.trackStock,
+            salePrice: effectiveVariantPrice(v, p.salePrice),
+            purchasePrice: v.purchasePrice ?? p.purchasePrice,
+            taxRate: p.taxRate,
+            currency: p.currency,
+            totalStock: stockByVariant.get(v.id) ?? 0,
+            minQuantity: p.minQuantity,
+            isActive: v.isActive && p.isActive,
+            imageUrl: v.imageUrl || p.imageUrl,
+          })
+        }
+      } else {
+        out.push({
+          id: p.id,
+          productId: p.id,
+          variantId: null,
+          code: p.code,
+          label: p.name,
+          barcode: p.barcode,
+          unit: p.unit,
+          categoryId: p.categoryId,
+          categoryName: cat?.name ?? null,
+          type: p.type,
+          brand: p.brand,
+          trackStock: p.trackStock,
+          salePrice: p.salePrice,
+          purchasePrice: p.purchasePrice,
+          taxRate: p.taxRate,
+          currency: p.currency,
+          totalStock: stockByProduct.has(p.id) ? stockByProduct.get(p.id)! : p.quantity,
+          minQuantity: p.minQuantity,
+          isActive: p.isActive,
+          imageUrl: p.imageUrl,
+        })
+      }
+    }
+    return out
   }
 
   async create(dto: CreateProductDto): Promise<ProductDto> {
@@ -386,6 +533,27 @@ export class ProductsService {
       order: { sortOrder: 'ASC', code: 'ASC' },
     })
     return all.map((v) => toVariantDto(v, product.salePrice, product.variantAttributes))
+  }
+
+  // Set variantAttributes from selected category feature fields, then generate.
+  async generateVariantsFromFeatures(
+    productId: string,
+    dto: GenerateVariantsFromFeaturesDto,
+  ): Promise<ProductVariantDto[]> {
+    const product = await this.findOrFail(productId)
+    const axes = (dto.fields ?? [])
+      .map((f) => ({
+        name: f.name?.trim(),
+        lookupList: f.lookupList,
+        values: [...new Set((f.values ?? []).map((v) => String(v).trim()).filter(Boolean))],
+      }))
+      .filter((a) => a.name && a.values.length)
+    if (axes.length === 0) {
+      throw new BadRequestException('Varyant türetmek için en az bir özellik ve değer seçilmelidir')
+    }
+    product.variantAttributes = axes
+    await this.products.save(product)
+    return this.generateVariants(productId, { pruneInvalid: dto.pruneInvalid })
   }
 
   // --- Packagings --------------------------------------------------------
@@ -807,6 +975,7 @@ export function toProductDto(
     packagings?: ProductPackagingDto[]
     stock?: ProductStockDto[]
     channelPrices?: ProductChannelPriceDto[]
+    bundleComponents?: ProductBundleComponentDto[]
     totalStock?: number
     variantCount?: number
     barcodes?: string[]
@@ -845,6 +1014,7 @@ export function toProductDto(
     packagings: opts?.packagings ?? [],
     stock: opts?.stock ?? [],
     channelPrices: opts?.channelPrices ?? [],
+    bundleComponents: opts?.bundleComponents ?? [],
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
   }

@@ -67,6 +67,11 @@ export class Invoice extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   notes!: string | null
 
+  // When false, issuing this invoice does NOT post stock — the stock was already
+  // moved by a prior İrsaliye (orders module), so the chain never double-counts.
+  @Column({ default: true })
+  postsStock!: boolean
+
   @Column('numeric', { precision: 18, scale: 2, default: 0, transformer: decimalTransformer })
   subtotal!: number
 

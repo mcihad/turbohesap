@@ -14,13 +14,21 @@ export interface PosSessionDto {
   openingCash: number
   closedAt: string | null
   closingCash: number | null
+  closedById: string | null
+  closedByName: string | null
   /** COMPUTED: opening cash + Σ cash payments in this session. */
   expectedCash: number
   countedCash: number | null
   status: PosSessionStatus
   /** COMPUTED: Σ grandTotal of paid orders + order count. */
   salesTotal: number
+  /** COMPUTED: Σ card payments in this session. */
+  cardTotal: number
   orderCount: number
+  /** Aggregated finance postings created at close (vezne). Null while open —
+   *  cash/card are NOT posted per-order; they post once on close. */
+  cashFinanceTxId: string | null
+  cardFinanceTxId: string | null
   notes: string | null
   createdAt: string
   updatedAt: string

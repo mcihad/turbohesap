@@ -138,6 +138,13 @@ in `main.ts`; a controller `@Controller('iam/users')` is served at
 ### Caching policy
 - `index.html` / SPA fallback → `Cache-Control: no-cache`.
 - Other assets → `public, max-age=<STATIC_CACHE_MAX_AGE>` (default 3600s).
+- **Application cache (analytics):** a pluggable `CacheDriver` (`backend/src/cache/`)
+  backs the per-module report endpoints. The store is chosen by `CACHE_STORE`
+  (`memory` default — zero-config in-process; or `redis` / `memcached` via env),
+  mirroring the files `STORAGE_DRIVER` `useFactory` pattern. `@Global() CacheModule`
+  exposes the `CACHE_DRIVER` token; expensive aggregations are wrapped in
+  `cache.wrap(key, ttl, fn)`. `redis`/`memcached` clients (`ioredis`/`memjs`) are
+  lazy-loaded only when selected, so the default needs nothing extra.
 
 ---
 
@@ -714,7 +721,11 @@ recipes). Mobile is separate (`mobile/.env`, `EXPO_PUBLIC_*`).
 | `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL` | `15m` / `7d` | token lifetimes (seconds or ms-string) |
 | `SEED_ADMIN_USERNAME/PASSWORD/EMAIL` | `admin` / `Admin123!` / `admin@turbohesap.local` | first-boot admin |
 | `VITE_API_BASE_URL`    | `/api`  | frontend: API base the shared client builds from |
-| `EXPO_PUBLIC_API_BASE_URL` | `http://localhost:5800/api` | mobile API base (`mobile/.env`) |
+| `EXPO_PUBLIC_API_BASE_URL` | `http://localhost:5800/api` | mobile API base (`mobile/.env`; also runtime-overridable by double-tapping the login logo) |
+| `CACHE_STORE`          | `memory` | analytics cache backend: `memory` \| `redis` \| `memcached` |
+| `CACHE_TTL` / `CACHE_PREFIX` / `CACHE_MEMORY_MAX` | `60` / `th:` / `1000` | cache entry TTL (s) / key namespace / in-memory entry cap |
+| `REDIS_URL` (or `REDIS_HOST/PORT/PASSWORD/DB`) | — | redis connection (only when `CACHE_STORE=redis`) |
+| `MEMCACHED_SERVERS` (+ `MEMCACHED_USERNAME/PASSWORD`) | `127.0.0.1:11211` | memcached servers (only when `CACHE_STORE=memcached`) |
 
 ### Endpoints
 - `GET /api/health` — liveness + DB connectivity.
@@ -738,6 +749,19 @@ recipes). Mobile is separate (`mobile/.env`, `EXPO_PUBLIC_*`).
   `computeInvoiceTotals`), KDV özeti, gapless numbering + ETTN on issue, and
   cari-ledger posting (issue → cari borç/alacak; cancel reverses). The web entry
   is a dedicated page with a live line editor + inline cari/ürün create.
+- `/api/pos/{registers,sessions,orders,tables}` (+ `/api/auth/pos-login|pos-switch`)
+  — restaurant-capable POS: PIN/cashier auth, sessions (vezne: cash/card posted to
+  kasa/banka in one aggregated finance entry **at session close**, cari + stock
+  real-time), orders with modifiers + **bundle** components + per-unit tender split,
+  returns (geri giriş), floors/tables. Server-authoritative pricing (§7.4 in agy.md).
+  See `docs/pos.md`.
+- `/api/reports/{overview,pos,inventory,finance,invoices,contacts,sales}` — per-module
+  analytics, each returning the generic shared `ModuleStatsDto` (KPIs + trend +
+  breakdowns + top lists), **cached** (§3 Caching policy), gated by the `reports.<module>`
+  permission group. Web pages live under `/genel/analytics/*`.
+- `/api/feedback` — in-app feedback (istek/talep/öneri/hata) with an annotated
+  screenshot (stored via `/api/files`) and a triage status workflow; `feedback.create`
+  / `feedback.read` / `feedback.manage`.
 - `/api/files` — polymorphic uploads (`raw/:storedName` is `@Public()`);
   `/api/settings/:type` — per-user jsonb state (DataGrid layouts). See §5.4.
 

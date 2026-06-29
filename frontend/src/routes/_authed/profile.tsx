@@ -44,7 +44,7 @@ function initials(name: string): string {
 function expiryLabel(claims: Claims | null): string | null {
   const exp = claims?.exp
   if (typeof exp !== 'number') return null
-  const when = new Date(exp * 1000).toLocaleString('tr-TR')
+  const when = new Date(exp * 1000).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })
   const msLeft = exp * 1000 - Date.now()
   if (msLeft <= 0) return `Süresi doldu • ${when}`
   const mins = Math.floor(msLeft / 60000)

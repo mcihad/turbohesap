@@ -135,6 +135,14 @@ export class <Res> {
 > Use **camelCase** property names — a `SnakeNamingStrategy` maps them to
 > snake_case columns automatically (`createdAt` → `created_at`). Don't add
 > `@Column({ name: '…' })` overrides; the JSON API stays camelCase via the DTO.
+> Extend `common/entities/base.entity.ts` (`BaseEntity`) instead of re-inlining
+> id/timestamps.
+> **Money/quantities:** `@Column('numeric', { precision, scale, transformer:
+> decimalTransformer })` — never `double precision` (agy.md §7.1). And **always set
+> transformer columns explicitly in `repo.create({…})`** (e.g. `amount: 0`): a
+> transformer column is always inserted, and `undefined` → `NULL` → not-null
+> violation; the DB `default` never applies. In raw QueryBuilder SQL reference
+> columns as quoted snake_case (`o."created_at"`), not the camelCase property (agy.md §7.5).
 ```ts
 // dto/create-<res-singular>.dto.ts  (class-validator; implements the shared request)
 import { IsNotEmpty, IsString } from 'class-validator'

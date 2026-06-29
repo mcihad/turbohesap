@@ -122,7 +122,7 @@ function useClock() {
     return () => clearInterval(id)
   }, [])
   return {
-    time: now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
-    date: now.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' }),
+    time: now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Istanbul' }),
+    date: now.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Istanbul' }),
   }
 }

@@ -2,10 +2,11 @@ import * as React from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { LifeBuoy, MessageSquarePlus } from 'lucide-react'
 
-import { MODULES } from '@turbohesap/shared'
+import { FeedbackPermissions, MODULES } from '@turbohesap/shared'
 
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth/auth-context'
+import { Can } from '@/lib/auth/permission-gate'
 import { accessibleModules } from '@/lib/auth/access'
 import { useLayout } from '@/lib/layout/use-layout'
 import { useActiveModule } from '@/lib/layout/use-active-module'
@@ -90,17 +91,19 @@ export function ModuleLauncher() {
               <LifeBuoy className="size-4" />
               Yardım
             </Link>
-            <button
-              type="button"
-              onClick={() => {
-                setModuleLauncherOpen(false)
-                setFeedbackOpen(true)
-              }}
-              className="flex flex-1 items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
-            >
-              <MessageSquarePlus className="size-4" />
-              Geri bildirim
-            </button>
+            <Can permission={FeedbackPermissions.create}>
+              <button
+                type="button"
+                onClick={() => {
+                  setModuleLauncherOpen(false)
+                  setFeedbackOpen(true)
+                }}
+                className="flex flex-1 items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                <MessageSquarePlus className="size-4" />
+                Geri bildirim
+              </button>
+            </Can>
           </div>
         </DialogContent>
       </Dialog>

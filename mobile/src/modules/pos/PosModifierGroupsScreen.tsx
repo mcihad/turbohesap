@@ -10,6 +10,7 @@ import {
   InventoryPermissions,
   MODIFIER_SELECTION_TYPES,
   type ModifierSelectionType,
+  type ProductDto,
 } from '@turbohesap/shared'
 
 import {
@@ -61,12 +62,25 @@ export function PosModifierGroupsScreen() {
     () => [...(groupsQ.data ?? [])].sort((a, b) => a.sortOrder - b.sortOrder),
     [groupsQ.data],
   )
+  // Products → resolve names for the option's stock link (picker + display hint).
+  const productsQ = useAsync(() => api.inventory.products.list(), [])
+  const productNameById = React.useMemo(() => {
+    const m = new Map<string, string>()
+    for (const p of productsQ.data ?? []) m.set(p.id, p.name)
+    return m
+  }, [productsQ.data])
 
   const [newGroupName, setNewGroupName] = React.useState('')
   const [editingId, setEditingId] = React.useState<string | null>(null)
   const [form, setForm] = React.useState<GroupForm | null>(null)
   const [optionName, setOptionName] = React.useState('')
   const [optionDelta, setOptionDelta] = React.useState('')
+  // Optional stock link for the option being added (deducts stock when chosen).
+  const [optStockProductId, setOptStockProductId] = React.useState<string | null>(null)
+  const [optConsumeQty, setOptConsumeQty] = React.useState('1')
+  const [optDeductStock, setOptDeductStock] = React.useState(true)
+  const [optReturnable, setOptReturnable] = React.useState(false)
+  const [stockPickerOpen, setStockPickerOpen] = React.useState(false)
 
   const editingGroup = groups.find((g) => g.id === editingId) ?? null
 
@@ -84,6 +98,10 @@ export function PosModifierGroupsScreen() {
     })
     setOptionName('')
     setOptionDelta('')
+    setOptStockProductId(null)
+    setOptConsumeQty('1')
+    setOptDeductStock(true)
+    setOptReturnable(false)
   }
 
   const createGroup = () => {
@@ -143,9 +161,19 @@ export function PosModifierGroupsScreen() {
         await api.inventory.modifiers.addOption(editingId, {
           name,
           priceDelta: Number(optionDelta.replace(',', '.')) || 0,
+          // Optional stock link — when a product is chosen, choosing this option
+          // also consumes that product's stock at sale time.
+          stockProductId: optStockProductId,
+          consumeQty: optStockProductId ? Number(optConsumeQty.replace(',', '.')) || 1 : undefined,
+          deductStock: optStockProductId ? optDeductStock : undefined,
+          returnable: optStockProductId ? optReturnable : undefined,
         })
         setOptionName('')
         setOptionDelta('')
+        setOptStockProductId(null)
+        setOptConsumeQty('1')
+        setOptDeductStock(true)
+        setOptReturnable(false)
         groupsQ.refetch()
       },
       { errorTitle: 'Seçenek eklenemedi' },
@@ -312,6 +340,15 @@ export function PosModifierGroupsScreen() {
                             {o.priceDelta > 0 ? '+' : ''}
                             {formatMoney(o.priceDelta)}
                           </Text>
+                          {o.stockProductId ? (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                              <Icon name="package" size={12} color={t.colors.warning} />
+                              <Text variant="caption" tone="warning" numberOfLines={1}>
+                                Stoktan düşer · {o.consumeQty}× {productNameById.get(o.stockProductId) ?? 'ürün'}
+                                {o.returnable ? ' · iade edilebilir' : ''}
+                              </Text>
+                            </View>
+                          ) : null}
                         </View>
                         <Pressable onPress={() => toggleDefault(o.id, o.isDefault)} hitSlop={6}>
                           <Badge label="Varsayılan" tone={o.isDefault ? 'success' : 'muted'} />
@@ -332,12 +369,162 @@ export function PosModifierGroupsScreen() {
                   <Button title="Ekle" icon="plus" onPress={addOption} loading={busy} disabled={!optionName.trim()} style={{ height: 48, alignSelf: 'flex-end' }} />
                 </View>
 
+                {/* Optional stock link for the new option — deducts a product's
+                    stock when this option is chosen (e.g. "Ekstra ketçap"). */}
+                <View style={{ gap: t.spacing[2] }}>
+                  <Text variant="label" tone="muted" weight="medium">
+                    Stok bağlantısı (opsiyonel)
+                  </Text>
+                  <Pressable
+                    onPress={() => setStockPickerOpen(true)}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      height: 48,
+                      paddingHorizontal: t.spacing[3.5],
+                      borderRadius: t.radius.md,
+                      borderWidth: 1,
+                      borderColor: t.colors.inputBorder,
+                      backgroundColor: t.colors.card,
+                    }}
+                  >
+                    <Icon name="package" size={16} color={t.colors.mutedForeground} />
+                    <Text
+                      variant="body"
+                      tone={optStockProductId ? 'default' : 'muted'}
+                      style={{ flex: 1, marginLeft: t.spacing[2] }}
+                      numberOfLines={1}
+                    >
+                      {optStockProductId ? productNameById.get(optStockProductId) ?? 'Ürün' : 'Stok ürünü seç'}
+                    </Text>
+                    {optStockProductId ? (
+                      <Pressable onPress={() => setOptStockProductId(null)} hitSlop={8}>
+                        <Icon name="x" size={16} color={t.colors.mutedForeground} />
+                      </Pressable>
+                    ) : (
+                      <Icon name="chevron-down" size={18} color={t.colors.mutedForeground} />
+                    )}
+                  </Pressable>
+                  {optStockProductId ? (
+                    <>
+                      <Input
+                        label="Tüketilen miktar (1 birim için)"
+                        value={optConsumeQty}
+                        onChangeText={setOptConsumeQty}
+                        keyboardType="decimal-pad"
+                        placeholder="1"
+                      />
+                      <FormSwitchRow label="Stoktan düş" value={optDeductStock} onValueChange={setOptDeductStock} />
+                      <FormSwitchRow label="İade edilebilir" value={optReturnable} onValueChange={setOptReturnable} />
+                    </>
+                  ) : null}
+                </View>
+
                 <Button title="Grubu Kaydet" fullWidth loading={busy} disabled={!form.name.trim()} onPress={saveGroup} />
               </ScrollView>
             ) : null}
           </Pressable>
         </Pressable>
       </Modal>
+
+      <StockProductPickerModal
+        visible={stockPickerOpen}
+        products={(productsQ.data ?? []).filter((p) => p.isActive)}
+        loading={productsQ.loading}
+        onClose={() => setStockPickerOpen(false)}
+        onPick={(id) => {
+          setOptStockProductId(id)
+          setStockPickerOpen(false)
+        }}
+      />
     </PermissionRequired>
+  )
+}
+
+// ── Stock product picker (for an option's stock link) ─────────────────────
+function StockProductPickerModal({
+  visible,
+  products,
+  loading,
+  onClose,
+  onPick,
+}: {
+  visible: boolean
+  products: ProductDto[]
+  loading: boolean
+  onClose: () => void
+  onPick: (id: string) => void
+}) {
+  const t = useTheme()
+  const [query, setQuery] = React.useState('')
+  const filtered = React.useMemo(() => {
+    const q = query.trim().toLocaleLowerCase('tr')
+    if (!q) return products
+    return products.filter((p) => `${p.name} ${p.code}`.toLocaleLowerCase('tr').includes(q))
+  }, [products, query])
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: t.colors.overlay, justifyContent: 'flex-end' }}>
+        <Pressable
+          onPress={(e) => e.stopPropagation()}
+          style={{
+            backgroundColor: t.colors.background,
+            borderTopLeftRadius: t.radius['2xl'],
+            borderTopRightRadius: t.radius['2xl'],
+            maxHeight: '85%',
+          }}
+        >
+          <View style={{ alignItems: 'center', paddingTop: t.spacing[3] }}>
+            <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: t.colors.border }} />
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: t.spacing[4], paddingVertical: t.spacing[3], gap: t.spacing[2] }}>
+            <Text variant="title" weight="bold" style={{ flex: 1 }}>
+              Stok ürünü seç
+            </Text>
+            <Pressable onPress={onClose} hitSlop={8}>
+              <Icon name="x" size={24} color={t.colors.mutedForeground} />
+            </Pressable>
+          </View>
+          <View style={{ paddingHorizontal: t.spacing[4], paddingBottom: t.spacing[2] }}>
+            <Input icon="search" placeholder="Ürün ara…" value={query} onChangeText={setQuery} />
+          </View>
+          <ScrollView contentContainerStyle={{ paddingHorizontal: t.spacing[4], paddingBottom: t.spacing[8] }}>
+            {loading ? (
+              <Text variant="body" tone="muted" style={{ padding: t.spacing[4] }}>
+                Yükleniyor…
+              </Text>
+            ) : filtered.length === 0 ? (
+              <EmptyState icon="package" title="Ürün bulunamadı" />
+            ) : (
+              filtered.map((p) => (
+                <Pressable
+                  key={p.id}
+                  onPress={() => onPick(p.id)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: t.spacing[3],
+                    paddingVertical: t.spacing[3],
+                    borderBottomWidth: 1,
+                    borderBottomColor: t.colors.border,
+                  }}
+                >
+                  <Icon name="package" size={18} color={t.colors.mutedForeground} />
+                  <View style={{ flex: 1 }}>
+                    <Text variant="body" weight="medium" numberOfLines={1}>
+                      {p.name}
+                    </Text>
+                    <Text variant="caption" tone="muted">
+                      {p.code}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))
+            )}
+          </ScrollView>
+        </Pressable>
+      </Pressable>
+    </Modal>
   )
 }

@@ -155,6 +155,10 @@ export function descOf(key: string): string | undefined {
     finance: 'Kasa, banka ve işlemler',
     contacts: 'Cariler, gruplar ve fırsatlar',
     invoices: 'Satış ve alış faturaları',
+    orders: 'Teklif, sipariş ve irsaliye',
+    stocktake: 'Depo/şube stok sayımı',
+    hr: 'Personel, izin ve bordro',
+    feedback: 'İstek, öneri ve hata bildirimi',
     lookups: 'Tanım listeleri',
     iam: 'Kullanıcı, rol ve izinler',
   }

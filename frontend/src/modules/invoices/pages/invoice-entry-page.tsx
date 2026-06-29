@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, FileCheck2, Plus, Save, Trash2 } from 'lucide-react'
+import { ArrowLeft, FileCheck2, PanelRightOpen, Plus, Save, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -14,6 +14,7 @@ import {
   WITHHOLDING_RATIOS,
   type CreateInvoiceLineInput,
   type InvoiceType,
+  type SellableUnitDto,
 } from '@turbohesap/shared'
 
 import { OrgPermissions } from '@turbohesap/shared'
@@ -35,8 +36,13 @@ import {
 } from '@/components/ui/select'
 import { ContactDialog } from '@/modules/contacts/components/contact-dialog'
 import { EntityCombobox } from '../components/entity-combobox'
+import { ProductPickerField } from '@/components/product-picker/product-picker-field'
 import { QuickProductDialog } from '../components/quick-product-dialog'
 import { formatMoney } from '../format'
+
+const SUMMARY_MIN = 300
+const SUMMARY_MAX = 560
+const SUMMARY_DEFAULT = 360
 
 const TYPE_LABELS: Record<InvoiceType, string> = { sales: 'Satış', purchase: 'Alış', return: 'İade' }
 const NO_WH = '__none__'
@@ -91,8 +97,34 @@ export function InvoiceEntryPage() {
   const [contactDialog, setContactDialog] = React.useState(false)
   const [productDialog, setProductDialog] = React.useState<{ row: number; name: string } | null>(null)
 
+  // Collapsible / resizable summary sidebar (splitter, like the products page).
+  const [summaryOpen, setSummaryOpen] = React.useState(true)
+  const [summaryW, setSummaryW] = React.useState(SUMMARY_DEFAULT)
+  const [isWide, setIsWide] = React.useState(true)
+  React.useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)')
+    const sync = () => setIsWide(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
+  const summaryDrag = React.useRef<{ startX: number; startW: number } | null>(null)
+  const onSummaryDown = (e: React.PointerEvent) => {
+    e.preventDefault()
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+    summaryDrag.current = { startX: e.clientX, startW: summaryW }
+  }
+  const onSummaryMove = (e: React.PointerEvent) => {
+    if (!summaryDrag.current) return
+    const next = summaryDrag.current.startW + (summaryDrag.current.startX - e.clientX)
+    setSummaryW(Math.max(SUMMARY_MIN, Math.min(SUMMARY_MAX, next)))
+  }
+  const onSummaryUp = (e: React.PointerEvent) => {
+    ;(e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId)
+    summaryDrag.current = null
+  }
+
   const contactsQuery = useQuery({ queryKey: ['contacts', 'contacts'], queryFn: () => api.contacts.contacts.list() })
-  const productsQuery = useQuery({ queryKey: ['inventory', 'products'], queryFn: () => api.inventory.products.list() })
   const branchesQuery = useQuery({
     queryKey: ['org', 'branches'],
     queryFn: () => api.org.branches.list(),
@@ -104,6 +136,9 @@ export function InvoiceEntryPage() {
     enabled: !!editId,
   })
 
+  // Hydrate the form from the loaded draft EXACTLY ONCE per edit session, so a
+  // background refetch never clobbers the cashier's unsaved edits.
+  const hydratedRef = React.useRef(false)
   React.useEffect(() => {
     const inv = editQuery.data
     if (!inv) return
@@ -111,6 +146,8 @@ export function InvoiceEntryPage() {
       navigate({ to: '/invoices/invoices/$id', params: { id: inv.id } })
       return
     }
+    if (hydratedRef.current) return
+    hydratedRef.current = true
     setType(inv.type)
     setDate(inv.date.slice(0, 10))
     setDueDate(inv.dueDate?.slice(0, 10) ?? '')
@@ -128,7 +165,6 @@ export function InvoiceEntryPage() {
   }, [editQuery.data, navigate])
 
   const contacts = contactsQuery.data ?? []
-  const products = productsQuery.data ?? []
   const totals = React.useMemo(() => computeInvoiceTotals(lines.map(toInput)), [lines])
   const selectedContact = contacts.find((c) => c.id === contactId) ?? null
 
@@ -137,15 +173,51 @@ export function InvoiceEntryPage() {
   const addRow = () => setLines((rows) => [...rows, emptyRow()])
   const removeRow = (i: number) => setLines((rows) => (rows.length > 1 ? rows.filter((_, idx) => idx !== i) : rows))
 
-  const pickProduct = (i: number, productId: string | null) => {
-    const p = products.find((x) => x.id === productId)
-    if (!p) { setRow(i, { productId: null }); return }
+  const priceForUnit = (u: SellableUnitDto) =>
+    String((type === 'purchase' ? u.purchasePrice : u.salePrice) ?? u.salePrice ?? 0)
+
+  // The backend only accepts the legal KDV rates; a product may carry a legacy
+  // rate (e.g. 18, 8). Snap to the nearest valid rate so drafts always save.
+  const validVat = (rate?: number | null): number => {
+    if (rate == null) return 20
+    if (VAT_RATES.includes(rate)) return rate
+    return VAT_RATES.reduce((best, v) => (Math.abs(v - rate) < Math.abs(best - rate) ? v : best), 20)
+  }
+
+  const unitToRow = (u: SellableUnitDto): LineRow => ({
+    key: `r${rowSeq++}`,
+    productId: u.productId,
+    description: u.label,
+    quantity: '1',
+    unit: u.unit || 'Adet',
+    unitPrice: priceForUnit(u),
+    discountRate: '0',
+    vatRate: validVat(u.taxRate),
+    withholdingCode: null,
+  })
+
+  // Typeahead pick on the current row.
+  const pickUnit = (i: number, u: SellableUnitDto | null) => {
+    if (!u) { setRow(i, { productId: null }); return }
     setRow(i, {
-      productId: p.id,
-      description: p.name,
-      unit: p.unit || 'Adet',
-      unitPrice: String((type === 'purchase' ? p.purchasePrice : p.salePrice) ?? p.salePrice ?? 0),
-      vatRate: p.taxRate ?? 20,
+      productId: u.productId,
+      description: u.label,
+      unit: u.unit || 'Adet',
+      unitPrice: priceForUnit(u),
+      vatRate: validVat(u.taxRate),
+    })
+  }
+
+  // Magnifier multi-pick: each selected unit becomes its own invoice line.
+  const addUnits = (i: number, list: SellableUnitDto[]) => {
+    if (!list.length) return
+    setLines((rows) => {
+      const made = list.map(unitToRow)
+      const target = rows[i]
+      const copy = [...rows]
+      if (target && !target.productId && !target.description.trim()) copy.splice(i, 1, ...made)
+      else copy.splice(i + 1, 0, ...made)
+      return copy
     })
   }
 
@@ -264,19 +336,26 @@ export function InvoiceEntryPage() {
               <section className="overflow-hidden rounded-xl border bg-card shadow-sm">
                 <div className="flex items-center justify-between border-b px-4 py-2.5">
                   <h2 className="text-sm font-medium">Kalemler <span className="ml-1 text-xs text-muted-foreground">({lines.length})</span></h2>
-                  <Button variant="ghost" size="sm" onClick={addRow}><Plus className="size-4" />Satır ekle</Button>
+                  <div className="flex items-center gap-1">
+                    {isWide && !summaryOpen ? (
+                      <Button variant="outline" size="sm" onClick={() => setSummaryOpen(true)} className="gap-1.5">
+                        <PanelRightOpen className="size-4" />Özet
+                      </Button>
+                    ) : null}
+                    <Button variant="ghost" size="sm" onClick={addRow}><Plus className="size-4" />Satır ekle</Button>
+                  </div>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[860px] border-collapse text-sm">
+                  <table className="w-full min-w-[920px] border-collapse text-sm">
                     <thead>
                       <tr className="bg-muted/50 text-[11px] uppercase tracking-wide text-muted-foreground">
                         <th className="px-3 py-2 text-left font-medium">Ürün / Açıklama</th>
                         <th className="w-24 px-2 py-2 text-right font-medium">Miktar</th>
-                        <th className="w-20 px-2 py-2 text-left font-medium">Birim</th>
+                        <th className="w-24 px-2 py-2 text-left font-medium">Birim</th>
                         <th className="w-28 px-2 py-2 text-right font-medium">B.Fiyat</th>
-                        <th className="w-16 px-2 py-2 text-right font-medium">İsk%</th>
-                        <th className="w-20 px-2 py-2 text-right font-medium">KDV</th>
-                        <th className="w-24 px-2 py-2 text-left font-medium">Tevkifat</th>
+                        <th className="w-20 px-2 py-2 text-right font-medium">İsk%</th>
+                        <th className="w-24 px-2 py-2 text-right font-medium">KDV</th>
+                        <th className="w-28 px-2 py-2 text-left font-medium">Tevkifat</th>
                         <th className="w-28 px-3 py-2 text-right font-medium">Tutar</th>
                         <th className="w-10" />
                       </tr>
@@ -288,19 +367,15 @@ export function InvoiceEntryPage() {
                           <tr key={r.key} className="group border-b align-top transition-colors last:border-0 focus-within:bg-accent/30 hover:bg-accent/20">
                             <td className="px-3 py-2">
                               <div className="space-y-1.5">
-                                <EntityCombobox
-                                  items={products}
+                                <ProductPickerField
                                   value={r.productId}
-                                  onChange={(id) => pickProduct(i, id)}
-                                  getId={(p) => p.id}
-                                  getLabel={(p) => p.name}
-                                  getSub={(p) => p.code}
+                                  onChange={(u) => pickUnit(i, u)}
+                                  allowMulti
+                                  onPickMulti={(units) => addUnits(i, units)}
                                   placeholder="Ürün seç…"
-                                  searchPlaceholder="Ürün ara…"
-                                  emptyText="Ürün bulunamadı"
                                   onCreate={(q) => setProductDialog({ row: i, name: q })}
                                   createLabel="Yeni ürün ekle"
-                                  className="h-9"
+                                  title="Faturaya ürün ekle"
                                 />
                                 <Input value={r.description} onChange={(e) => setRow(i, { description: e.target.value })} placeholder="Açıklama" className="h-8 border-dashed text-xs" />
                               </div>
@@ -347,11 +422,38 @@ export function InvoiceEntryPage() {
               </section>
             </div>
 
-            {/* Summary */}
-            <aside className="w-full shrink-0 lg:w-80">
-              <div className="space-y-3 lg:sticky lg:top-4">
+            {/* Splitter — drag to resize the summary (lg only). */}
+            {isWide && summaryOpen ? (
+              <div
+                onPointerDown={onSummaryDown}
+                onPointerMove={onSummaryMove}
+                onPointerUp={onSummaryUp}
+                title="Sürükleyerek boyutlandır"
+                className="group hidden w-2 shrink-0 cursor-col-resize touch-none self-stretch lg:flex"
+              >
+                <div className="mx-auto w-px bg-border transition-colors group-hover:bg-primary" />
+              </div>
+            ) : null}
+
+            {/* Summary — collapsible right sidebar (stacks below on narrow screens) */}
+            <aside
+              className={cn('w-full lg:sticky lg:top-4 lg:shrink-0', isWide && !summaryOpen && 'lg:hidden')}
+              style={isWide ? { width: summaryOpen ? summaryW : 0 } : undefined}
+            >
+              <div className="space-y-3">
                 <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-                  <div className="border-b bg-muted/40 px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">Özet</div>
+                  <div className="flex items-center justify-between border-b bg-muted/40 px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    <span>Özet</span>
+                    <button
+                      type="button"
+                      onClick={() => setSummaryOpen(false)}
+                      className="hidden rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground lg:inline-flex"
+                      aria-label="Özeti gizle"
+                      title="Özeti gizle"
+                    >
+                      <PanelRightOpen className="size-4 rotate-180" />
+                    </button>
+                  </div>
                   <div className="space-y-2 p-4 text-sm">
                     <SumRow label="Ara toplam" value={formatMoney(totals.subtotal, currencyCode)} />
                     {totals.discountTotal > 0 ? <SumRow label="İskonto" value={`− ${formatMoney(totals.discountTotal, currencyCode)}`} /> : null}
@@ -372,7 +474,7 @@ export function InvoiceEntryPage() {
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-2 lg:flex-col">{actionButtons}</div>
+                <div className="flex justify-end gap-2">{actionButtons}</div>
               </div>
             </aside>
           </div>
@@ -390,8 +492,8 @@ export function InvoiceEntryPage() {
           initialName={productDialog?.name ?? ''}
           onCreated={(p) => {
             const row = productDialog?.row ?? 0
-            void productsQuery.refetch()
-            setRow(row, { productId: p.id, description: p.name, unit: p.unit || 'Adet', unitPrice: String(p.salePrice ?? 0), vatRate: p.taxRate ?? 20 })
+            void qc.invalidateQueries({ queryKey: ['inventory', 'products'] })
+            setRow(row, { productId: p.id, description: p.name, unit: p.unit || 'Adet', unitPrice: String(p.salePrice ?? 0), vatRate: validVat(p.taxRate) })
             setProductDialog(null)
           }}
         />

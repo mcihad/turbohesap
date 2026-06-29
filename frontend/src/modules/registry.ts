@@ -7,7 +7,11 @@ import { posModule } from './pos/module.config'
 import { financeModule } from './finance/module.config'
 import { contactsModule } from './contacts/module.config'
 import { invoicesModule } from './invoices/module.config'
+import { ordersModule } from './orders/module.config'
+import { stocktakeModule } from './stocktake/module.config'
+import { hrModule } from './hr/module.config'
 import { lookupsModule } from './lookups/module.config'
+import { feedbackModule } from './feedback/module.config'
 import { iamModule } from './iam/module.config'
 
 // The ordered list of modules rendered in the left rail. Add a module's config
@@ -21,7 +25,11 @@ export const APP_MODULES: AppModule[] = [
   financeModule,
   contactsModule,
   invoicesModule,
+  ordersModule,
+  stocktakeModule,
+  hrModule,
   lookupsModule,
+  feedbackModule,
   iamModule,
 ]
 

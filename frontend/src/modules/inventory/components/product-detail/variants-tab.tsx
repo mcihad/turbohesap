@@ -1,15 +1,25 @@
 import * as React from 'react'
-import { useMutation } from '@tanstack/react-query'
-import { Pencil, Sparkles, Tag, Trash2 } from 'lucide-react'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { Pencil, Sparkles, Tag, Trash2, Wand2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { FilesPermissions, toApiError, type ProductDto, type ProductVariantDto } from '@turbohesap/shared'
+import {
+  FilesPermissions,
+  InventoryPermissions,
+  LookupsPermissions,
+  effectiveFieldDefsWithSource,
+  toApiError,
+  type CategoryFieldDef,
+  type ProductDto,
+  type ProductVariantDto,
+} from '@turbohesap/shared'
 
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth/auth-context'
 import { FileManager } from '@/modules/files/components/file-manager'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -42,6 +52,7 @@ export function VariantsTab({
 }) {
   const [editing, setEditing] = React.useState<ProductVariantDto | null>(null)
   const [bulkOpen, setBulkOpen] = React.useState(false)
+  const [featureOpen, setFeatureOpen] = React.useState(false)
 
   const generate = useMutation({
     mutationFn: () => api.inventory.products.generateVariants(product.id, {}),
@@ -86,6 +97,10 @@ export function VariantsTab({
                 Toplu fiyat
               </Button>
             ) : null}
+            <Button variant="outline" size="sm" onClick={() => setFeatureOpen(true)}>
+              <Wand2 className="size-4" />
+              Kategori özelliklerinden türet
+            </Button>
             {axes.length > 0 ? (
               <Button size="sm" onClick={() => generate.mutate()} disabled={generate.isPending}>
                 <Sparkles className="size-4" />
@@ -101,6 +116,14 @@ export function VariantsTab({
           product={product}
           onClose={() => setBulkOpen(false)}
           onSaved={() => { setBulkOpen(false); refetch() }}
+        />
+      ) : null}
+
+      {featureOpen ? (
+        <FeatureVariantsDialog
+          product={product}
+          onClose={() => setFeatureOpen(false)}
+          onSaved={() => { setFeatureOpen(false); refetch() }}
         />
       ) : null}
 
@@ -250,5 +273,139 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
       <Label>{label}</Label>
       {children}
     </div>
+  )
+}
+
+const LIST_FIELD_TYPES = new Set<CategoryFieldDef['type']>(['select', 'multiselect', 'lookup'])
+
+// Derive variant axes from the product category's list-type custom fields. The
+// user picks which fields + which values to use; each chosen field becomes a
+// variant axis.
+function FeatureVariantsDialog({
+  product,
+  onClose,
+  onSaved,
+}: {
+  product: ProductDto
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const { hasPermission } = useAuth()
+  const categoriesQuery = useQuery({
+    queryKey: ['inventory', 'categories'],
+    queryFn: () => api.inventory.categories.list(),
+    enabled: hasPermission(InventoryPermissions.categoriesRead),
+  })
+  const lookupsQuery = useQuery({
+    queryKey: ['lookups', 'items'],
+    queryFn: () => api.lookups.list(),
+    enabled: hasPermission(LookupsPermissions.read),
+  })
+
+  // Effective list-type field defs for this product's category.
+  const fields = React.useMemo<CategoryFieldDef[]>(() => {
+    const defs = effectiveFieldDefsWithSource(product.categoryId, categoriesQuery.data ?? [])
+    return defs.map((s) => s.def).filter((d) => LIST_FIELD_TYPES.has(d.type))
+  }, [product.categoryId, categoriesQuery.data])
+
+  // Values available for a field: inline options, else the bound lookup list.
+  const valuesFor = React.useCallback(
+    (def: CategoryFieldDef): string[] => {
+      if (def.options?.length) return def.options
+      if (def.lookupList) {
+        return (lookupsQuery.data ?? [])
+          .filter((it) => it.list === def.lookupList)
+          .map((it) => it.value)
+      }
+      return []
+    },
+    [lookupsQuery.data],
+  )
+
+  // key → set of chosen values
+  const [picked, setPicked] = React.useState<Record<string, Set<string>>>({})
+  const togglePick = (key: string, value: string) =>
+    setPicked((cur) => {
+      const set = new Set(cur[key] ?? [])
+      if (set.has(value)) set.delete(value)
+      else set.add(value)
+      return { ...cur, [key]: set }
+    })
+
+  const axes = fields
+    .map((def) => ({ def, values: [...(picked[def.key] ?? [])] }))
+    .filter((a) => a.values.length > 0)
+
+  const generate = useMutation({
+    mutationFn: () =>
+      api.inventory.products.generateVariantsFromFeatures(product.id, {
+        fields: axes.map((a) => ({ name: a.def.label, lookupList: a.def.lookupList, values: a.values })),
+      }),
+    onSuccess: (rows) => {
+      toast.success(`${rows.length} varyant hazır`)
+      onSaved()
+    },
+    onError: (e) => toast.error('Üretim başarısız', { description: toApiError(e).message }),
+  })
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose() }}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Kategori özelliklerinden varyant türet</DialogTitle>
+        </DialogHeader>
+        <div className="max-h-[60vh] space-y-4 overflow-y-auto px-1 py-1">
+          {categoriesQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Yükleniyor…</p>
+          ) : fields.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Bu ürünün kategorisinde liste tipinde (seçim/çoklu seçim/lookup) özellik tanımlı değil.
+            </p>
+          ) : (
+            fields.map((def) => {
+              const values = valuesFor(def)
+              const chosen = picked[def.key] ?? new Set<string>()
+              return (
+                <div key={def.key} className="space-y-2 rounded-lg border p-3">
+                  <p className="text-sm font-medium">{def.label}</p>
+                  {values.length === 0 ? (
+                    <p className="text-2xs text-muted-foreground">Bu özellik için değer bulunamadı.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {values.map((v) => {
+                        const on = chosen.has(v)
+                        return (
+                          <button
+                            key={v}
+                            type="button"
+                            onClick={() => togglePick(def.key, v)}
+                            className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm transition-colors ${
+                              on ? 'border-primary bg-primary/10 text-primary' : 'bg-background hover:bg-accent'
+                            }`}
+                          >
+                            <Checkbox checked={on} className="pointer-events-none" />
+                            {v}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>İptal</Button>
+          <Button
+            onClick={() => generate.mutate()}
+            disabled={axes.length === 0 || generate.isPending}
+          >
+            <Sparkles className="size-4" />
+            Türet ve üret
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

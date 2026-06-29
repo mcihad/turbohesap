@@ -27,6 +27,13 @@ export interface PosOrderLineModifierDto {
   priceDelta: number
   groupId: string | null
   optionId: string | null
+  /** Stock-consumption snapshot (frozen at sale time). When stockProductId is
+   *  set and deductStock is true, settling the order deducts this product. */
+  stockProductId: string | null
+  stockVariantId: string | null
+  consumeQty: number
+  deductStock: boolean
+  returnable: boolean
 }
 
 export interface PosOrderLineDto {
@@ -44,6 +51,15 @@ export interface PosOrderLineDto {
   kitchenStatus: KitchenStatus
   stationId: string | null
   notes: string | null
+  /** True for a server-generated bundle component line (e.g. "+ 2 Ketçap").
+   *  Bundle children are indented under their parent and not edited directly. */
+  isBundleChild: boolean
+  /** The parent line id this bundle child belongs to (null for normal lines). */
+  bundleParentLineId: string | null
+  /** When true this line can be returned to stock (geri giriş). */
+  returnable: boolean
+  /** Quantity already returned to stock for this line. */
+  returnedQty: number
   modifiers: PosOrderLineModifierDto[]
 }
 
@@ -115,6 +131,9 @@ export interface CreatePosOrderLineInput {
   discount?: number
   taxRate?: number
   notes?: string | null
+  /** Set by the cart for preview-only bundle children; the server ignores them
+   *  (it re-expands bundle components authoritatively from the parent product). */
+  isBundleChild?: boolean
   modifiers?: CreatePosOrderLineModifierInput[]
 }
 
@@ -150,6 +169,20 @@ export interface SplitPosOrderRequest {
 export interface VoidPosOrderRequest {
   reason?: string | null
   /** When true, reverse a previously settled (paid) order. */
+  refund?: boolean
+}
+
+/** Return specific (returnable) line units back to stock — "geri giriş".
+ *  Used for unconsumed packaged items handed out with an order. Posts an
+ *  inbound stock movement for each returned line; money refund is optional. */
+export interface ReturnPosOrderLineInput {
+  lineId: string
+  qty: number
+}
+export interface ReturnPosOrderRequest {
+  lines: ReturnPosOrderLineInput[]
+  reason?: string | null
+  /** When true, also refund the value of the returned lines (cash drawer). */
   refund?: boolean
 }
 

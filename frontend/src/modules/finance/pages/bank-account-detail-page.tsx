@@ -8,7 +8,7 @@ import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth/auth-context'
 import { PermissionRequired } from '@/lib/auth/permission-gate'
 import { useRegisterBreadcrumbLabel } from '@/lib/layout/breadcrumb-store'
-import { formatDateTime } from '@/lib/datetime'
+import { formatDate, formatDateTime, formatTime } from '@/lib/datetime'
 import { PageHeader, PageWrapper } from '@/components/layout/page'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -99,7 +99,10 @@ export function BankAccountDetailPage() {
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <Calendar className="size-4 text-muted-foreground" />
-          <span>{formatDateTime(row.original.date)}</span>
+          <div className="leading-tight">
+            <div>{formatDate(row.original.date)}</div>
+            <div className="text-2xs tabular-nums text-muted-foreground">{formatTime(row.original.createdAt)}</div>
+          </div>
         </div>
       ),
     },

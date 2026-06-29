@@ -44,16 +44,45 @@ export function ProductsScreen() {
   const [sheetOpen, setSheetOpen] = React.useState(false)
 
   const products = useAsync(() => api.inventory.products.list(), [], { enabled: canRead })
+  // Flat "sellable unit" list: one row per variant (parent hidden), variant-less
+  // products show themselves — mirrors the web stock list. The ProductDto list
+  // above still powers the advanced-filter facets/sheet.
+  const sellable = useAsync(() => api.inventory.products.sellable(), [], { enabled: canRead })
   const categories = useAsync(() => api.inventory.categories.list(), [], {
     enabled: hasPermission(InventoryPermissions.categoriesRead),
   })
 
   const list = products.data ?? []
   const cats = categories.data ?? []
-  const filtered = React.useMemo(
-    () => filterProducts(list, filters, cats),
+
+  // Advanced filters (category + attributes, search excluded) → allowed product
+  // ids; the flat sellable rows are then narrowed to those ids and the search.
+  const allowedIds = React.useMemo(
+    () => new Set(filterProducts(list, { ...filters, search: '' }, cats).map((p) => p.id)),
     [list, filters, cats],
   )
+  const q = filters.search.trim().toLocaleLowerCase('tr')
+  const rows = React.useMemo(
+    () =>
+      (sellable.data ?? []).filter((r) => {
+        if (!allowedIds.has(r.productId)) return false
+        if (q) {
+          const hay = `${r.label} ${r.code} ${r.barcode} ${r.categoryName ?? ''}`.toLocaleLowerCase('tr')
+          if (!hay.includes(q)) return false
+        }
+        return true
+      }),
+    [sellable.data, allowedIds, q],
+  )
+
+  const loading = products.loading || sellable.loading
+  const error = products.error || sellable.error
+  const refreshing = products.refreshing || sellable.refreshing
+  const refetch = React.useCallback(() => {
+    products.refetch()
+    sellable.refetch()
+  }, [products, sellable])
+
   const filterCount = advancedFilterCount(filters)
   const anyFilter = !!filters.search.trim() || filterCount > 0
 
@@ -68,8 +97,8 @@ export function ProductsScreen() {
             <HeaderAction icon="plus" onPress={() => nav.navigate('inventory.products.form', {}, 'Yeni ürün')} />
           ) : undefined,
         }}
-        onRefresh={products.refetch}
-        refreshing={products.refreshing}
+        onRefresh={refetch}
+        refreshing={refreshing}
       >
         {/* Search + advanced filter */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing[2] }}>
@@ -121,11 +150,11 @@ export function ProductsScreen() {
           </Pressable>
         </View>
 
-        {products.loading ? (
+        {loading ? (
           <SkeletonRows count={6} />
-        ) : products.error ? (
-          <EmptyState icon="alert-triangle" tone="destructive" title="Yüklenemedi" description={products.error} actionLabel="Tekrar dene" onAction={products.refetch} />
-        ) : filtered.length === 0 ? (
+        ) : error ? (
+          <EmptyState icon="alert-triangle" tone="destructive" title="Yüklenemedi" description={error} actionLabel="Tekrar dene" onAction={refetch} />
+        ) : rows.length === 0 ? (
           <EmptyState
             icon="box"
             title="Ürün yok"
@@ -142,27 +171,29 @@ export function ProductsScreen() {
         ) : (
           <>
             <Text variant="overline" tone="muted" style={{ paddingHorizontal: t.spacing[1] }}>
-              {filtered.length} ürün{filtered.length !== list.length ? ` · ${list.length} içinde` : ''}
+              {rows.length} ürün
             </Text>
             <ListCard>
-              {filtered.map((p) => (
+              {rows.map((r) => (
                 <ListRow
-                  key={p.id}
+                  key={r.id}
                   icon="box"
-                  title={p.name}
-                  subtitle={`${p.code}${p.category ? ` · ${p.category.name}` : ''}`}
+                  title={r.label}
+                  subtitle={`${r.code}${r.categoryName ? ` · ${r.categoryName}` : ''}`}
                   trailing={
                     <View style={{ alignItems: 'flex-end', gap: 4 }}>
                       <Text variant="label" weight="semibold">
-                        {p.salePrice == null ? '—' : `${p.salePrice} ${p.currency}`}
+                        {r.salePrice == null ? '—' : `${r.salePrice} ${r.currency}`}
                       </Text>
-                      <Badge
-                        label={`${p.totalStock}${p.unit ? ` ${p.unit}` : ''}`}
-                        tone={p.totalStock <= p.minQuantity ? 'destructive' : 'muted'}
-                      />
+                      {r.trackStock ? (
+                        <Badge
+                          label={`${r.totalStock}${r.unit ? ` ${r.unit}` : ''}`}
+                          tone={r.totalStock <= r.minQuantity ? 'destructive' : 'muted'}
+                        />
+                      ) : null}
                     </View>
                   }
-                  onPress={() => nav.navigate('inventory.products.detail', { id: p.id }, p.name)}
+                  onPress={() => nav.navigate('inventory.products.detail', { id: r.productId }, r.label)}
                 />
               ))}
             </ListCard>

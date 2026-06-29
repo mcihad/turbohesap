@@ -5,6 +5,7 @@ import type {
   CreatePosOrderRequest,
   PosOrderDto,
   PosOrderListQuery,
+  ReturnPosOrderRequest,
   SplitPosOrderRequest,
   UpdatePosOrderRequest,
   VoidPosOrderRequest,
@@ -42,6 +43,9 @@ export class PosOrdersApiClient implements IPosOrdersService {
   }
   async void(id: string, input: VoidPosOrderRequest): Promise<PosOrderDto> {
     return (await this.http.post<PosOrderDto>(`${base}/${id}/void`, input)).data
+  }
+  async returnLines(id: string, input: ReturnPosOrderRequest): Promise<PosOrderDto> {
+    return (await this.http.post<PosOrderDto>(`${base}/${id}/return`, input)).data
   }
   async remove(id: string): Promise<void> {
     await this.http.delete(`${base}/${id}`)

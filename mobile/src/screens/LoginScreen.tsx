@@ -9,12 +9,25 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Button, Input, Text } from '../components'
 import { useAuth } from '../lib/auth/auth-context'
 import { useTheme } from '../theme/theme-context'
+import { ServerUrlDialog } from './ServerUrlDialog'
 
 export function LoginScreen() {
   const t = useTheme()
   const insets = useSafeAreaInsets()
   const { login, posLogin } = useAuth()
   const [mode, setMode] = React.useState<'password' | 'pin'>('password')
+  // Hidden trick: double-tap the logo to set a custom server address/IP.
+  const [serverDialog, setServerDialog] = React.useState(false)
+  const lastLogoTap = React.useRef(0)
+  const onLogoTap = () => {
+    const now = Date.now()
+    if (now - lastLogoTap.current < 300) {
+      lastLogoTap.current = 0
+      setServerDialog(true)
+    } else {
+      lastLogoTap.current = now
+    }
+  }
   const [username, setUsername] = React.useState('admin')
   const [password, setPassword] = React.useState('Admin123!')
   const [pin, setPin] = React.useState('')
@@ -73,11 +86,13 @@ export function LoginScreen() {
               marginBottom: t.spacing[8],
             }}
           >
-            <Image
-              source={require('../../assets/logo.png')}
-              style={{ width: 76, height: 76, borderRadius: t.radius.lg }}
-              resizeMode="contain"
-            />
+            <Pressable onPress={onLogoTap} accessibilityLabel="TurboHesap logosu">
+              <Image
+                source={require('../../assets/logo.png')}
+                style={{ width: 76, height: 76, borderRadius: t.radius.lg }}
+                resizeMode="contain"
+              />
+            </Pressable>
             <View style={{ gap: 2 }}>
               <Text variant="h1" style={{ fontSize: 24, fontWeight: '700', lineHeight: 28 }}>
                 TurboHesap
@@ -196,6 +211,8 @@ export function LoginScreen() {
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <ServerUrlDialog visible={serverDialog} onClose={() => setServerDialog(false)} />
     </View>
   )
 }

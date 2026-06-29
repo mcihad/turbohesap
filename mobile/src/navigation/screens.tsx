@@ -4,7 +4,15 @@
 
 import * as React from 'react'
 
-import { AnalyticsScreen } from '../modules/genel/AnalyticsScreen'
+import {
+  AnalyticsScreen,
+  ContactsAnalyticsScreen,
+  FinanceAnalyticsScreen,
+  InventoryAnalyticsScreen,
+  InvoicesAnalyticsScreen,
+  PosAnalyticsScreen,
+  SalesAnalyticsScreen,
+} from '../modules/genel/AnalyticsScreen'
 import { DashboardScreen } from '../modules/genel/DashboardScreen'
 import { AuditDetailScreen } from '../modules/iam/AuditDetailScreen'
 import { AuditLogsScreen } from '../modules/iam/AuditLogsScreen'
@@ -73,6 +81,22 @@ import { CrmFieldFormScreen } from '../modules/contacts/CrmFieldFormScreen'
 import { InvoicesScreen } from '../modules/invoices/InvoicesScreen'
 import { InvoiceDetailScreen } from '../modules/invoices/InvoiceDetailScreen'
 import { InvoiceEntryScreen } from '../modules/invoices/InvoiceEntryScreen'
+import { OrdersListScreen } from '../modules/orders/OrdersListScreen'
+import { OrderDetailScreen } from '../modules/orders/OrderDetailScreen'
+import { OrderEntryScreen } from '../modules/orders/OrderEntryScreen'
+import { StockCountListScreen } from '../modules/stocktake/StockCountListScreen'
+import { StockCountDetailScreen } from '../modules/stocktake/StockCountDetailScreen'
+import { CountScanScreen } from '../modules/stocktake/CountScanScreen'
+import { EmployeesListScreen } from '../modules/hr/EmployeesListScreen'
+import { EmployeeDetailScreen } from '../modules/hr/EmployeeDetailScreen'
+import { EmployeeEntryScreen } from '../modules/hr/EmployeeEntryScreen'
+import { LeavesScreen } from '../modules/hr/LeavesScreen'
+import { TimesheetScreen } from '../modules/hr/TimesheetScreen'
+import { PayrollScreen } from '../modules/hr/PayrollScreen'
+import { PayrollRunDetailScreen } from '../modules/hr/PayrollRunDetailScreen'
+import { PayslipDetailScreen } from '../modules/hr/PayslipDetailScreen'
+import { FeedbackListScreen } from '../modules/feedback/FeedbackListScreen'
+import { FeedbackDetailScreen } from '../modules/feedback/FeedbackDetailScreen'
 import { ProfileScreen } from '../screens/ProfileScreen'
 import { ModuleDashboardScreen } from './ModuleDashboardScreen'
 import { ModuleHome } from './ModuleHome'
@@ -83,6 +107,12 @@ export const SCREENS: Record<string, () => React.ReactElement> = {
   // Genel
   'genel.dashboard': () => <DashboardScreen />,
   'genel.analytics': () => <AnalyticsScreen />,
+  'genel.analytics.pos': () => <PosAnalyticsScreen />,
+  'genel.analytics.inventory': () => <InventoryAnalyticsScreen />,
+  'genel.analytics.finance': () => <FinanceAnalyticsScreen />,
+  'genel.analytics.invoices': () => <InvoicesAnalyticsScreen />,
+  'genel.analytics.contacts': () => <ContactsAnalyticsScreen />,
+  'genel.analytics.sales': () => <SalesAnalyticsScreen />,
   // Satış
   'sales.home': () => <ModuleHome moduleKey="sales" />,
   'sales.channels': () => <ChannelsScreen />,
@@ -167,6 +197,31 @@ export const SCREENS: Record<string, () => React.ReactElement> = {
   'invoices.invoices': () => <InvoicesScreen />,
   'invoices.invoices.detail': () => <InvoiceDetailScreen />,
   'invoices.invoices.form': () => <InvoiceEntryScreen />,
+  // Sipariş (orders): Teklif → Sipariş → İrsaliye → Fatura chain
+  'orders.home': () => <ModuleHome moduleKey="orders" />,
+  'orders.quotes': () => <OrdersListScreen kind="quote" />,
+  'orders.orders': () => <OrdersListScreen kind="order" />,
+  'orders.deliveries': () => <OrdersListScreen kind="delivery" />,
+  'orders.detail': () => <OrderDetailScreen />,
+  'orders.entry': () => <OrderEntryScreen />,
+  // Sayım (stocktake): list → detail → barcode counting (CountScanScreen)
+  'stocktake.home': () => <ModuleHome moduleKey="stocktake" />,
+  'stocktake.counts': () => <StockCountListScreen />,
+  'stocktake.detail': () => <StockCountDetailScreen />,
+  'stocktake.scan': () => <CountScanScreen />,
+  // İK & Bordro (hr): Personel · İzinler · Puantaj · Bordro
+  'hr.home': () => <ModuleHome moduleKey="hr" />,
+  'hr.employees': () => <EmployeesListScreen />,
+  'hr.employee.detail': () => <EmployeeDetailScreen />,
+  'hr.employee.entry': () => <EmployeeEntryScreen />,
+  'hr.leaves': () => <LeavesScreen />,
+  'hr.timesheets': () => <TimesheetScreen />,
+  'hr.payroll': () => <PayrollScreen />,
+  'hr.payroll.detail': () => <PayrollRunDetailScreen />,
+  'hr.payslip': () => <PayslipDetailScreen />,
+  // Geri Bildirim (feedback)
+  'feedback.list': () => <FeedbackListScreen />,
+  'feedback.detail': () => <FeedbackDetailScreen />,
   // Profil (pseudo-module tab)
   profile: () => <ProfileScreen />,
 }

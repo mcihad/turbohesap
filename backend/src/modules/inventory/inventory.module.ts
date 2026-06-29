@@ -24,6 +24,15 @@ import { ProductModifierOption } from './entities/product-modifier-option.entity
 import { ProductModifierLink } from './entities/product-modifier-link.entity'
 import { ProductModifiersController } from './product-modifiers.controller'
 import { ProductModifiersService } from './product-modifiers.service'
+import { ProductBundleComponent } from './entities/product-bundle-component.entity'
+import { ProductBundlesController } from './product-bundles.controller'
+import { ProductBundlesService } from './product-bundles.service'
+import { ProductStatsService } from './product-stats.service'
+// Cross-module entity shapes (read-only) for per-product sales statistics.
+import { InvoiceLine } from '../invoices/entities/invoice-line.entity'
+import { Invoice } from '../invoices/entities/invoice.entity'
+import { PosOrderLine } from '../pos/entities/pos-order-line.entity'
+import { PosOrder } from '../pos/entities/pos-order.entity'
 
 // Envanter — product categories (a tree, with per-category custom field schemas)
 // and products with variants, packagings, per-branch stock and per-channel
@@ -43,6 +52,11 @@ import { ProductModifiersService } from './product-modifiers.service'
       ProductModifierGroup,
       ProductModifierOption,
       ProductModifierLink,
+      ProductBundleComponent,
+      InvoiceLine,
+      Invoice,
+      PosOrderLine,
+      PosOrder,
       Branch,
       SalesChannel,
     ]),
@@ -53,6 +67,7 @@ import { ProductModifiersService } from './product-modifiers.service'
     StockMovementTypesController,
     StockMovementsController,
     ProductModifiersController,
+    ProductBundlesController,
   ],
   providers: [
     CategoriesService,
@@ -60,6 +75,8 @@ import { ProductModifiersService } from './product-modifiers.service'
     StockMovementTypesService,
     StockMovementsService,
     ProductModifiersService,
+    ProductBundlesService,
+    ProductStatsService,
   ],
   // Exported so InvoicesModule/PosModule can post/reverse stock movements.
   exports: [StockMovementsService, StockMovementTypesService, ProductModifiersService],

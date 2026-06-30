@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 
 import { Branch } from '../org/entities/branch.entity'
+import { RefreshToken } from '../auth/entities/refresh-token.entity'
 import { AccessService } from './access.service'
 import { AuditSubscriber } from './audit/audit.subscriber'
 import { AuditLogsController } from './audit/audit-logs.controller'
@@ -27,7 +28,7 @@ import { UsersService } from './users/users.service'
 // resolution) and ErrorLogsService (used by the global exception filter).
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Role, Permission, AuditLog, ErrorLog, Branch]),
+    TypeOrmModule.forFeature([User, Role, Permission, AuditLog, ErrorLog, Branch, RefreshToken]),
   ],
   controllers: [
     UsersController,
@@ -46,6 +47,6 @@ import { UsersService } from './users/users.service'
     ErrorLogsService,
     AuditSubscriber,
   ],
-  exports: [TypeOrmModule, AccessService, ErrorLogsService],
+  exports: [TypeOrmModule, AccessService, ErrorLogsService, UsersService],
 })
 export class IamModule {}

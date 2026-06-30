@@ -45,4 +45,24 @@ export const INVENTORY_PERMISSION_DEFS: PermissionDef[] = [
     description: 'POS modifier grup/seçenek yönetimi',
     group: 'products',
   },
+  {
+    key: InventoryPermissions.assetsRead,
+    description: 'Demirbaş ve zimmetleri görüntüleme',
+    group: 'Demirbaş',
+  },
+  {
+    key: InventoryPermissions.assetsWrite,
+    description: 'Demirbaş ekleme, düzenleme ve durum (kayıp/hurda/çıkış)',
+    group: 'Demirbaş',
+  },
+  {
+    key: InventoryPermissions.assetsAssign,
+    description: 'Zimmet verme, devretme, devralma ve iade',
+    group: 'Demirbaş',
+  },
+  {
+    key: InventoryPermissions.assetsMaintain,
+    description: 'Bakım/onarım ve araç km/yakıt kayıtları',
+    group: 'Demirbaş',
+  },
 ]

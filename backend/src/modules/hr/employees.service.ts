@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
@@ -10,6 +10,8 @@ import type {
   UpdateEmployeeRequest,
 } from '@turbohesap/shared'
 
+import { Role } from '../iam/entities/role.entity'
+import { UsersService } from '../iam/users/users.service'
 import { Employee } from './entities/employee.entity'
 import { LeaveRequest } from './entities/leave-request.entity'
 import { LeaveType } from './entities/leave-type.entity'
@@ -20,6 +22,8 @@ export class EmployeesService {
     @InjectRepository(Employee) private readonly employees: Repository<Employee>,
     @InjectRepository(LeaveRequest) private readonly leaveRequests: Repository<LeaveRequest>,
     @InjectRepository(LeaveType) private readonly leaveTypes: Repository<LeaveType>,
+    @InjectRepository(Role) private readonly roles: Repository<Role>,
+    private readonly users: UsersService,
   ) {}
 
   async list(query?: EmployeeListQuery): Promise<EmployeeDto[]> {
@@ -42,6 +46,13 @@ export class EmployeesService {
   }
 
   async create(input: CreateEmployeeRequest): Promise<EmployeeDto> {
+    // Optional: create a login user on the spot (standard "Personel" role) when
+    // the personel has no existing user linked. A provided userId wins.
+    let userId = input.userId ?? null
+    if (!userId && input.createUser) {
+      userId = await this.createPersonelUser(input.createUser)
+    }
+
     const employee = this.employees.create({
       firstName: input.firstName.trim(),
       lastName: input.lastName.trim(),
@@ -62,7 +73,8 @@ export class EmployeesService {
       email: input.email ?? null,
       address: input.address ?? null,
       branchId: input.branchId ?? null,
-      userId: input.userId ?? null,
+      userId,
+      cardNo: input.cardNo ?? null,
       annualLeaveDays: input.annualLeaveDays ?? 14,
       isActive: input.isActive ?? true,
       notes: input.notes ?? null,
@@ -92,6 +104,11 @@ export class EmployeesService {
     if (input.address !== undefined) employee.address = input.address
     if (input.branchId !== undefined) employee.branchId = input.branchId
     if (input.userId !== undefined) employee.userId = input.userId
+    // Create + link a login user on edit when the personel isn't linked yet.
+    if (!employee.userId && input.createUser) {
+      employee.userId = await this.createPersonelUser(input.createUser)
+    }
+    if (input.cardNo !== undefined) employee.cardNo = input.cardNo
     if (input.annualLeaveDays !== undefined) employee.annualLeaveDays = input.annualLeaveDays
     if (input.isActive !== undefined) employee.isActive = input.isActive
     if (input.notes !== undefined) employee.notes = input.notes
@@ -101,6 +118,28 @@ export class EmployeesService {
   async remove(id: string): Promise<void> {
     const employee = await this.findOrFail(id)
     await this.employees.remove(employee)
+  }
+
+  // Create a login user for a personel with the standard "Personel" role.
+  private async createPersonelUser(input: {
+    username: string
+    email: string
+    password: string
+  }): Promise<string> {
+    const role = await this.roles.findOne({ where: { name: 'personel' } })
+    if (!role) {
+      throw new BadRequestException(
+        'Personel rolü bulunamadı (sunucu açılışında otomatik oluşturulur)',
+      )
+    }
+    const user = await this.users.create({
+      username: input.username.trim(),
+      email: input.email.trim(),
+      password: input.password,
+      isActive: true,
+      roleIds: [role.id],
+    })
+    return user.id
   }
 
   /** Annual paid-leave balance for a year (defaults to the current year). */
@@ -174,6 +213,7 @@ export function toEmployeeDto(e: Employee): EmployeeDto {
     address: e.address,
     branchId: e.branchId,
     userId: e.userId,
+    cardNo: e.cardNo,
     annualLeaveDays: e.annualLeaveDays,
     isActive: e.isActive,
     notes: e.notes,

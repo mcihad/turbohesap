@@ -34,6 +34,16 @@ import { StockMovementTypesApiClient } from '../modules/inventory/stock-movement
 import type { IStockMovementTypesService } from '../modules/inventory/stock-movement-types.service'
 import { StockMovementsApiClient } from '../modules/inventory/stock-movements.client'
 import type { IStockMovementsService } from '../modules/inventory/stock-movements.service'
+import { AssetsApiClient } from '../modules/inventory/assets.client'
+import type { IAssetsService } from '../modules/inventory/assets.service'
+import { AssetAssignmentsApiClient } from '../modules/inventory/asset-assignments.client'
+import type { IAssetAssignmentsService } from '../modules/inventory/asset-assignments.service'
+import { AssetTransfersApiClient } from '../modules/inventory/asset-transfers.client'
+import type { IAssetTransfersService } from '../modules/inventory/asset-transfers.service'
+import { AssetMaintenanceApiClient } from '../modules/inventory/asset-maintenance.client'
+import type { IAssetMaintenanceService } from '../modules/inventory/asset-maintenance.service'
+import { AssetVehicleLogsApiClient } from '../modules/inventory/asset-vehicle-logs.client'
+import type { IAssetVehicleLogsService } from '../modules/inventory/asset-vehicle-logs.service'
 import { HealthApiClient } from '../modules/health/health.client'
 import type { IHealthService } from '../modules/health/health.service'
 import { CashAccountsApiClient } from '../modules/finance/cash-accounts.client'
@@ -89,6 +99,12 @@ import {
   TimesheetsApiClient,
   PayrollApiClient,
   PayrollParamsApiClient,
+  ShiftsApiClient,
+  ShiftRotationsApiClient,
+  ShiftScheduleApiClient,
+  CheckinAreasApiClient,
+  AttendanceApiClient,
+  CardSourcesApiClient,
 } from '../modules/hr/hr.client'
 import type {
   IEmployeesService,
@@ -97,6 +113,12 @@ import type {
   ITimesheetsService,
   IPayrollService,
   IPayrollParamsService,
+  IShiftsService,
+  IShiftRotationsService,
+  IShiftScheduleService,
+  ICheckinAreasService,
+  IAttendanceService,
+  ICardSourcesService,
 } from '../modules/hr/hr.service'
 import { StocktakeApiClient } from '../modules/stocktake/stocktake.client'
 import type { IStocktakeService } from '../modules/stocktake/stocktake.service'
@@ -129,6 +151,16 @@ export interface InventoryApi {
   bundles: IProductBundlesService
   movementTypes: IStockMovementTypesService
   stockMovements: IStockMovementsService
+  /** Demirbaş (fixed assets) registry. */
+  assets: IAssetsService
+  /** Zimmet (custody) ledger + operations. */
+  assetAssignments: IAssetAssignmentsService
+  /** Zimmet devri (barcode handshake transfers). */
+  assetTransfers: IAssetTransfersService
+  /** Bakım/Onarım ledger. */
+  assetMaintenance: IAssetMaintenanceService
+  /** Araç KM & Yakıt ledger. */
+  assetVehicleLogs: IAssetVehicleLogsService
 }
 
 export interface PosApi {
@@ -166,6 +198,18 @@ export interface HrApi {
   timesheets: ITimesheetsService
   payroll: IPayrollService
   params: IPayrollParamsService
+  /** PDKS: vardiya tanımları. */
+  shifts: IShiftsService
+  /** PDKS: vardiya rotasyon/döngü şablonları. */
+  shiftRotations: IShiftRotationsService
+  /** PDKS: personele vardiya ataması + materialize takvim. */
+  shiftSchedule: IShiftScheduleService
+  /** PDKS: geofence giriş alanları. */
+  checkinAreas: ICheckinAreasService
+  /** PDKS: giriş/çıkış kayıtları (mobil + kart + manuel). */
+  attendance: IAttendanceService
+  /** PDKS: kartlı geçiş kaynakları + personel kartları. */
+  cardSources: ICardSourcesService
 }
 
 // TurbohesapApi bundles every module's service client behind its interface.
@@ -237,6 +281,11 @@ export function createTurbohesapApi(
       bundles: new ProductBundlesApiClient(http),
       movementTypes: new StockMovementTypesApiClient(http),
       stockMovements: new StockMovementsApiClient(http),
+      assets: new AssetsApiClient(http),
+      assetAssignments: new AssetAssignmentsApiClient(http),
+      assetTransfers: new AssetTransfersApiClient(http),
+      assetMaintenance: new AssetMaintenanceApiClient(http),
+      assetVehicleLogs: new AssetVehicleLogsApiClient(http),
     },
     finance: {
       cashAccounts: new CashAccountsApiClient(http),
@@ -274,6 +323,12 @@ export function createTurbohesapApi(
       timesheets: new TimesheetsApiClient(http),
       payroll: new PayrollApiClient(http),
       params: new PayrollParamsApiClient(http),
+      shifts: new ShiftsApiClient(http),
+      shiftRotations: new ShiftRotationsApiClient(http),
+      shiftSchedule: new ShiftScheduleApiClient(http),
+      checkinAreas: new CheckinAreasApiClient(http),
+      attendance: new AttendanceApiClient(http),
+      cardSources: new CardSourcesApiClient(http),
     },
     stocktake: new StocktakeApiClient(http),
     lookups: new LookupsApiClient(http),

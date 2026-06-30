@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Boxes, FolderTree, LayoutDashboard, Package } from 'lucide-react'
+import { ArrowLeftRight, Boxes, FolderTree, LayoutDashboard, Package, Truck, UserCheck } from 'lucide-react'
 
 import { InventoryPermissions } from '@turbohesap/shared'
 
@@ -34,6 +34,20 @@ export const inventoryModule: AppModule = {
           to: '/inventory/movement-types',
           keywords: ['hareket', 'stok hareketi', 'movement', 'giriş', 'çıkış'],
           permission: InventoryPermissions.productsRead,
+        },
+        {
+          title: 'Demirbaşlar',
+          icon: Truck,
+          to: '/inventory/assets',
+          keywords: ['demirbaş', 'zimmet', 'araç', 'asset', 'fixed asset', 'envanter'],
+          permission: InventoryPermissions.assetsRead,
+        },
+        {
+          title: 'Zimmetler',
+          icon: UserCheck,
+          to: '/inventory/assignments',
+          keywords: ['zimmet', 'kimde', 'custody', 'assignment', 'demirbaş'],
+          permission: InventoryPermissions.assetsRead,
         },
       ],
     },

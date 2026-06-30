@@ -64,11 +64,19 @@ import { Route as AuthedInvoicesInvoicesIndexRouteImport } from './routes/_authe
 import { Route as AuthedInventoryProductsIndexRouteImport } from './routes/_authed/inventory/products.index'
 import { Route as AuthedInventoryMovementTypesIndexRouteImport } from './routes/_authed/inventory/movement-types.index'
 import { Route as AuthedInventoryCategoriesIndexRouteImport } from './routes/_authed/inventory/categories.index'
+import { Route as AuthedInventoryAssignmentsIndexRouteImport } from './routes/_authed/inventory/assignments.index'
+import { Route as AuthedInventoryAssetsIndexRouteImport } from './routes/_authed/inventory/assets.index'
 import { Route as AuthedIamUsersIndexRouteImport } from './routes/_authed/iam/users.index'
 import { Route as AuthedIamRolesIndexRouteImport } from './routes/_authed/iam/roles.index'
 import { Route as AuthedIamPermissionsIndexRouteImport } from './routes/_authed/iam/permissions.index'
+import { Route as AuthedHrShiftsIndexRouteImport } from './routes/_authed/hr/shifts.index'
+import { Route as AuthedHrShiftScheduleIndexRouteImport } from './routes/_authed/hr/shift-schedule.index'
+import { Route as AuthedHrShiftRotationsIndexRouteImport } from './routes/_authed/hr/shift-rotations.index'
 import { Route as AuthedHrPayrollIndexRouteImport } from './routes/_authed/hr/payroll.index'
 import { Route as AuthedHrEmployeesIndexRouteImport } from './routes/_authed/hr/employees.index'
+import { Route as AuthedHrCheckinAreasIndexRouteImport } from './routes/_authed/hr/checkin-areas.index'
+import { Route as AuthedHrCardAccessIndexRouteImport } from './routes/_authed/hr/card-access.index'
+import { Route as AuthedHrAttendanceIndexRouteImport } from './routes/_authed/hr/attendance.index'
 import { Route as AuthedGenelAnalyticsIndexRouteImport } from './routes/_authed/genel/analytics/index'
 import { Route as AuthedFinanceCashAccountsIndexRouteImport } from './routes/_authed/finance/cash-accounts.index'
 import { Route as AuthedFinanceBankAccountsIndexRouteImport } from './routes/_authed/finance/bank-accounts.index'
@@ -85,6 +93,7 @@ import { Route as AuthedInvoicesInvoicesNewRouteImport } from './routes/_authed/
 import { Route as AuthedInvoicesInvoicesIdRouteImport } from './routes/_authed/invoices/invoices.$id'
 import { Route as AuthedInventoryProductsIdRouteImport } from './routes/_authed/inventory/products.$id'
 import { Route as AuthedInventoryCategoriesIdRouteImport } from './routes/_authed/inventory/categories.$id'
+import { Route as AuthedInventoryAssetsIdRouteImport } from './routes/_authed/inventory/assets.$id'
 import { Route as AuthedIamUsersIdRouteImport } from './routes/_authed/iam/users.$id'
 import { Route as AuthedIamRolesIdRouteImport } from './routes/_authed/iam/roles.$id'
 import { Route as AuthedIamPermissionsKeyRouteImport } from './routes/_authed/iam/permissions.$key'
@@ -387,6 +396,18 @@ const AuthedInventoryCategoriesIndexRoute =
     path: '/inventory/categories/',
     getParentRoute: () => AuthedRoute,
   } as any)
+const AuthedInventoryAssignmentsIndexRoute =
+  AuthedInventoryAssignmentsIndexRouteImport.update({
+    id: '/inventory/assignments/',
+    path: '/inventory/assignments/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedInventoryAssetsIndexRoute =
+  AuthedInventoryAssetsIndexRouteImport.update({
+    id: '/inventory/assets/',
+    path: '/inventory/assets/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
 const AuthedIamUsersIndexRoute = AuthedIamUsersIndexRouteImport.update({
   id: '/iam/users/',
   path: '/iam/users/',
@@ -403,6 +424,23 @@ const AuthedIamPermissionsIndexRoute =
     path: '/iam/permissions/',
     getParentRoute: () => AuthedRoute,
   } as any)
+const AuthedHrShiftsIndexRoute = AuthedHrShiftsIndexRouteImport.update({
+  id: '/hr/shifts/',
+  path: '/hr/shifts/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedHrShiftScheduleIndexRoute =
+  AuthedHrShiftScheduleIndexRouteImport.update({
+    id: '/hr/shift-schedule/',
+    path: '/hr/shift-schedule/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedHrShiftRotationsIndexRoute =
+  AuthedHrShiftRotationsIndexRouteImport.update({
+    id: '/hr/shift-rotations/',
+    path: '/hr/shift-rotations/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
 const AuthedHrPayrollIndexRoute = AuthedHrPayrollIndexRouteImport.update({
   id: '/hr/payroll/',
   path: '/hr/payroll/',
@@ -411,6 +449,22 @@ const AuthedHrPayrollIndexRoute = AuthedHrPayrollIndexRouteImport.update({
 const AuthedHrEmployeesIndexRoute = AuthedHrEmployeesIndexRouteImport.update({
   id: '/hr/employees/',
   path: '/hr/employees/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedHrCheckinAreasIndexRoute =
+  AuthedHrCheckinAreasIndexRouteImport.update({
+    id: '/hr/checkin-areas/',
+    path: '/hr/checkin-areas/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedHrCardAccessIndexRoute = AuthedHrCardAccessIndexRouteImport.update({
+  id: '/hr/card-access/',
+  path: '/hr/card-access/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedHrAttendanceIndexRoute = AuthedHrAttendanceIndexRouteImport.update({
+  id: '/hr/attendance/',
+  path: '/hr/attendance/',
   getParentRoute: () => AuthedRoute,
 } as any)
 const AuthedGenelAnalyticsIndexRoute =
@@ -505,6 +559,11 @@ const AuthedInventoryCategoriesIdRoute =
     path: '/inventory/categories/$id',
     getParentRoute: () => AuthedRoute,
   } as any)
+const AuthedInventoryAssetsIdRoute = AuthedInventoryAssetsIdRouteImport.update({
+  id: '/inventory/assets/$id',
+  path: '/inventory/assets/$id',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const AuthedIamUsersIdRoute = AuthedIamUsersIdRouteImport.update({
   id: '/iam/users/$id',
   path: '/iam/users/$id',
@@ -673,6 +732,7 @@ export interface FileRoutesByFullPath {
   '/iam/permissions/$key': typeof AuthedIamPermissionsKeyRoute
   '/iam/roles/$id': typeof AuthedIamRolesIdRoute
   '/iam/users/$id': typeof AuthedIamUsersIdRoute
+  '/inventory/assets/$id': typeof AuthedInventoryAssetsIdRoute
   '/inventory/categories/$id': typeof AuthedInventoryCategoriesIdRoute
   '/inventory/products/$id': typeof AuthedInventoryProductsIdRoute
   '/invoices/invoices/$id': typeof AuthedInvoicesInvoicesIdRouteWithChildren
@@ -689,11 +749,19 @@ export interface FileRoutesByFullPath {
   '/finance/bank-accounts/': typeof AuthedFinanceBankAccountsIndexRoute
   '/finance/cash-accounts/': typeof AuthedFinanceCashAccountsIndexRoute
   '/genel/analytics/': typeof AuthedGenelAnalyticsIndexRoute
+  '/hr/attendance/': typeof AuthedHrAttendanceIndexRoute
+  '/hr/card-access/': typeof AuthedHrCardAccessIndexRoute
+  '/hr/checkin-areas/': typeof AuthedHrCheckinAreasIndexRoute
   '/hr/employees/': typeof AuthedHrEmployeesIndexRoute
   '/hr/payroll/': typeof AuthedHrPayrollIndexRoute
+  '/hr/shift-rotations/': typeof AuthedHrShiftRotationsIndexRoute
+  '/hr/shift-schedule/': typeof AuthedHrShiftScheduleIndexRoute
+  '/hr/shifts/': typeof AuthedHrShiftsIndexRoute
   '/iam/permissions/': typeof AuthedIamPermissionsIndexRoute
   '/iam/roles/': typeof AuthedIamRolesIndexRoute
   '/iam/users/': typeof AuthedIamUsersIndexRoute
+  '/inventory/assets/': typeof AuthedInventoryAssetsIndexRoute
+  '/inventory/assignments/': typeof AuthedInventoryAssignmentsIndexRoute
   '/inventory/categories/': typeof AuthedInventoryCategoriesIndexRoute
   '/inventory/movement-types/': typeof AuthedInventoryMovementTypesIndexRoute
   '/inventory/products/': typeof AuthedInventoryProductsIndexRoute
@@ -767,6 +835,7 @@ export interface FileRoutesByTo {
   '/iam/permissions/$key': typeof AuthedIamPermissionsKeyRoute
   '/iam/roles/$id': typeof AuthedIamRolesIdRoute
   '/iam/users/$id': typeof AuthedIamUsersIdRoute
+  '/inventory/assets/$id': typeof AuthedInventoryAssetsIdRoute
   '/inventory/categories/$id': typeof AuthedInventoryCategoriesIdRoute
   '/inventory/products/$id': typeof AuthedInventoryProductsIdRoute
   '/invoices/invoices/$id': typeof AuthedInvoicesInvoicesIdRouteWithChildren
@@ -783,11 +852,19 @@ export interface FileRoutesByTo {
   '/finance/bank-accounts': typeof AuthedFinanceBankAccountsIndexRoute
   '/finance/cash-accounts': typeof AuthedFinanceCashAccountsIndexRoute
   '/genel/analytics': typeof AuthedGenelAnalyticsIndexRoute
+  '/hr/attendance': typeof AuthedHrAttendanceIndexRoute
+  '/hr/card-access': typeof AuthedHrCardAccessIndexRoute
+  '/hr/checkin-areas': typeof AuthedHrCheckinAreasIndexRoute
   '/hr/employees': typeof AuthedHrEmployeesIndexRoute
   '/hr/payroll': typeof AuthedHrPayrollIndexRoute
+  '/hr/shift-rotations': typeof AuthedHrShiftRotationsIndexRoute
+  '/hr/shift-schedule': typeof AuthedHrShiftScheduleIndexRoute
+  '/hr/shifts': typeof AuthedHrShiftsIndexRoute
   '/iam/permissions': typeof AuthedIamPermissionsIndexRoute
   '/iam/roles': typeof AuthedIamRolesIndexRoute
   '/iam/users': typeof AuthedIamUsersIndexRoute
+  '/inventory/assets': typeof AuthedInventoryAssetsIndexRoute
+  '/inventory/assignments': typeof AuthedInventoryAssignmentsIndexRoute
   '/inventory/categories': typeof AuthedInventoryCategoriesIndexRoute
   '/inventory/movement-types': typeof AuthedInventoryMovementTypesIndexRoute
   '/inventory/products': typeof AuthedInventoryProductsIndexRoute
@@ -865,6 +942,7 @@ export interface FileRoutesById {
   '/_authed/iam/permissions/$key': typeof AuthedIamPermissionsKeyRoute
   '/_authed/iam/roles/$id': typeof AuthedIamRolesIdRoute
   '/_authed/iam/users/$id': typeof AuthedIamUsersIdRoute
+  '/_authed/inventory/assets/$id': typeof AuthedInventoryAssetsIdRoute
   '/_authed/inventory/categories/$id': typeof AuthedInventoryCategoriesIdRoute
   '/_authed/inventory/products/$id': typeof AuthedInventoryProductsIdRoute
   '/_authed/invoices/invoices/$id': typeof AuthedInvoicesInvoicesIdRouteWithChildren
@@ -881,11 +959,19 @@ export interface FileRoutesById {
   '/_authed/finance/bank-accounts/': typeof AuthedFinanceBankAccountsIndexRoute
   '/_authed/finance/cash-accounts/': typeof AuthedFinanceCashAccountsIndexRoute
   '/_authed/genel/analytics/': typeof AuthedGenelAnalyticsIndexRoute
+  '/_authed/hr/attendance/': typeof AuthedHrAttendanceIndexRoute
+  '/_authed/hr/card-access/': typeof AuthedHrCardAccessIndexRoute
+  '/_authed/hr/checkin-areas/': typeof AuthedHrCheckinAreasIndexRoute
   '/_authed/hr/employees/': typeof AuthedHrEmployeesIndexRoute
   '/_authed/hr/payroll/': typeof AuthedHrPayrollIndexRoute
+  '/_authed/hr/shift-rotations/': typeof AuthedHrShiftRotationsIndexRoute
+  '/_authed/hr/shift-schedule/': typeof AuthedHrShiftScheduleIndexRoute
+  '/_authed/hr/shifts/': typeof AuthedHrShiftsIndexRoute
   '/_authed/iam/permissions/': typeof AuthedIamPermissionsIndexRoute
   '/_authed/iam/roles/': typeof AuthedIamRolesIndexRoute
   '/_authed/iam/users/': typeof AuthedIamUsersIndexRoute
+  '/_authed/inventory/assets/': typeof AuthedInventoryAssetsIndexRoute
+  '/_authed/inventory/assignments/': typeof AuthedInventoryAssignmentsIndexRoute
   '/_authed/inventory/categories/': typeof AuthedInventoryCategoriesIndexRoute
   '/_authed/inventory/movement-types/': typeof AuthedInventoryMovementTypesIndexRoute
   '/_authed/inventory/products/': typeof AuthedInventoryProductsIndexRoute
@@ -962,6 +1048,7 @@ export interface FileRouteTypes {
     | '/iam/permissions/$key'
     | '/iam/roles/$id'
     | '/iam/users/$id'
+    | '/inventory/assets/$id'
     | '/inventory/categories/$id'
     | '/inventory/products/$id'
     | '/invoices/invoices/$id'
@@ -978,11 +1065,19 @@ export interface FileRouteTypes {
     | '/finance/bank-accounts/'
     | '/finance/cash-accounts/'
     | '/genel/analytics/'
+    | '/hr/attendance/'
+    | '/hr/card-access/'
+    | '/hr/checkin-areas/'
     | '/hr/employees/'
     | '/hr/payroll/'
+    | '/hr/shift-rotations/'
+    | '/hr/shift-schedule/'
+    | '/hr/shifts/'
     | '/iam/permissions/'
     | '/iam/roles/'
     | '/iam/users/'
+    | '/inventory/assets/'
+    | '/inventory/assignments/'
     | '/inventory/categories/'
     | '/inventory/movement-types/'
     | '/inventory/products/'
@@ -1056,6 +1151,7 @@ export interface FileRouteTypes {
     | '/iam/permissions/$key'
     | '/iam/roles/$id'
     | '/iam/users/$id'
+    | '/inventory/assets/$id'
     | '/inventory/categories/$id'
     | '/inventory/products/$id'
     | '/invoices/invoices/$id'
@@ -1072,11 +1168,19 @@ export interface FileRouteTypes {
     | '/finance/bank-accounts'
     | '/finance/cash-accounts'
     | '/genel/analytics'
+    | '/hr/attendance'
+    | '/hr/card-access'
+    | '/hr/checkin-areas'
     | '/hr/employees'
     | '/hr/payroll'
+    | '/hr/shift-rotations'
+    | '/hr/shift-schedule'
+    | '/hr/shifts'
     | '/iam/permissions'
     | '/iam/roles'
     | '/iam/users'
+    | '/inventory/assets'
+    | '/inventory/assignments'
     | '/inventory/categories'
     | '/inventory/movement-types'
     | '/inventory/products'
@@ -1153,6 +1257,7 @@ export interface FileRouteTypes {
     | '/_authed/iam/permissions/$key'
     | '/_authed/iam/roles/$id'
     | '/_authed/iam/users/$id'
+    | '/_authed/inventory/assets/$id'
     | '/_authed/inventory/categories/$id'
     | '/_authed/inventory/products/$id'
     | '/_authed/invoices/invoices/$id'
@@ -1169,11 +1274,19 @@ export interface FileRouteTypes {
     | '/_authed/finance/bank-accounts/'
     | '/_authed/finance/cash-accounts/'
     | '/_authed/genel/analytics/'
+    | '/_authed/hr/attendance/'
+    | '/_authed/hr/card-access/'
+    | '/_authed/hr/checkin-areas/'
     | '/_authed/hr/employees/'
     | '/_authed/hr/payroll/'
+    | '/_authed/hr/shift-rotations/'
+    | '/_authed/hr/shift-schedule/'
+    | '/_authed/hr/shifts/'
     | '/_authed/iam/permissions/'
     | '/_authed/iam/roles/'
     | '/_authed/iam/users/'
+    | '/_authed/inventory/assets/'
+    | '/_authed/inventory/assignments/'
     | '/_authed/inventory/categories/'
     | '/_authed/inventory/movement-types/'
     | '/_authed/inventory/products/'
@@ -1583,6 +1696,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedInventoryCategoriesIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/inventory/assignments/': {
+      id: '/_authed/inventory/assignments/'
+      path: '/inventory/assignments'
+      fullPath: '/inventory/assignments/'
+      preLoaderRoute: typeof AuthedInventoryAssignmentsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/inventory/assets/': {
+      id: '/_authed/inventory/assets/'
+      path: '/inventory/assets'
+      fullPath: '/inventory/assets/'
+      preLoaderRoute: typeof AuthedInventoryAssetsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/iam/users/': {
       id: '/_authed/iam/users/'
       path: '/iam/users'
@@ -1604,6 +1731,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedIamPermissionsIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/hr/shifts/': {
+      id: '/_authed/hr/shifts/'
+      path: '/hr/shifts'
+      fullPath: '/hr/shifts/'
+      preLoaderRoute: typeof AuthedHrShiftsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/hr/shift-schedule/': {
+      id: '/_authed/hr/shift-schedule/'
+      path: '/hr/shift-schedule'
+      fullPath: '/hr/shift-schedule/'
+      preLoaderRoute: typeof AuthedHrShiftScheduleIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/hr/shift-rotations/': {
+      id: '/_authed/hr/shift-rotations/'
+      path: '/hr/shift-rotations'
+      fullPath: '/hr/shift-rotations/'
+      preLoaderRoute: typeof AuthedHrShiftRotationsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/hr/payroll/': {
       id: '/_authed/hr/payroll/'
       path: '/hr/payroll'
@@ -1616,6 +1764,27 @@ declare module '@tanstack/react-router' {
       path: '/hr/employees'
       fullPath: '/hr/employees/'
       preLoaderRoute: typeof AuthedHrEmployeesIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/hr/checkin-areas/': {
+      id: '/_authed/hr/checkin-areas/'
+      path: '/hr/checkin-areas'
+      fullPath: '/hr/checkin-areas/'
+      preLoaderRoute: typeof AuthedHrCheckinAreasIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/hr/card-access/': {
+      id: '/_authed/hr/card-access/'
+      path: '/hr/card-access'
+      fullPath: '/hr/card-access/'
+      preLoaderRoute: typeof AuthedHrCardAccessIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/hr/attendance/': {
+      id: '/_authed/hr/attendance/'
+      path: '/hr/attendance'
+      fullPath: '/hr/attendance/'
+      preLoaderRoute: typeof AuthedHrAttendanceIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/genel/analytics/': {
@@ -1728,6 +1897,13 @@ declare module '@tanstack/react-router' {
       path: '/inventory/categories/$id'
       fullPath: '/inventory/categories/$id'
       preLoaderRoute: typeof AuthedInventoryCategoriesIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/inventory/assets/$id': {
+      id: '/_authed/inventory/assets/$id'
+      path: '/inventory/assets/$id'
+      fullPath: '/inventory/assets/$id'
+      preLoaderRoute: typeof AuthedInventoryAssetsIdRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/iam/users/$id': {
@@ -1966,6 +2142,7 @@ interface AuthedRouteChildren {
   AuthedIamPermissionsKeyRoute: typeof AuthedIamPermissionsKeyRoute
   AuthedIamRolesIdRoute: typeof AuthedIamRolesIdRoute
   AuthedIamUsersIdRoute: typeof AuthedIamUsersIdRoute
+  AuthedInventoryAssetsIdRoute: typeof AuthedInventoryAssetsIdRoute
   AuthedInventoryCategoriesIdRoute: typeof AuthedInventoryCategoriesIdRoute
   AuthedInventoryProductsIdRoute: typeof AuthedInventoryProductsIdRoute
   AuthedInvoicesInvoicesIdRoute: typeof AuthedInvoicesInvoicesIdRouteWithChildren
@@ -1979,11 +2156,19 @@ interface AuthedRouteChildren {
   AuthedFeedbackItemsIndexRoute: typeof AuthedFeedbackItemsIndexRoute
   AuthedFinanceBankAccountsIndexRoute: typeof AuthedFinanceBankAccountsIndexRoute
   AuthedFinanceCashAccountsIndexRoute: typeof AuthedFinanceCashAccountsIndexRoute
+  AuthedHrAttendanceIndexRoute: typeof AuthedHrAttendanceIndexRoute
+  AuthedHrCardAccessIndexRoute: typeof AuthedHrCardAccessIndexRoute
+  AuthedHrCheckinAreasIndexRoute: typeof AuthedHrCheckinAreasIndexRoute
   AuthedHrEmployeesIndexRoute: typeof AuthedHrEmployeesIndexRoute
   AuthedHrPayrollIndexRoute: typeof AuthedHrPayrollIndexRoute
+  AuthedHrShiftRotationsIndexRoute: typeof AuthedHrShiftRotationsIndexRoute
+  AuthedHrShiftScheduleIndexRoute: typeof AuthedHrShiftScheduleIndexRoute
+  AuthedHrShiftsIndexRoute: typeof AuthedHrShiftsIndexRoute
   AuthedIamPermissionsIndexRoute: typeof AuthedIamPermissionsIndexRoute
   AuthedIamRolesIndexRoute: typeof AuthedIamRolesIndexRoute
   AuthedIamUsersIndexRoute: typeof AuthedIamUsersIndexRoute
+  AuthedInventoryAssetsIndexRoute: typeof AuthedInventoryAssetsIndexRoute
+  AuthedInventoryAssignmentsIndexRoute: typeof AuthedInventoryAssignmentsIndexRoute
   AuthedInventoryCategoriesIndexRoute: typeof AuthedInventoryCategoriesIndexRoute
   AuthedInventoryMovementTypesIndexRoute: typeof AuthedInventoryMovementTypesIndexRoute
   AuthedInventoryProductsIndexRoute: typeof AuthedInventoryProductsIndexRoute
@@ -2049,6 +2234,7 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedIamPermissionsKeyRoute: AuthedIamPermissionsKeyRoute,
   AuthedIamRolesIdRoute: AuthedIamRolesIdRoute,
   AuthedIamUsersIdRoute: AuthedIamUsersIdRoute,
+  AuthedInventoryAssetsIdRoute: AuthedInventoryAssetsIdRoute,
   AuthedInventoryCategoriesIdRoute: AuthedInventoryCategoriesIdRoute,
   AuthedInventoryProductsIdRoute: AuthedInventoryProductsIdRoute,
   AuthedInvoicesInvoicesIdRoute: AuthedInvoicesInvoicesIdRouteWithChildren,
@@ -2062,11 +2248,19 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedFeedbackItemsIndexRoute: AuthedFeedbackItemsIndexRoute,
   AuthedFinanceBankAccountsIndexRoute: AuthedFinanceBankAccountsIndexRoute,
   AuthedFinanceCashAccountsIndexRoute: AuthedFinanceCashAccountsIndexRoute,
+  AuthedHrAttendanceIndexRoute: AuthedHrAttendanceIndexRoute,
+  AuthedHrCardAccessIndexRoute: AuthedHrCardAccessIndexRoute,
+  AuthedHrCheckinAreasIndexRoute: AuthedHrCheckinAreasIndexRoute,
   AuthedHrEmployeesIndexRoute: AuthedHrEmployeesIndexRoute,
   AuthedHrPayrollIndexRoute: AuthedHrPayrollIndexRoute,
+  AuthedHrShiftRotationsIndexRoute: AuthedHrShiftRotationsIndexRoute,
+  AuthedHrShiftScheduleIndexRoute: AuthedHrShiftScheduleIndexRoute,
+  AuthedHrShiftsIndexRoute: AuthedHrShiftsIndexRoute,
   AuthedIamPermissionsIndexRoute: AuthedIamPermissionsIndexRoute,
   AuthedIamRolesIndexRoute: AuthedIamRolesIndexRoute,
   AuthedIamUsersIndexRoute: AuthedIamUsersIndexRoute,
+  AuthedInventoryAssetsIndexRoute: AuthedInventoryAssetsIndexRoute,
+  AuthedInventoryAssignmentsIndexRoute: AuthedInventoryAssignmentsIndexRoute,
   AuthedInventoryCategoriesIndexRoute: AuthedInventoryCategoriesIndexRoute,
   AuthedInventoryMovementTypesIndexRoute:
     AuthedInventoryMovementTypesIndexRoute,

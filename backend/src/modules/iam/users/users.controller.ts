@@ -9,11 +9,12 @@ import {
   Post,
 } from '@nestjs/common'
 
-import { IsOptional, IsString } from 'class-validator'
+import { IsOptional, IsString, MinLength } from 'class-validator'
 
 import {
   IamPermissions,
   PosPermissions,
+  type ResetPasswordRequest,
   type SetUserPinRequest,
   type UserDto,
 } from '@turbohesap/shared'
@@ -25,6 +26,10 @@ import { UsersService } from './users.service'
 
 class SetUserPinDto implements SetUserPinRequest {
   @IsOptional() @IsString() pin!: string | null
+}
+
+class ResetPasswordDto implements ResetPasswordRequest {
+  @IsString() @MinLength(6) password!: string
 }
 
 // Authorization is enforced by the global PermissionsGuard via the
@@ -61,6 +66,17 @@ export class UsersController {
   @RequirePermissions(PosPermissions.usersPin)
   setPin(@Param('id') id: string, @Body() dto: SetUserPinDto): Promise<UserDto> {
     return this.users.setPin(id, dto.pin)
+  }
+
+  // Admin reset/renew of a user's password (revokes their sessions).
+  @Post(':id/reset-password')
+  @HttpCode(204)
+  @RequirePermissions(IamPermissions.usersPassword)
+  async resetPassword(
+    @Param('id') id: string,
+    @Body() dto: ResetPasswordDto,
+  ): Promise<void> {
+    await this.users.resetPassword(id, dto.password)
   }
 
   @Delete(':id')

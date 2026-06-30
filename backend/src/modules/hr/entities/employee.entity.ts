@@ -71,6 +71,12 @@ export class Employee extends BaseEntity {
   @Column({ type: 'uuid', nullable: true })
   userId!: string | null
 
+  // PDKS — primary card-access mapping (printed decimal card number, string to keep
+  // leading zeros). Fallbacks live in hr_employee_cards.
+  @Index()
+  @Column({ type: 'varchar', nullable: true })
+  cardNo!: string | null
+
   @Column({ type: 'int', default: 14 })
   annualLeaveDays!: number
 

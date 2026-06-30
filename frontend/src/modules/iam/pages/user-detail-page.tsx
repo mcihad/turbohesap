@@ -491,6 +491,8 @@ function OperationsTab({
 }) {
   const qc = useQueryClient()
   const navigate = useNavigate()
+  const { hasPermission } = useAuth()
+  const canResetPassword = hasPermission(IamPermissions.usersPassword)
   const [password, setPassword] = React.useState('')
   const [deleteOpen, setDeleteOpen] = React.useState(false)
 
@@ -510,7 +512,7 @@ function OperationsTab({
   })
 
   const passwordMutation = useMutation({
-    mutationFn: () => api.iam.users.update(user.id, { password }),
+    mutationFn: () => api.iam.users.resetPassword(user.id, { password }),
     onSuccess: () => {
       toast.success('Parola sıfırlandı')
       setPassword('')
@@ -531,7 +533,7 @@ function OperationsTab({
       toast.error('Silme başarısız', { description: toApiError(e).message }),
   })
 
-  if (!canWrite) {
+  if (!canWrite && !canResetPassword) {
     return (
       <Card>
         <CardContent className="pt-6 text-sm text-muted-foreground">
@@ -544,82 +546,91 @@ function OperationsTab({
   return (
     <div className="space-y-4">
       {/* Account status */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Hesap durumu</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium">
-              {user.isActive ? 'Aktif' : 'Pasif'}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Pasif kullanıcılar giriş yapamaz.
-            </p>
-          </div>
-          <Switch
-            checked={user.isActive}
-            disabled={statusMutation.isPending}
-            onCheckedChange={(v) => statusMutation.mutate(v)}
-          />
-        </CardContent>
-      </Card>
+      {canWrite ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Hesap durumu</CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium">
+                {user.isActive ? 'Aktif' : 'Pasif'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Pasif kullanıcılar giriş yapamaz.
+              </p>
+            </div>
+            <Switch
+              checked={user.isActive}
+              disabled={statusMutation.isPending}
+              onCheckedChange={(v) => statusMutation.mutate(v)}
+            />
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* Password reset */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">Parola sıfırlama</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="new-pass">Yeni parola</Label>
-            <div className="flex gap-2">
-              <Input
-                id="new-pass"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Yeni parolayı girin veya üretin"
-                className="font-mono"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setPassword(generatePassword())}
-                title="Rastgele üret"
-              >
-                <Wand2 />
-                <span className="hidden sm:inline">Üret</span>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                disabled={!password}
-                title="Kopyala"
-                onClick={() => {
-                  void navigator.clipboard.writeText(password)
-                  toast.success('Parola kopyalandı')
-                }}
-              >
-                <Copy />
-              </Button>
+      {canResetPassword ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Parola sıfırlama</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="new-pass">Yeni parola</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="new-pass"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Yeni parolayı girin veya üretin"
+                  className="font-mono"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setPassword(generatePassword())}
+                  title="Rastgele üret"
+                >
+                  <Wand2 />
+                  <span className="hidden sm:inline">Üret</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  disabled={!password}
+                  title="Kopyala"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(password)
+                    toast.success('Parola kopyalandı')
+                  }}
+                >
+                  <Copy />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Parolayı kullanıcıya güvenli bir kanaldan iletin; burada tekrar
+                görüntülenemez.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Parola sıfırlandığında kullanıcının açık oturumları kapatılır ve
+                yeniden giriş gerekir.
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Parolayı kullanıcıya güvenli bir kanaldan iletin; burada tekrar
-              görüntülenemez.
-            </p>
-          </div>
-          <Button
-            onClick={() => passwordMutation.mutate()}
-            disabled={password.length < 6 || passwordMutation.isPending}
-          >
-            <RefreshCw />
-            Parolayı sıfırla
-          </Button>
-        </CardContent>
-      </Card>
+            <Button
+              onClick={() => passwordMutation.mutate()}
+              disabled={password.length < 6 || passwordMutation.isPending}
+            >
+              <RefreshCw />
+              Parolayı sıfırla
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* Danger zone */}
+      {canWrite ? (
       <Card className="border-destructive/40">
         <CardHeader>
           <CardTitle className="text-sm text-destructive">
@@ -639,16 +650,19 @@ function OperationsTab({
           </Button>
         </CardContent>
       </Card>
+      ) : null}
 
-      <DeletePasswordDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        userName={user.username}
-        onConfirmed={() => {
-          setDeleteOpen(false)
-          deleteMutation.mutate()
-        }}
-      />
+      {canWrite ? (
+        <DeletePasswordDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          userName={user.username}
+          onConfirmed={() => {
+            setDeleteOpen(false)
+            deleteMutation.mutate()
+          }}
+        />
+      ) : null}
     </div>
   )
 }

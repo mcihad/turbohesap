@@ -14,6 +14,15 @@ export const InventoryPermissions = {
   /** Manage POS modifier groups/options and product attachments. */
   modifiersRead: 'inventory.modifiers.read',
   modifiersWrite: 'inventory.modifiers.write',
+  // Demirbaş & Zimmet (fixed assets + custody). View the asset registry; edit the
+  // master records (incl. lifecycle status: kayıp/hurda/çıkış); ASSIGN is the
+  // custody operation (zimmet ver / devret / devral / iade — note: the mobile
+  // receiver who scans to take custody needs this too); MAINTAIN covers
+  // maintenance/repair and vehicle km/fuel logs.
+  assetsRead: 'inventory.assets.read',
+  assetsWrite: 'inventory.assets.write',
+  assetsAssign: 'inventory.assets.assign',
+  assetsMaintain: 'inventory.assets.maintain',
 } as const
 
 export type InventoryPermission =

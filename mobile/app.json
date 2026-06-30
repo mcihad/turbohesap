@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Giriş/çıkış yapabilmek için konumunuz kullanılır."
+      },
+      "bundleIdentifier": "com.anonymous.turbohesapmobile"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,8 +25,15 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.RECORD_AUDIO",
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
       ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "REPLACE_WITH_ANDROID_GOOGLE_MAPS_API_KEY"
+        }
+      },
       "package": "com.anonymous.turbohesapmobile"
     },
     "web": {
@@ -51,6 +62,12 @@
         "expo-camera",
         {
           "cameraPermission": "Stok sayımında barkod taramak için kamera erişimine izin verin."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Giriş/çıkış yapabilmek için konumunuz kullanılır."
         }
       ],
       "@react-native-community/datetimepicker"

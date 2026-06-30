@@ -68,3 +68,12 @@ export interface UpdateUserRequest {
 export interface SetUserPinRequest {
   pin: string | null
 }
+
+/**
+ * Admin resets/renews a user's password (IAM: POST /iam/users/:id/reset-password).
+ * The new password is hashed server-side and the user's active sessions (refresh
+ * tokens) are revoked, forcing re-login.
+ */
+export interface ResetPasswordRequest {
+  password: string
+}

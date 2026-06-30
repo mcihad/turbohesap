@@ -5,6 +5,8 @@
 export const IamPermissions = {
   usersRead: 'iam.users.read',
   usersWrite: 'iam.users.write',
+  /** Reset/renew another user's password (revokes their sessions). */
+  usersPassword: 'iam.users.password',
   rolesRead: 'iam.roles.read',
   rolesWrite: 'iam.roles.write',
   permissionsRead: 'iam.permissions.read',

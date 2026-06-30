@@ -4,12 +4,13 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { In, Repository } from 'typeorm'
+import { In, IsNull, Repository } from 'typeorm'
 import * as bcrypt from 'bcryptjs'
 
 import type { UserDto } from '@turbohesap/shared'
 
 import { Branch } from '../../org/entities/branch.entity'
+import { RefreshToken } from '../../auth/entities/refresh-token.entity'
 import { Role } from '../entities/role.entity'
 import { User } from '../entities/user.entity'
 import { toUserDto } from '../mappers'
@@ -22,6 +23,8 @@ export class UsersService {
     @InjectRepository(User) private readonly users: Repository<User>,
     @InjectRepository(Role) private readonly roles: Repository<Role>,
     @InjectRepository(Branch) private readonly branches: Repository<Branch>,
+    @InjectRepository(RefreshToken)
+    private readonly refreshTokens: Repository<RefreshToken>,
   ) {}
 
   async list(): Promise<UserDto[]> {
@@ -79,6 +82,21 @@ export class UsersService {
     if (pin) user.isPosUser = true
     await this.users.save(user)
     return toUserDto(await this.findOrFail(id))
+  }
+
+  /**
+   * Admin reset of another user's password. Sets a new bcrypt hash and revokes
+   * the user's active refresh tokens, forcing re-login on every device.
+   */
+  async resetPassword(id: string, password: string): Promise<void> {
+    const user = await this.findOrFail(id)
+    user.passwordHash = hash(password)
+    await this.users.save(user)
+    // Revoke all of this user's active sessions.
+    await this.refreshTokens.update(
+      { userId: id, revokedAt: IsNull() },
+      { revokedAt: new Date() },
+    )
   }
 
   async remove(id: string): Promise<void> {

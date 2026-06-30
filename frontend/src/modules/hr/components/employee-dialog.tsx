@@ -1,10 +1,13 @@
 import * as React from 'react'
+import { Link } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Eye, EyeOff, Wand2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
   EMPLOYMENT_TYPES,
   EMPLOYMENT_TYPE_LABELS,
+  IamPermissions,
   OrgPermissions,
   SALARY_TYPES,
   SALARY_TYPE_LABELS,
@@ -44,6 +47,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 const NO_BRANCH = '__nobranch__'
+const NO_USER = '__nouser__'
 
 interface FormState {
   firstName: string
@@ -68,6 +72,36 @@ interface FormState {
   annualLeaveDays: string
   isActive: boolean
   notes: string
+  // User link (create mode only)
+  userMode: UserMode
+  userId: string
+  newUsername: string
+  newEmail: string
+  newPassword: string
+}
+
+/** Which user-link strategy is active when creating a personel. */
+type UserMode = 'none' | 'link' | 'create'
+
+/** Random ~14-char password — mirrors the helper in user-detail-page.tsx. */
+function generatePassword(length = 14): string {
+  const chars =
+    'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%?'
+  const buf = new Uint32Array(length)
+  crypto.getRandomValues(buf)
+  let out = ''
+  for (let i = 0; i < length; i++) out += chars[buf[i] % chars.length]
+  return out
+}
+
+/** Suggest a username from the personel's email local-part, else firstname.lastname. */
+function suggestUsername(f: FormState): string {
+  const email = f.email.trim()
+  if (email.includes('@')) return email.split('@')[0].toLowerCase()
+  const parts = [f.firstName.trim(), f.lastName.trim()]
+    .filter(Boolean)
+    .map((p) => p.toLowerCase())
+  return parts.join('.')
 }
 
 function emptyForm(): FormState {
@@ -94,6 +128,11 @@ function emptyForm(): FormState {
     annualLeaveDays: '14',
     isActive: true,
     notes: '',
+    userMode: 'none',
+    userId: '',
+    newUsername: '',
+    newEmail: '',
+    newPassword: '',
   }
 }
 
@@ -121,10 +160,26 @@ function fromEmployee(emp: EmployeeDto): FormState {
     annualLeaveDays: String(emp.annualLeaveDays),
     isActive: emp.isActive,
     notes: emp.notes ?? '',
+    userMode: 'none',
+    userId: emp.userId ?? '',
+    newUsername: '',
+    newEmail: '',
+    newPassword: '',
   }
 }
 
-type FieldErrors = Partial<Record<'firstName' | 'lastName' | 'hireDate' | 'salaryAmount', string>>
+type FieldErrors = Partial<
+  Record<
+    | 'firstName'
+    | 'lastName'
+    | 'hireDate'
+    | 'salaryAmount'
+    | 'newUsername'
+    | 'newEmail'
+    | 'newPassword',
+    string
+  >
+>
 
 /**
  * Create/edit dialog for an employee, split into tabs. Handles BOTH create
@@ -150,9 +205,22 @@ export function EmployeeDialog({
   const [form, setForm] = React.useState<FormState>(emptyForm)
   const [errors, setErrors] = React.useState<FieldErrors>({})
   const [tab, setTab] = React.useState('kisisel')
+  const [showPassword, setShowPassword] = React.useState(false)
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }))
+
+  // Switch the user-link strategy; prefill create-user fields on first entry.
+  const setUserMode = (mode: UserMode) =>
+    setForm((f) => {
+      if (mode !== 'create') return { ...f, userMode: mode }
+      return {
+        ...f,
+        userMode: mode,
+        newUsername: f.newUsername || suggestUsername(f),
+        newEmail: f.newEmail || f.email.trim(),
+      }
+    })
 
   // Re-hydrate whenever the dialog opens (or the target employee changes).
   React.useEffect(() => {
@@ -160,6 +228,7 @@ export function EmployeeDialog({
     setForm(employee ? fromEmployee(employee) : emptyForm())
     setErrors({})
     setTab('kisisel')
+    setShowPassword(false)
   }, [open, employee])
 
   const branchesQuery = useQuery({
@@ -169,6 +238,15 @@ export function EmployeeDialog({
   })
   const branches = branchesQuery.data ?? []
 
+  const usersQuery = useQuery({
+    queryKey: ['iam', 'users'],
+    queryFn: () => api.iam.users.list(),
+    // Load the linkable users whenever the link controls can show (create, or an
+    // existing personel that is not yet linked).
+    enabled: open && !employee?.userId && hasPermission(IamPermissions.usersRead),
+  })
+  const users = usersQuery.data ?? []
+
   const validate = (): FieldErrors => {
     const e: FieldErrors = {}
     if (!form.firstName.trim()) e.firstName = 'Ad zorunludur'
@@ -177,10 +255,18 @@ export function EmployeeDialog({
     const salary = Number(form.salaryAmount)
     if (form.salaryAmount.trim() === '' || Number.isNaN(salary) || salary < 0)
       e.salaryAmount = 'Geçerli bir maaş tutarı girin'
+    if (form.userMode === 'create') {
+      if (!form.newUsername.trim()) e.newUsername = 'Kullanıcı adı zorunludur'
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.newEmail.trim()))
+        e.newEmail = 'Geçerli bir e-posta girin'
+      if (form.newPassword.length < 6)
+        e.newPassword = 'Parola en az 6 karakter olmalı'
+    }
     return e
   }
 
-  const buildPayload = (): CreateEmployeeRequest => ({
+  const buildPayload = (): CreateEmployeeRequest => {
+    const base: CreateEmployeeRequest = {
     firstName: form.firstName.trim(),
     lastName: form.lastName.trim(),
     tcKimlikNo: form.tcKimlikNo.trim() || undefined,
@@ -203,7 +289,28 @@ export function EmployeeDialog({
     annualLeaveDays: Number(form.annualLeaveDays) || 0,
     isActive: form.isActive,
     notes: form.notes.trim() || null,
-  })
+    }
+    // Link an existing user (userId wins; never send createUser alongside it).
+    if (form.userMode === 'link' && form.userId) {
+      base.userId = form.userId
+      return base
+    }
+    // Create a brand-new login user (create mode, or an unlinked personel on edit).
+    if (
+      !employee?.userId &&
+      form.userMode === 'create' &&
+      form.newUsername.trim() &&
+      form.newEmail.trim() &&
+      form.newPassword
+    ) {
+      base.createUser = {
+        username: form.newUsername.trim(),
+        email: form.newEmail.trim(),
+        password: form.newPassword,
+      }
+    }
+    return base
+  }
 
   const save = useMutation({
     mutationFn: () => {
@@ -222,6 +329,13 @@ export function EmployeeDialog({
     onError: (e) => toast.error('Kaydedilemedi', { description: toApiError(e).message }),
   })
 
+  const createUserInvalid =
+    !employee?.userId &&
+    form.userMode === 'create' &&
+    (!form.newUsername.trim() ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.newEmail.trim()) ||
+      form.newPassword.length < 6)
+
   const onSave = () => {
     const e = validate()
     setErrors(e)
@@ -230,6 +344,7 @@ export function EmployeeDialog({
       if (e.firstName || e.lastName) setTab('kisisel')
       else if (e.hireDate) setTab('istihdam')
       else if (e.salaryAmount) setTab('maas')
+      else if (e.newUsername || e.newEmail || e.newPassword) setTab('kullanici')
       return
     }
     save.mutate()
@@ -253,6 +368,7 @@ export function EmployeeDialog({
             <TabsTrigger value="istihdam">İstihdam</TabsTrigger>
             <TabsTrigger value="maas">Maaş &amp; SGK</TabsTrigger>
             <TabsTrigger value="iletisim">İletişim &amp; Banka</TabsTrigger>
+            <TabsTrigger value="kullanici">Kullanıcı</TabsTrigger>
           </TabsList>
 
           {/* Kişisel */}
@@ -400,13 +516,122 @@ export function EmployeeDialog({
               <Textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={2} />
             </Field>
           </TabsContent>
+
+          {/* Kullanıcı */}
+          <TabsContent value="kullanici" className="space-y-4">
+            {employee?.userId ? (
+              <div className="space-y-3 rounded-md border p-4">
+                <div>
+                  <p className="text-sm font-medium">Bu personel bir kullanıcıya bağlı.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Detaylı kullanıcı bilgisi için kullanıcılar bölümüne gidin.
+                  </p>
+                </div>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/iam/users/$id" params={{ id: employee.userId }}>
+                    Kullanıcıya git
+                  </Link>
+                </Button>
+              </div>
+            ) : (
+              <>
+                <ToggleGroup
+                  type="single"
+                  variant="outline"
+                  value={form.userMode}
+                  onValueChange={(v) => {
+                    if (v) setUserMode(v as UserMode)
+                  }}
+                  className="w-full"
+                >
+                  <ToggleGroupItem value="none">Yok</ToggleGroupItem>
+                  <ToggleGroupItem value="link">Mevcut kullanıcıyı bağla</ToggleGroupItem>
+                  <ToggleGroupItem value="create">Yeni kullanıcı oluştur</ToggleGroupItem>
+                </ToggleGroup>
+
+                {form.userMode === 'link' ? (
+                  <Field label="Kullanıcı">
+                    <Select
+                      value={form.userId || NO_USER}
+                      onValueChange={(v) => set('userId', v === NO_USER ? '' : v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Kullanıcı seçin" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NO_USER}>Seçilmedi</SelectItem>
+                        {users.map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.username} · {u.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                ) : null}
+
+                {form.userMode === 'create' ? (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <Field label="Kullanıcı Adı" required error={errors.newUsername}>
+                      <Input
+                        value={form.newUsername}
+                        onChange={(e) => set('newUsername', e.target.value)}
+                      />
+                    </Field>
+                    <Field label="E-posta" required error={errors.newEmail}>
+                      <Input
+                        type="email"
+                        value={form.newEmail}
+                        onChange={(e) => set('newEmail', e.target.value)}
+                      />
+                    </Field>
+                    <Field label="Parola" required error={errors.newPassword} className="sm:col-span-2">
+                      <div className="flex gap-2">
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          value={form.newPassword}
+                          onChange={(e) => set('newPassword', e.target.value)}
+                          className="font-mono"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          title={showPassword ? 'Gizle' : 'Göster'}
+                          onClick={() => setShowPassword((s) => !s)}
+                        >
+                          {showPassword ? <EyeOff /> : <Eye />}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          title="Rastgele üret"
+                          onClick={() => {
+                            set('newPassword', generatePassword())
+                            setShowPassword(true)
+                          }}
+                        >
+                          <Wand2 />
+                          <span className="hidden sm:inline">Üret</span>
+                        </Button>
+                      </div>
+                    </Field>
+                    <p className="text-xs text-muted-foreground sm:col-span-2">
+                      Yeni kullanıcı, vardiya görüntüleme + giriş/çıkış + zimmet
+                      (devret/devral) standart yetkileriyle açılır.
+                    </p>
+                  </div>
+                ) : null}
+              </>
+            )}
+          </TabsContent>
         </Tabs>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             İptal
           </Button>
-          <Button onClick={onSave} disabled={save.isPending}>
+          <Button onClick={onSave} disabled={save.isPending || createUserInvalid}>
             Kaydet
           </Button>
         </DialogFooter>

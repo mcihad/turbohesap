@@ -33,6 +33,22 @@ import { InvoiceLine } from '../invoices/entities/invoice-line.entity'
 import { Invoice } from '../invoices/entities/invoice.entity'
 import { PosOrderLine } from '../pos/entities/pos-order-line.entity'
 import { PosOrder } from '../pos/entities/pos-order.entity'
+// Demirbaş & Zimmet (fixed assets + custody).
+import { Employee } from '../hr/entities/employee.entity'
+import { Asset } from './entities/asset.entity'
+import { AssetAssignment } from './entities/asset-assignment.entity'
+import { AssetTransfer } from './entities/asset-transfer.entity'
+import { AssetMaintenance } from './entities/asset-maintenance.entity'
+import { AssetVehicleLog } from './entities/asset-vehicle-log.entity'
+import { AssetsController } from './assets.controller'
+import { AssetsService } from './assets.service'
+import { AssetAssignmentsController } from './asset-assignments.controller'
+import { AssetTransfersController } from './asset-transfers.controller'
+import { AssetCustodyService } from './asset-custody.service'
+import { AssetMaintenanceController } from './asset-maintenance.controller'
+import { AssetMaintenanceService } from './asset-maintenance.service'
+import { AssetVehicleLogsController } from './asset-vehicle-logs.controller'
+import { AssetVehicleLogsService } from './asset-vehicle-logs.service'
 
 // Envanter — product categories (a tree, with per-category custom field schemas)
 // and products with variants, packagings, per-branch stock and per-channel
@@ -59,6 +75,13 @@ import { PosOrder } from '../pos/entities/pos-order.entity'
       PosOrder,
       Branch,
       SalesChannel,
+      // Demirbaş & Zimmet entities (+ Employee borrowed read-only for zimmet).
+      Asset,
+      AssetAssignment,
+      AssetTransfer,
+      AssetMaintenance,
+      AssetVehicleLog,
+      Employee,
     ]),
   ],
   controllers: [
@@ -68,6 +91,11 @@ import { PosOrder } from '../pos/entities/pos-order.entity'
     StockMovementsController,
     ProductModifiersController,
     ProductBundlesController,
+    AssetsController,
+    AssetAssignmentsController,
+    AssetTransfersController,
+    AssetMaintenanceController,
+    AssetVehicleLogsController,
   ],
   providers: [
     CategoriesService,
@@ -77,6 +105,10 @@ import { PosOrder } from '../pos/entities/pos-order.entity'
     ProductModifiersService,
     ProductBundlesService,
     ProductStatsService,
+    AssetsService,
+    AssetCustodyService,
+    AssetMaintenanceService,
+    AssetVehicleLogsService,
   ],
   // Exported so InvoicesModule/PosModule can post/reverse stock movements.
   exports: [StockMovementsService, StockMovementTypesService, ProductModifiersService],

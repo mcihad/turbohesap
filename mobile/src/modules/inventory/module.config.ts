@@ -24,5 +24,26 @@ export const inventoryModule: MobileModule = {
       description: 'Kategori ağacı ve özel alanlar',
       permission: InventoryPermissions.categoriesRead,
     },
+    {
+      key: 'inventory.assets',
+      title: 'Demirbaşlar',
+      icon: 'truck',
+      description: 'Demirbaş ve zimmet',
+      permission: InventoryPermissions.assetsRead,
+    },
+    {
+      key: 'inventory.myAssignments',
+      title: 'Zimmetlerim',
+      icon: 'user-check',
+      description: 'Bana zimmetli ekipman',
+      permission: InventoryPermissions.assetsRead,
+    },
+    {
+      key: 'inventory.transferReceive',
+      title: 'Zimmet Devral',
+      icon: 'maximize',
+      description: 'Barkod okutarak devral',
+      permission: InventoryPermissions.assetsAssign,
+    },
   ],
 }

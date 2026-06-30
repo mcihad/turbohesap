@@ -1,12 +1,16 @@
+import { Type } from 'class-transformer'
 import {
   IsBoolean,
+  IsEmail,
   IsIn,
   IsInt,
   IsNotEmpty,
-  IsNumber,
   IsOptional,
+  IsNumber,
   IsString,
   Min,
+  MinLength,
+  ValidateNested,
 } from 'class-validator'
 
 import {
@@ -14,11 +18,19 @@ import {
   SALARY_TYPES,
   SGK_STATUSES,
   type CreateEmployeeRequest,
+  type CreateEmployeeUserRequest,
   type EmploymentType,
   type SalaryType,
   type SgkStatus,
   type UpdateEmployeeRequest,
 } from '@turbohesap/shared'
+
+// Inline user creation when adding a personel with no existing user.
+export class CreateEmployeeUserDto implements CreateEmployeeUserRequest {
+  @IsString() @IsNotEmpty() username!: string
+  @IsEmail() email!: string
+  @IsString() @MinLength(6) password!: string
+}
 
 export class CreateEmployeeDto implements CreateEmployeeRequest {
   @IsString() @IsNotEmpty() firstName!: string
@@ -41,6 +53,8 @@ export class CreateEmployeeDto implements CreateEmployeeRequest {
   @IsOptional() @IsString() address?: string | null
   @IsOptional() @IsString() branchId?: string | null
   @IsOptional() @IsString() userId?: string | null
+  @IsOptional() @ValidateNested() @Type(() => CreateEmployeeUserDto) createUser?: CreateEmployeeUserDto
+  @IsOptional() @IsString() cardNo?: string | null
   @IsOptional() @IsInt() @Min(0) annualLeaveDays?: number
   @IsOptional() @IsBoolean() isActive?: boolean
   @IsOptional() @IsString() notes?: string | null
@@ -67,6 +81,8 @@ export class UpdateEmployeeDto implements UpdateEmployeeRequest {
   @IsOptional() @IsString() address?: string | null
   @IsOptional() @IsString() branchId?: string | null
   @IsOptional() @IsString() userId?: string | null
+  @IsOptional() @ValidateNested() @Type(() => CreateEmployeeUserDto) createUser?: CreateEmployeeUserDto
+  @IsOptional() @IsString() cardNo?: string | null
   @IsOptional() @IsInt() @Min(0) annualLeaveDays?: number
   @IsOptional() @IsBoolean() isActive?: boolean
   @IsOptional() @IsString() notes?: string | null

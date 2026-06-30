@@ -284,7 +284,15 @@ alongside). Examples today:
   `module`. On startup `SeedService` upserts the permission catalog
   (`src/permissions.catalog.ts` — keys from `@turbohesap/shared`, Turkish
   descriptions in each `<module>.permissions.ts`), the system roles
-  (`admin`, `user`), and a default admin user from `SEED_ADMIN_*` — idempotent.
+  (`admin`, `user`, **`personel`** — the standard self-service role for staff:
+  `hr.attendance.checkin` + `hr.shifts.read` + `inventory.assets.read` +
+  `inventory.assets.assign`; auto-assigned when an HR employee is created with an
+  inline `createUser`), and a default admin user from `SEED_ADMIN_*` — idempotent.
+  An HR **Employee links to an iam User** via `Employee.userId` (optional); creating
+  a personel can create that user on the spot (`CreateEmployeeRequest.createUser`).
+  Admins reset a user's password via **`POST /api/iam/users/:id/reset-password`**
+  (perm `iam.users.password`), which re-hashes and **revokes the user's refresh
+  tokens** (forces re-login).
 - **`pos`** (`/api/pos`): `registers`, `sessions`, `orders` (+ split orders),
   `floors`/`tables`. An order **settle** (`PosOrdersService.settleInTx`, inside one
   `this.orders.manager.transaction`) posts in a **single transaction**: stock
@@ -736,6 +744,14 @@ recipes). Mobile is separate (`mobile/.env`, `EXPO_PUBLIC_*`).
   permission-protected.
 - `/api/inventory/{categories,products}` — category tree (+ jsonb custom field
   schema) and products/stock.
+- `/api/inventory/{assets,asset-assignments,asset-transfers,asset-maintenance,asset-vehicle-logs}`
+  — **Demirbaş & Zimmet** (fixed assets + custody): the asset registry
+  (equipment/machinery/vehicles; lifecycle status giriş/çıkış/kayıp/hurda via
+  `POST assets/:id/status`), the zimmet (custody) ledger with a **barcode devir
+  handshake** (`asset-transfers`: initiate → `by-token/:token` → `accept`, the
+  giver's active zimmet closes and the receiver's opens — mobile QR scan), plus
+  bakım/onarım and araç km/yakıt ledgers. Asset types/fuel via lookups; assets are
+  an independent registry (NOT product stock). Perms `inventory.assets.{read,write,assign,maintain}`.
 - `/api/sales/channels`, `/api/org/branches`, `/api/lookups` — sales channels,
   branches (per-branch user authz), generic reference lists.
 - `/api/finance/{cash-accounts,bank-accounts,transactions}` — kasa/banka + ledger
@@ -759,6 +775,19 @@ recipes). Mobile is separate (`mobile/.env`, `EXPO_PUBLIC_*`).
   analytics, each returning the generic shared `ModuleStatsDto` (KPIs + trend +
   breakdowns + top lists), **cached** (§3 Caching policy), gated by the `reports.<module>`
   permission group. Web pages live under `/genel/analytics/*`.
+- `/api/hr/{shifts,shift-rotations,shift-schedule,checkin-areas,attendance,card-sources,employee-cards}`
+  — **İK PDKS** (vardiya + geofence giriş/çıkış + kartlı geçiş): shift definitions
+  (+ mola), rotation patterns and a materialized per-employee shift calendar
+  (`shift-schedule/generate`); **PostGIS** geofence `checkin-areas` (geometry column
+  always **`geom`**, SRID 4326, Polygon or Point + `toleranceMeters`, multiple time
+  windows) edited on web via **OpenLayers**; mobile self check-in
+  (`POST attendance/checkin`, geofence validated with `ST_DWithin(geom::geography…)`
+  + time window + accuracy → valid/flagged); and **card-access import**
+  (`attendance/import`, vendor-neutral `AccessEvent` standard with idempotency +
+  cardNo→employee mapping — see `docs/hr-pdks.md`). PostGIS extension is enabled in
+  the `AddHrPdks` migration. Perms group **İK-PDKS**:
+  `hr.shifts.{read,write,assign}`, `hr.areas.{read,write,assign}`,
+  `hr.attendance.{read,checkin,manage}`, `hr.cards.{read,write,import}`.
 - `/api/feedback` — in-app feedback (istek/talep/öneri/hata) with an annotated
   screenshot (stored via `/api/files`) and a triage status workflow; `feedback.create`
   / `feedback.read` / `feedback.manage`.

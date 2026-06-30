@@ -50,12 +50,22 @@ export interface EmployeeDto {
   branchId: string | null
   /** Optional link to an iam User (login). */
   userId: string | null
+  /** PDKS — printed card number for card-access matching. */
+  cardNo: string | null
   /** Annual paid-leave entitlement in days. */
   annualLeaveDays: number
   isActive: boolean
   notes: string | null
   createdAt: string
   updatedAt: string
+}
+
+/** Inline user-creation payload when adding a personel without an existing user. */
+export interface CreateEmployeeUserRequest {
+  username: string
+  /** Required — the iam User has a unique, non-null email. */
+  email: string
+  password: string
 }
 
 export interface CreateEmployeeRequest {
@@ -79,6 +89,13 @@ export interface CreateEmployeeRequest {
   address?: string | null
   branchId?: string | null
   userId?: string | null
+  /**
+   * When `userId` is absent, optionally create a login user for this personel on
+   * the spot. The new user gets the standard "Personel" role (vardiya görüntüleme,
+   * giriş/çıkış, zimmet erişim + devret/devral). Ignored if `userId` is set.
+   */
+  createUser?: CreateEmployeeUserRequest
+  cardNo?: string | null
   annualLeaveDays?: number
   isActive?: boolean
   notes?: string | null

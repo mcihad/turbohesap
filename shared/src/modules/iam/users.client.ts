@@ -2,6 +2,7 @@ import type { AxiosInstance } from 'axios'
 
 import type {
   CreateUserRequest,
+  ResetPasswordRequest,
   UpdateUserRequest,
   UserDto,
 } from './user.dto'
@@ -33,5 +34,9 @@ export class UsersApiClient implements IUsersService {
 
   async remove(id: string): Promise<void> {
     await this.http.delete(`/iam/users/${id}`)
+  }
+
+  async resetPassword(id: string, input: ResetPasswordRequest): Promise<void> {
+    await this.http.post(`/iam/users/${id}/reset-password`, input)
   }
 }

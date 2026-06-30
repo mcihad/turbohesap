@@ -11,6 +11,11 @@ export const IGNORED_AUDIT_ENTITIES = new Set<string>([
   'Notification',
   // Integration connections hold secrets — never audit their values.
   'IntegrationConnection',
+  // PDKS high-volume rows — check-in/out events + materialized shift-day grid +
+  // area assignment join would flood the audit log.
+  'AttendanceRecord',
+  'EmployeeShiftDay',
+  'EmployeeCheckinArea',
 ])
 
 // Column names whose values are redacted in the recorded diff.
@@ -19,6 +24,7 @@ export const REDACTED_AUDIT_FIELDS = new Set<string>([
   'password',
   'token',
   'secret',
+  'apiKey',
 ])
 
 // Updates that touch ONLY these columns are skipped (bookkeeping, not a
@@ -45,6 +51,11 @@ export const ENTITY_MODULE_MAP: Record<string, string> = {
   ProductModifierGroup: 'inventory',
   ProductModifierOption: 'inventory',
   ProductModifierLink: 'inventory',
+  Asset: 'inventory',
+  AssetAssignment: 'inventory',
+  AssetTransfer: 'inventory',
+  AssetMaintenance: 'inventory',
+  AssetVehicleLog: 'inventory',
   FileEntity: 'files',
   CashAccount: 'finance',
   BankAccount: 'finance',
@@ -70,6 +81,13 @@ export const ENTITY_MODULE_MAP: Record<string, string> = {
   PosPayment: 'pos',
   PosFloor: 'pos',
   PosTable: 'pos',
+  // PDKS (İK) audited entities
+  Shift: 'hr',
+  ShiftRotation: 'hr',
+  EmployeeShift: 'hr',
+  CheckinArea: 'hr',
+  CardSource: 'hr',
+  EmployeeCard: 'hr',
 }
 
 export function moduleForEntity(entityName: string): string | null {

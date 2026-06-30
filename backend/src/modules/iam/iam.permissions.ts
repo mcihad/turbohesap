@@ -8,6 +8,7 @@ import type { PermissionDef } from '../../common/permission.types'
 export const IAM_PERMISSION_DEFS: PermissionDef[] = [
   { key: IamPermissions.usersRead, description: 'Kullanıcıları görüntüleme', group: 'users' },
   { key: IamPermissions.usersWrite, description: 'Kullanıcı ekleme, düzenleme ve silme', group: 'users' },
+  { key: IamPermissions.usersPassword, description: 'Kullanıcı parolasını sıfırlama/yenileme (oturumları kapatır)', group: 'users' },
   { key: IamPermissions.rolesRead, description: 'Rolleri görüntüleme', group: 'roles' },
   { key: IamPermissions.rolesWrite, description: 'Rol ekleme, düzenleme ve silme', group: 'roles' },
   { key: IamPermissions.permissionsRead, description: 'İzin kataloğunu görüntüleme', group: 'permissions' },

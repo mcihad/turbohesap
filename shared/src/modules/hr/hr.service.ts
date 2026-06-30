@@ -25,6 +25,54 @@ import type {
   PayslipDto,
   UpsertPayrollParamsRequest,
 } from './payroll.dto'
+import type {
+  CreateShiftRequest,
+  ShiftDto,
+  ShiftListQuery,
+  UpdateShiftRequest,
+} from './shift.dto'
+import type {
+  CreateShiftRotationRequest,
+  ShiftRotationDto,
+  UpdateShiftRotationRequest,
+} from './shift-rotation.dto'
+import type {
+  AssignEmployeeShiftRequest,
+  EmployeeShiftAssignmentDto,
+  EmployeeShiftDayDto,
+  GenerateScheduleRequest,
+  GenerateScheduleResult,
+  SetShiftDayRequest,
+  ShiftAssignmentListQuery,
+  ShiftDayListQuery,
+  UpdateEmployeeShiftRequest,
+} from './shift-schedule.dto'
+import type {
+  CheckinAreaDto,
+  CheckinAreaListQuery,
+  CreateCheckinAreaRequest,
+  SetAreaEmployeesRequest,
+  UpdateCheckinAreaRequest,
+} from './checkin-area.dto'
+import type {
+  AttendanceListQuery,
+  AttendanceRecordDto,
+  CheckinRequest,
+  CheckinResultDto,
+  CreateAttendanceRequest,
+  UpdateAttendanceRequest,
+} from './attendance.dto'
+import type {
+  AttendanceImportRequest,
+  CardSourceDto,
+  CreateCardSourceRequest,
+  CreateEmployeeCardRequest,
+  EmployeeCardDto,
+  EmployeeCardListQuery,
+  AttendanceImportResultDto,
+  UpdateCardSourceRequest,
+  UpdateEmployeeCardRequest,
+} from './card.dto'
 
 export interface IEmployeesService {
   list(query?: EmployeeListQuery): Promise<EmployeeDto[]>
@@ -79,4 +127,80 @@ export interface IPayrollParamsService {
   list(): Promise<PayrollParamSetDto[]>
   get(year: number): Promise<PayrollParamSetDto>
   upsert(input: UpsertPayrollParamsRequest): Promise<PayrollParamSetDto>
+}
+
+// ── PDKS: vardiya (shift) ─────────────────────────────────────────────────────
+
+export interface IShiftsService {
+  list(query?: ShiftListQuery): Promise<ShiftDto[]>
+  get(id: string): Promise<ShiftDto>
+  create(input: CreateShiftRequest): Promise<ShiftDto>
+  update(id: string, input: UpdateShiftRequest): Promise<ShiftDto>
+  remove(id: string): Promise<void>
+}
+
+export interface IShiftRotationsService {
+  list(): Promise<ShiftRotationDto[]>
+  get(id: string): Promise<ShiftRotationDto>
+  create(input: CreateShiftRotationRequest): Promise<ShiftRotationDto>
+  update(id: string, input: UpdateShiftRotationRequest): Promise<ShiftRotationDto>
+  remove(id: string): Promise<void>
+}
+
+export interface IShiftScheduleService {
+  // Assignments (the rule layer)
+  listAssignments(query?: ShiftAssignmentListQuery): Promise<EmployeeShiftAssignmentDto[]>
+  assign(input: AssignEmployeeShiftRequest): Promise<EmployeeShiftAssignmentDto>
+  updateAssignment(id: string, input: UpdateEmployeeShiftRequest): Promise<EmployeeShiftAssignmentDto>
+  removeAssignment(id: string): Promise<void>
+  // Materialized per-day calendar
+  generate(input: GenerateScheduleRequest): Promise<GenerateScheduleResult>
+  listDays(query?: ShiftDayListQuery): Promise<EmployeeShiftDayDto[]>
+  setDay(input: SetShiftDayRequest): Promise<EmployeeShiftDayDto>
+  /** The calling user's own materialized schedule (Employee.userId). */
+  mine(from?: string, to?: string): Promise<EmployeeShiftDayDto[]>
+}
+
+// ── PDKS: giriş alanları (geofence) ───────────────────────────────────────────
+
+export interface ICheckinAreasService {
+  list(query?: CheckinAreaListQuery): Promise<CheckinAreaDto[]>
+  get(id: string): Promise<CheckinAreaDto>
+  create(input: CreateCheckinAreaRequest): Promise<CheckinAreaDto>
+  update(id: string, input: UpdateCheckinAreaRequest): Promise<CheckinAreaDto>
+  remove(id: string): Promise<void>
+  /** Employees explicitly allowed to check in from this area. */
+  listEmployees(id: string): Promise<string[]>
+  setEmployees(id: string, input: SetAreaEmployeesRequest): Promise<string[]>
+}
+
+// ── PDKS: giriş/çıkış kayıtları ───────────────────────────────────────────────
+
+export interface IAttendanceService {
+  list(query?: AttendanceListQuery): Promise<AttendanceRecordDto[]>
+  get(id: string): Promise<AttendanceRecordDto>
+  /** Mobile self check-in/out — server validates geofence + time + tolerance. */
+  checkin(input: CheckinRequest): Promise<CheckinResultDto>
+  /** The calling user's own recent records. */
+  mine(query?: AttendanceListQuery): Promise<AttendanceRecordDto[]>
+  create(input: CreateAttendanceRequest): Promise<AttendanceRecordDto>
+  update(id: string, input: UpdateAttendanceRequest): Promise<AttendanceRecordDto>
+  remove(id: string): Promise<void>
+  /** Import a batch of card-access events (vendor-neutral standard). */
+  import(input: AttendanceImportRequest): Promise<AttendanceImportResultDto>
+}
+
+// ── PDKS: kartlı geçiş ayarları ───────────────────────────────────────────────
+
+export interface ICardSourcesService {
+  list(): Promise<CardSourceDto[]>
+  get(id: string): Promise<CardSourceDto>
+  create(input: CreateCardSourceRequest): Promise<CardSourceDto>
+  update(id: string, input: UpdateCardSourceRequest): Promise<CardSourceDto>
+  remove(id: string): Promise<void>
+  // Employee↔card mapping
+  listCards(query?: EmployeeCardListQuery): Promise<EmployeeCardDto[]>
+  createCard(input: CreateEmployeeCardRequest): Promise<EmployeeCardDto>
+  updateCard(id: string, input: UpdateEmployeeCardRequest): Promise<EmployeeCardDto>
+  removeCard(id: string): Promise<void>
 }

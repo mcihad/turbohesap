@@ -1,5 +1,6 @@
 import type {
   CreateUserRequest,
+  ResetPasswordRequest,
   UpdateUserRequest,
   UserDto,
 } from './user.dto'
@@ -11,4 +12,6 @@ export interface IUsersService {
   create(input: CreateUserRequest): Promise<UserDto>
   update(id: string, input: UpdateUserRequest): Promise<UserDto>
   remove(id: string): Promise<void>
+  /** Admin reset of another user's password (revokes their active sessions). */
+  resetPassword(id: string, input: ResetPasswordRequest): Promise<void>
 }

@@ -43,6 +43,11 @@ import { CategoryFormScreen } from '../modules/inventory/CategoryFormScreen'
 import { ProductDetailScreen } from '../modules/inventory/ProductDetailScreen'
 import { ProductFormScreen } from '../modules/inventory/ProductFormScreen'
 import { ProductsScreen } from '../modules/inventory/ProductsScreen'
+import { AssetsScreen } from '../modules/inventory/AssetsScreen'
+import { AssetDetailScreen } from '../modules/inventory/AssetDetailScreen'
+import { MyAssignmentsScreen } from '../modules/inventory/MyAssignmentsScreen'
+import { TransferInitiateScreen } from '../modules/inventory/TransferInitiateScreen'
+import { TransferReceiveScreen } from '../modules/inventory/TransferReceiveScreen'
 import { PosDashboardScreen } from '../modules/pos/PosDashboardScreen'
 import { PosRegistersScreen } from '../modules/pos/PosRegistersScreen'
 import { PosSellScreen } from '../modules/pos/PosSellScreen'
@@ -95,6 +100,20 @@ import { TimesheetScreen } from '../modules/hr/TimesheetScreen'
 import { PayrollScreen } from '../modules/hr/PayrollScreen'
 import { PayrollRunDetailScreen } from '../modules/hr/PayrollRunDetailScreen'
 import { PayslipDetailScreen } from '../modules/hr/PayslipDetailScreen'
+import { CheckinScreen } from '../modules/hr/CheckinScreen'
+import { MyScheduleScreen } from '../modules/hr/MyScheduleScreen'
+import { ShiftsScreen } from '../modules/hr/ShiftsScreen'
+import { ShiftEntryScreen } from '../modules/hr/ShiftEntryScreen'
+import { RotationsScreen } from '../modules/hr/RotationsScreen'
+import { RotationEntryScreen } from '../modules/hr/RotationEntryScreen'
+import { ShiftScheduleScreen } from '../modules/hr/ShiftScheduleScreen'
+import { CheckinAreasScreen } from '../modules/hr/CheckinAreasScreen'
+import { CheckinAreaEntryScreen } from '../modules/hr/CheckinAreaEntryScreen'
+import { AttendanceScreen } from '../modules/hr/AttendanceScreen'
+import { AttendanceEntryScreen } from '../modules/hr/AttendanceEntryScreen'
+import { CardAccessScreen } from '../modules/hr/CardAccessScreen'
+import { CardSourceEntryScreen } from '../modules/hr/CardSourceEntryScreen'
+import { EmployeeCardEntryScreen } from '../modules/hr/EmployeeCardEntryScreen'
 import { FeedbackListScreen } from '../modules/feedback/FeedbackListScreen'
 import { FeedbackDetailScreen } from '../modules/feedback/FeedbackDetailScreen'
 import { ProfileScreen } from '../screens/ProfileScreen'
@@ -136,6 +155,12 @@ export const SCREENS: Record<string, () => React.ReactElement> = {
   'inventory.category.detail': () => <CategoryDetailScreen />,
   'inventory.category.form': () => <CategoryFormScreen />,
   'inventory.category.field': () => <CategoryFieldFormScreen />,
+  // Demirbaş & Zimmet (fixed assets + custody)
+  'inventory.assets': () => <AssetsScreen />,
+  'inventory.assetDetail': () => <AssetDetailScreen />,
+  'inventory.myAssignments': () => <MyAssignmentsScreen />,
+  'inventory.transferInitiate': () => <TransferInitiateScreen />,
+  'inventory.transferReceive': () => <TransferReceiveScreen />,
   // Yönetim (IAM)
   'iam.home': () => <ModuleHome moduleKey="iam" />,
   'iam.users': () => <UsersScreen />,
@@ -219,6 +244,20 @@ export const SCREENS: Record<string, () => React.ReactElement> = {
   'hr.payroll': () => <PayrollScreen />,
   'hr.payroll.detail': () => <PayrollRunDetailScreen />,
   'hr.payslip': () => <PayslipDetailScreen />,
+  'hr.checkin': () => <CheckinScreen />,
+  'hr.myschedule': () => <MyScheduleScreen />,
+  'hr.shifts': () => <ShiftsScreen />,
+  'hr.shift.entry': () => <ShiftEntryScreen />,
+  'hr.rotations': () => <RotationsScreen />,
+  'hr.rotation.entry': () => <RotationEntryScreen />,
+  'hr.schedule': () => <ShiftScheduleScreen />,
+  'hr.areas': () => <CheckinAreasScreen />,
+  'hr.area.entry': () => <CheckinAreaEntryScreen />,
+  'hr.attendance': () => <AttendanceScreen />,
+  'hr.attendance.entry': () => <AttendanceEntryScreen />,
+  'hr.cards': () => <CardAccessScreen />,
+  'hr.card.entry': () => <CardSourceEntryScreen />,
+  'hr.employeecard.entry': () => <EmployeeCardEntryScreen />,
   // Geri Bildirim (feedback)
   'feedback.list': () => <FeedbackListScreen />,
   'feedback.detail': () => <FeedbackDetailScreen />,

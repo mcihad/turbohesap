@@ -7,6 +7,7 @@ import {
   HeaderAction,
   ListCard,
   ListRow,
+  LoadMoreFooter,
   PermissionRequired,
   Screen,
   SegmentedControl,
@@ -17,7 +18,7 @@ import {
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
 import { formatDate } from '../../lib/datetime'
-import { useAsync } from '../../lib/use-async'
+import { usePaginated } from '../../lib/use-paginated'
 import { useNav } from '../../navigation/nav-context'
 import { useTheme } from '../../theme/theme-context'
 import { formatMoney, STATUS_LABELS, STATUS_TONES, TYPE_LABELS } from './format'
@@ -38,13 +39,12 @@ export function InvoicesScreen() {
   const canWrite = hasPermission(InvoicesPermissions.write)
   const [filter, setFilter] = React.useState<TypeFilter>('all')
 
-  const invoices = useAsync(() => api.invoices.list(), [], { enabled: canRead })
-
-  const filtered = React.useMemo(() => {
-    const list = invoices.data ?? []
-    if (filter === 'all') return list
-    return list.filter((inv) => inv.type === filter)
-  }, [invoices.data, filter])
+  const invoices = usePaginated(
+    (page) => api.invoices.listPage({ page, pageSize: 30, type: filter === 'all' ? undefined : filter }),
+    [filter],
+    { enabled: canRead },
+  )
+  const items = invoices.items
 
   const openForm = () => nav.navigate('invoices.invoices.form', {}, 'Yeni fatura')
 
@@ -61,23 +61,24 @@ export function InvoicesScreen() {
           onBack: nav.canGoBack ? nav.goBack : undefined,
           right: canWrite ? <HeaderAction icon="plus" onPress={openForm} /> : undefined,
         }}
-        onRefresh={invoices.refetch}
+        onRefresh={invoices.refresh}
         refreshing={invoices.refreshing}
+        onEndReached={invoices.loadMore}
       >
         <SegmentedControl options={FILTER_OPTIONS} value={filter} onChange={setFilter} />
 
         {invoices.loading ? (
           <SkeletonRows count={6} />
-        ) : invoices.error ? (
+        ) : invoices.error && items.length === 0 ? (
           <EmptyState
             icon="alert-triangle"
             tone="destructive"
             title="Yüklenemedi"
             description={invoices.error}
             actionLabel="Tekrar dene"
-            onAction={invoices.refetch}
+            onAction={invoices.refresh}
           />
-        ) : filtered.length === 0 ? (
+        ) : items.length === 0 ? (
           <EmptyState
             icon="file-text"
             title="Fatura bulunamadı"
@@ -88,10 +89,10 @@ export function InvoicesScreen() {
         ) : (
           <>
             <Text variant="overline" tone="muted" style={{ paddingHorizontal: t.spacing[1] }}>
-              {filtered.length} Fatura
+              {items.length} / {invoices.total} Fatura
             </Text>
             <ListCard>
-              {filtered.map((inv) => (
+              {items.map((inv) => (
                 <ListRow
                   key={inv.id}
                   icon={inv.type === 'purchase' ? 'arrow-down-left' : 'file-text'}
@@ -111,6 +112,7 @@ export function InvoicesScreen() {
                 />
               ))}
             </ListCard>
+            <LoadMoreFooter loadingMore={invoices.loadingMore} hasMore={invoices.hasMore} total={invoices.total} />
           </>
         )}
       </Screen>

@@ -8,6 +8,7 @@ import {
   Input,
   ListCard,
   ListRow,
+  LoadMoreFooter,
   PermissionRequired,
   Screen,
   SkeletonRows,
@@ -15,7 +16,8 @@ import {
 } from '../../components'
 import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
-import { useAsync } from '../../lib/use-async'
+import { useDebouncedValue } from '../../lib/use-debounced-value'
+import { usePaginated } from '../../lib/use-paginated'
 import { useNav } from '../../navigation/nav-context'
 import { useTheme } from '../../theme/theme-context'
 import { balanceSideLabel, formatMoney } from './format'
@@ -35,16 +37,13 @@ export function ContactsScreen() {
   const canRead = hasPermission(ContactsPermissions.contactsRead)
   const canWrite = hasPermission(ContactsPermissions.contactsWrite)
   const [query, setQuery] = React.useState('')
-  const queryResult = useAsync(() => api.contacts.contacts.list(), [], { enabled: canRead })
-
-  const filtered = React.useMemo(() => {
-    const list = queryResult.data ?? []
-    const q = query.trim().toLowerCase()
-    if (!q) return list
-    return list.filter((item) =>
-      [item.name, item.code, item.email, item.phone].some((f) => f?.toLowerCase().includes(q)),
-    )
-  }, [queryResult.data, query])
+  const search = useDebouncedValue(query.trim(), 350)
+  const contacts = usePaginated(
+    (page) => api.contacts.contacts.listPage({ page, pageSize: 30, search: search || undefined }),
+    [search],
+    { enabled: canRead },
+  )
+  const items = contacts.items
 
   return (
     <PermissionRequired permission={ContactsPermissions.contactsRead} title="Cariler" onBack={nav.canGoBack ? nav.goBack : undefined}>
@@ -62,16 +61,17 @@ export function ContactsScreen() {
             </>
           ),
         }}
-        onRefresh={queryResult.refetch}
-        refreshing={queryResult.refreshing}
+        onRefresh={contacts.refresh}
+        refreshing={contacts.refreshing}
+        onEndReached={contacts.loadMore}
       >
         <Input icon="search" placeholder="Cari adı, kodu veya iletişim" value={query} onChangeText={setQuery} />
 
-        {queryResult.loading ? (
+        {contacts.loading ? (
           <SkeletonRows count={6} />
-        ) : queryResult.error ? (
-          <EmptyState icon="alert-triangle" tone="destructive" title="Yüklenemedi" description={queryResult.error} actionLabel="Tekrar dene" onAction={queryResult.refetch} />
-        ) : filtered.length === 0 ? (
+        ) : contacts.error && items.length === 0 ? (
+          <EmptyState icon="alert-triangle" tone="destructive" title="Yüklenemedi" description={contacts.error} actionLabel="Tekrar dene" onAction={contacts.refresh} />
+        ) : items.length === 0 ? (
           <EmptyState
             icon="users"
             title="Cari bulunamadı"
@@ -82,10 +82,10 @@ export function ContactsScreen() {
         ) : (
           <>
             <Text variant="overline" tone="muted" style={{ paddingHorizontal: t.spacing[1] }}>
-              {filtered.length} Cari
+              {items.length} / {contacts.total} Cari
             </Text>
             <ListCard>
-              {filtered.map((item) => (
+              {items.map((item) => (
                 <ListRow
                   key={item.id}
                   icon="user"
@@ -106,6 +106,7 @@ export function ContactsScreen() {
                 />
               ))}
             </ListCard>
+            <LoadMoreFooter loadingMore={contacts.loadingMore} hasMore={contacts.hasMore} total={contacts.total} />
           </>
         )}
       </Screen>

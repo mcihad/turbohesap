@@ -34,6 +34,7 @@ import { api } from '../../lib/api'
 import { useAuth } from '../../lib/auth/auth-context'
 import { formatDate } from '../../lib/datetime'
 import { useAsync } from '../../lib/use-async'
+import { usePaginated } from '../../lib/use-paginated'
 import { confirmDestructive, useSubmit } from '../../lib/use-submit'
 import { useTheme } from '../../theme/theme-context'
 import { money } from './labels'
@@ -211,8 +212,8 @@ export function StockSection({
   const movementTypes = useAsync(() => api.inventory.movementTypes.list(), [], {
     enabled: canStock,
   })
-  const movements = useAsync(
-    () => api.inventory.stockMovements.list({ productId: product.id }),
+  const movements = usePaginated(
+    (page) => api.inventory.stockMovements.listPage({ productId: product.id, page, pageSize: 20 }),
     [product.id],
     { enabled: canRead },
   )
@@ -232,7 +233,7 @@ export function StockSection({
     })),
   ]
 
-  const movementRows = movements.data ?? []
+  const movementRows = movements.items
 
   return (
     <Section
@@ -283,6 +284,15 @@ export function StockSection({
         ) : (
           <EmptyState icon="activity" title="Hareket yok" description="Bu ürün için henüz stok hareketi yok." />
         )}
+        {movements.hasMore ? (
+          <Button
+            title={movements.loadingMore ? 'Yükleniyor…' : 'Daha fazla göster'}
+            variant="ghost"
+            size="sm"
+            loading={movements.loadingMore}
+            onPress={movements.loadMore}
+          />
+        ) : null}
       </Section>
 
       <MovementSheet
@@ -294,7 +304,7 @@ export function StockSection({
         onSaved={() => {
           setSheetOpen(false)
           onChanged()
-          movements.refetch()
+          movements.refresh()
         }}
       />
     </Section>

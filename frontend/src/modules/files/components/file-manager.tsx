@@ -1,13 +1,26 @@
 import * as React from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Download, FileText, ImagePlus, Loader2, Star, Trash2, Upload } from 'lucide-react'
+import {
+  Download,
+  File as FileIcon,
+  FileArchive,
+  FileCode,
+  FileSpreadsheet,
+  FileText,
+  ImagePlus,
+  Loader2,
+  Star,
+  Trash2,
+  Upload,
+  UploadCloud,
+} from 'lucide-react'
 import { toast } from 'sonner'
 
 import { type FileDto, type FileKind, toApiError } from '@turbohesap/shared'
 
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
+import { formatRelative } from '@/lib/datetime'
 import { Badge } from '@/components/ui/badge'
 import { FileViewer } from './file-viewer'
 
@@ -15,6 +28,18 @@ function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`
   return `${(n / 1024 / 1024).toFixed(1)} MB`
+}
+
+// A tinted file-type glyph keyed off the extension — gives the plain file list
+// a quick visual read (pdf red, sheet green, archive amber, …).
+function fileMeta(ext: string): { Icon: typeof FileText; className: string } {
+  const e = ext.toLowerCase()
+  if (['pdf'].includes(e)) return { Icon: FileText, className: 'bg-destructive/10 text-destructive' }
+  if (['doc', 'docx', 'txt', 'rtf', 'odt'].includes(e)) return { Icon: FileText, className: 'bg-info/10 text-info' }
+  if (['xls', 'xlsx', 'csv', 'ods'].includes(e)) return { Icon: FileSpreadsheet, className: 'bg-success/10 text-success' }
+  if (['zip', 'rar', '7z', 'gz', 'tar'].includes(e)) return { Icon: FileArchive, className: 'bg-warning/10 text-warning' }
+  if (['json', 'xml', 'html', 'js', 'ts', 'css', 'sql'].includes(e)) return { Icon: FileCode, className: 'bg-primary/10 text-primary' }
+  return { Icon: FileIcon, className: 'bg-muted text-muted-foreground' }
 }
 
 // Generic media/file manager for any entity (polymorphic files API). `kind`
@@ -83,7 +108,9 @@ export function FileManager({
 
   // Drag-to-upload + (images) drag-to-reorder.
   const [dragId, setDragId] = React.useState<string | null>(null)
+  const [dropActive, setDropActive] = React.useState(false)
   const onDropFiles = (e: React.DragEvent) => {
+    setDropActive(false)
     if (!canWrite) return
     const files = Array.from(e.dataTransfer.files ?? [])
     if (files.length) {
@@ -115,20 +142,49 @@ export function FileManager({
       <input ref={inputRef} type="file" multiple accept={kind === 'image' ? 'image/*' : undefined} className="hidden" onChange={onPicked} />
 
       {canWrite ? (
-        <div
-          onDragOver={(e) => e.preventDefault()}
+        <button
+          type="button"
+          onClick={pick}
+          disabled={busy}
+          onDragOver={(e) => { e.preventDefault(); if (!dropActive) setDropActive(true) }}
+          onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDropActive(false) }}
           onDrop={onDropFiles}
-          className="flex items-center justify-between gap-3 rounded-lg border border-dashed px-4 py-3"
+          className={cn(
+            'group flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed bg-muted/30 px-4 py-6 text-center transition-colors outline-none',
+            'hover:border-primary/50 hover:bg-primary/[0.04] focus-visible:ring-[3px] focus-visible:ring-ring/50',
+            dropActive && 'border-primary bg-primary/[0.06]',
+            busy && 'pointer-events-none opacity-70',
+          )}
         >
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {kind === 'image' ? <ImagePlus className="size-4" /> : <Upload className="size-4" />}
-            <span>{kind === 'image' ? 'Görselleri sürükleyin ya da seçin' : 'Dosyaları sürükleyin ya da seçin'}</span>
-          </div>
-          <Button size="sm" variant="outline" onClick={pick} disabled={busy}>
-            {busy ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
-            Seç
-          </Button>
-        </div>
+          <span
+            className={cn(
+              'grid size-11 place-items-center rounded-full bg-background text-muted-foreground shadow-xs transition-colors',
+              'group-hover:text-primary',
+              dropActive && 'text-primary',
+            )}
+          >
+            {busy ? (
+              <Loader2 className="size-5 animate-spin" />
+            ) : dropActive ? (
+              <UploadCloud className="size-5" />
+            ) : kind === 'image' ? (
+              <ImagePlus className="size-5" />
+            ) : (
+              <Upload className="size-5" />
+            )}
+          </span>
+          <span className="text-sm font-medium text-foreground">
+            {busy
+              ? (kind === 'image' ? 'Görsel yükleniyor…' : 'Dosya yükleniyor…')
+              : dropActive
+                ? 'Bırakın, yüklensin'
+                : (kind === 'image' ? 'Görselleri buraya bırakın' : 'Dosyaları buraya bırakın')}
+          </span>
+          <span className="text-2xs text-muted-foreground">
+            ya da <span className="font-medium text-primary">bilgisayardan seçin</span>
+            {kind === 'image' ? ' · JPG, PNG, WebP' : ''}
+          </span>
+        </button>
       ) : null}
 
       {items.length === 0 ? (
@@ -172,37 +228,53 @@ export function FileManager({
           ))}
         </div>
       ) : (
-        <div className="divide-y rounded-lg border">
-          {items.map((f) => (
-            <div key={f.id} onClick={() => setViewing(f)} className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-accent/50">
-              <FileText className="size-4 shrink-0 text-muted-foreground" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{f.originalName}</p>
-                <p className="text-2xs text-muted-foreground uppercase">{f.extension || f.mimeType} · {formatBytes(f.size)}</p>
-              </div>
-              <a
-                href={api.files.rawUrl(f.storedName)}
-                download={f.originalName}
-                target="_blank"
-                rel="noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-accent"
-                title="İndir"
+        <div className="space-y-1.5">
+          {items.map((f) => {
+            const { Icon, className } = fileMeta(f.extension)
+            return (
+              <div
+                key={f.id}
+                onClick={() => setViewing(f)}
+                className="group flex cursor-pointer items-center gap-3 rounded-lg border bg-card px-3 py-2.5 transition-colors hover:border-primary/30 hover:bg-accent/40"
               >
-                <Download className="size-4" />
-              </a>
-              {canWrite ? (
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); remove.mutate(f.id) }}
-                  className="grid size-8 place-items-center rounded-md text-destructive hover:bg-accent"
-                  title="Sil"
-                >
-                  <Trash2 className="size-4" />
-                </button>
-              ) : null}
-            </div>
-          ))}
+                <span className={cn('grid size-9 shrink-0 place-items-center rounded-lg', className)}>
+                  <Icon className="size-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{f.originalName}</p>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-2xs text-muted-foreground">
+                    <span className="rounded bg-muted px-1 py-0.5 font-medium uppercase">{f.extension || 'dosya'}</span>
+                    {formatBytes(f.size)}
+                    <span className="text-muted-foreground/50">·</span>
+                    {formatRelative(f.createdAt)}
+                  </p>
+                </div>
+                <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                  <a
+                    href={api.files.rawUrl(f.storedName)}
+                    download={f.originalName}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="grid size-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+                    title="İndir"
+                  >
+                    <Download className="size-4" />
+                  </a>
+                  {canWrite ? (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); remove.mutate(f.id) }}
+                      className="grid size-8 place-items-center rounded-md text-destructive transition-colors hover:bg-destructive/10"
+                      title="Sil"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
 

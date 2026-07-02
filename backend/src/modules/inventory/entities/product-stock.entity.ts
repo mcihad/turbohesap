@@ -31,6 +31,11 @@ export class ProductStock {
   @Column({ type: 'double precision', default: 0 })
   quantity!: number
 
+  // Reserved for confirmed manufacturing orders / sales allocations. NOT a ledger
+  // movement — on-hand stays `quantity`; available = quantity - reservedQty.
+  @Column({ type: 'double precision', default: 0 })
+  reservedQty!: number
+
   @CreateDateColumn()
   createdAt!: Date
 

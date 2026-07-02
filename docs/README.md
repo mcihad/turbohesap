@@ -20,6 +20,10 @@ top-level guides:
 - **[`pos.md`](./pos.md)** — the point-of-sale module: PIN auth, modifiers,
   registers/sessions/orders, split & multi-tender payments, the settle→stock→
   kasa→cari flow, permissions, and the desktop-client integration guide.
+- **[`production.md`](./production.md)** — the manufacturing/MRP module: BOM,
+  work centers, Manufacturing/Work Orders, AVCO costing, stock reservation +
+  ATP, subcontracting (fason), MRP planning + MTO, and quality + lot/serial
+  traceability.
 
 ## Planned documents
 

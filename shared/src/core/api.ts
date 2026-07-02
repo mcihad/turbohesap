@@ -44,6 +44,18 @@ import { AssetMaintenanceApiClient } from '../modules/inventory/asset-maintenanc
 import type { IAssetMaintenanceService } from '../modules/inventory/asset-maintenance.service'
 import { AssetVehicleLogsApiClient } from '../modules/inventory/asset-vehicle-logs.client'
 import type { IAssetVehicleLogsService } from '../modules/inventory/asset-vehicle-logs.service'
+import { UomApiClient } from '../modules/inventory/uom.client'
+import type { IUomService } from '../modules/inventory/uom.service'
+import {
+  StockReservationsApiClient,
+  ProductCostApiClient,
+  AvailabilityApiClient,
+} from '../modules/inventory/stock-ops.client'
+import type {
+  IStockReservationsService,
+  IProductCostService,
+  IAvailabilityService,
+} from '../modules/inventory/stock-ops.service'
 import { HealthApiClient } from '../modules/health/health.client'
 import type { IHealthService } from '../modules/health/health.service'
 import { CashAccountsApiClient } from '../modules/finance/cash-accounts.client'
@@ -122,6 +134,22 @@ import type {
 } from '../modules/hr/hr.service'
 import { StocktakeApiClient } from '../modules/stocktake/stocktake.client'
 import type { IStocktakeService } from '../modules/stocktake/stocktake.service'
+import { WorkCentersApiClient } from '../modules/production/work-centers.client'
+import type { IWorkCentersService } from '../modules/production/work-centers.service'
+import { BomsApiClient } from '../modules/production/boms.client'
+import type { IBomsService } from '../modules/production/boms.service'
+import { ManufacturingOrdersApiClient } from '../modules/production/manufacturing-orders.client'
+import type { IManufacturingOrdersService } from '../modules/production/manufacturing-orders.service'
+import { WorkOrdersApiClient } from '../modules/production/work-orders.client'
+import type { IWorkOrdersService } from '../modules/production/work-orders.service'
+import { SubcontractDispatchesApiClient } from '../modules/production/subcontract.client'
+import type { ISubcontractDispatchesService } from '../modules/production/subcontract.service'
+import { ReorderRulesApiClient, PlanningApiClient } from '../modules/production/planning.client'
+import type { IReorderRulesService, IPlanningService } from '../modules/production/planning.service'
+import { QualityChecksApiClient } from '../modules/production/quality.client'
+import type { IQualityChecksService } from '../modules/production/quality.service'
+import { LotsApiClient } from '../modules/production/lot.client'
+import type { ILotsService } from '../modules/production/lot.service'
 import { createHttpClient, type HttpClientConfig } from './http'
 
 // Resources are grouped by module — `api.<module>.<resource>` — mirroring the
@@ -161,6 +189,14 @@ export interface InventoryApi {
   assetMaintenance: IAssetMaintenanceService
   /** Araç KM & Yakıt ledger. */
   assetVehicleLogs: IAssetVehicleLogsService
+  /** Ölçü birimi (UoM) sistemi + dönüşüm. */
+  uom: IUomService
+  /** Stok rezervasyonu (üretim/satış için ayrılan miktar). */
+  reservations: IStockReservationsService
+  /** Hareketli ortalama (AVCO) maliyet sorgusu. */
+  cost: IProductCostService
+  /** Uygunluk / ATP (söz verilebilir miktar). */
+  availability: IAvailabilityService
 }
 
 export interface PosApi {
@@ -189,6 +225,27 @@ export interface ContactsApi {
   notifications: INotificationsService
   fields: ICrmFieldsService
   integrations: IIntegrationsService
+}
+
+export interface ProductionApi {
+  /** İş merkezleri (work centers). */
+  workCenters: IWorkCentersService
+  /** Ürün reçeteleri / ürün ağaçları (BOMs). */
+  boms: IBomsService
+  /** Üretim Emirleri (manufacturing orders). */
+  orders: IManufacturingOrdersService
+  /** İş Emirleri (work orders — saha terminali). */
+  workOrders: IWorkOrdersService
+  /** Fason sevk belgeleri (subcontracting). */
+  subcontract: ISubcontractDispatchesService
+  /** Min/max reorder kuralları. */
+  reorderRules: IReorderRulesService
+  /** MRP planlama koşuları. */
+  planning: IPlanningService
+  /** Kalite kontrol kayıtları. */
+  qualityChecks: IQualityChecksService
+  /** Parti/Seri (lot/serial) izlenebilirlik. */
+  lots: ILotsService
 }
 
 export interface HrApi {
@@ -238,6 +295,8 @@ export interface TurbohesapApi {
   hr: HrApi
   /** Stok/Envanter Sayımı (stocktake): count sessions → posted stock adjustments. */
   stocktake: IStocktakeService
+  /** Üretim (manufacturing/MRP): reçete, iş merkezi, üretim/iş emri, fason. */
+  production: ProductionApi
   /** Generic key/value reference-data lists. */
   lookups: ILookupsService
   /** Generic file uploads/attachments (images + files for any entity). */
@@ -286,6 +345,10 @@ export function createTurbohesapApi(
       assetTransfers: new AssetTransfersApiClient(http),
       assetMaintenance: new AssetMaintenanceApiClient(http),
       assetVehicleLogs: new AssetVehicleLogsApiClient(http),
+      uom: new UomApiClient(http),
+      reservations: new StockReservationsApiClient(http),
+      cost: new ProductCostApiClient(http),
+      availability: new AvailabilityApiClient(http),
     },
     finance: {
       cashAccounts: new CashAccountsApiClient(http),
@@ -331,6 +394,17 @@ export function createTurbohesapApi(
       cardSources: new CardSourcesApiClient(http),
     },
     stocktake: new StocktakeApiClient(http),
+    production: {
+      workCenters: new WorkCentersApiClient(http),
+      boms: new BomsApiClient(http),
+      orders: new ManufacturingOrdersApiClient(http),
+      workOrders: new WorkOrdersApiClient(http),
+      subcontract: new SubcontractDispatchesApiClient(http),
+      reorderRules: new ReorderRulesApiClient(http),
+      planning: new PlanningApiClient(http),
+      qualityChecks: new QualityChecksApiClient(http),
+      lots: new LotsApiClient(http),
+    },
     lookups: new LookupsApiClient(http),
     files: new FilesApiClient(http),
     settings: new SettingsApiClient(http),

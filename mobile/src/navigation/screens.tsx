@@ -92,6 +92,26 @@ import { OrderEntryScreen } from '../modules/orders/OrderEntryScreen'
 import { StockCountListScreen } from '../modules/stocktake/StockCountListScreen'
 import { StockCountDetailScreen } from '../modules/stocktake/StockCountDetailScreen'
 import { CountScanScreen } from '../modules/stocktake/CountScanScreen'
+import { ManufacturingOrdersScreen } from '../modules/production/ManufacturingOrdersScreen'
+import { ManufacturingOrderDetailScreen } from '../modules/production/ManufacturingOrderDetailScreen'
+import { ManufacturingOrderEntryScreen } from '../modules/production/ManufacturingOrderEntryScreen'
+import { WorkOrdersScreen } from '../modules/production/WorkOrdersScreen'
+import { WorkOrderTerminalScreen } from '../modules/production/WorkOrderTerminalScreen'
+import { BomsScreen } from '../modules/production/BomsScreen'
+import { BomDetailScreen } from '../modules/production/BomDetailScreen'
+import { BomEntryScreen } from '../modules/production/BomEntryScreen'
+import { WorkCentersScreen } from '../modules/production/WorkCentersScreen'
+import { WorkCenterEntryScreen } from '../modules/production/WorkCenterEntryScreen'
+import { SubcontractScreen } from '../modules/production/SubcontractScreen'
+import { SubcontractEntryScreen } from '../modules/production/SubcontractEntryScreen'
+import { SubcontractDetailScreen } from '../modules/production/SubcontractDetailScreen'
+import { SubcontractStockScreen } from '../modules/production/SubcontractStockScreen'
+import { PlanningScreen } from '../modules/production/PlanningScreen'
+import { PlanningRunDetailScreen } from '../modules/production/PlanningRunDetailScreen'
+import { ReorderRulesScreen } from '../modules/production/ReorderRulesScreen'
+import { QualityScreen } from '../modules/production/QualityScreen'
+import { LotsScreen } from '../modules/production/LotsScreen'
+import { LotTraceScreen } from '../modules/production/LotTraceScreen'
 import { EmployeesListScreen } from '../modules/hr/EmployeesListScreen'
 import { EmployeeDetailScreen } from '../modules/hr/EmployeeDetailScreen'
 import { EmployeeEntryScreen } from '../modules/hr/EmployeeEntryScreen'
@@ -234,6 +254,29 @@ export const SCREENS: Record<string, () => React.ReactElement> = {
   'stocktake.counts': () => <StockCountListScreen />,
   'stocktake.detail': () => <StockCountDetailScreen />,
   'stocktake.scan': () => <CountScanScreen />,
+  // Üretim (production/MRP): Üretim Emri · İş Emri (saha) · Reçete · İş Merkezi ·
+  // Fason · Planlama · Kalite · Parti/Seri
+  'production.home': () => <ModuleHome moduleKey="production" />,
+  'production.orders': () => <ManufacturingOrdersScreen />,
+  'production.order.detail': () => <ManufacturingOrderDetailScreen />,
+  'production.order.entry': () => <ManufacturingOrderEntryScreen />,
+  'production.workorders': () => <WorkOrdersScreen />,
+  'production.workorder.terminal': () => <WorkOrderTerminalScreen />,
+  'production.boms': () => <BomsScreen />,
+  'production.bom.detail': () => <BomDetailScreen />,
+  'production.bom.entry': () => <BomEntryScreen />,
+  'production.workcenters': () => <WorkCentersScreen />,
+  'production.workcenter.entry': () => <WorkCenterEntryScreen />,
+  'production.subcontract': () => <SubcontractScreen />,
+  'production.subcontract.entry': () => <SubcontractEntryScreen />,
+  'production.subcontract.detail': () => <SubcontractDetailScreen />,
+  'production.subcontract.stock': () => <SubcontractStockScreen />,
+  'production.planning': () => <PlanningScreen />,
+  'production.planning.detail': () => <PlanningRunDetailScreen />,
+  'production.reorder': () => <ReorderRulesScreen />,
+  'production.quality': () => <QualityScreen />,
+  'production.lots': () => <LotsScreen />,
+  'production.lot.trace': () => <LotTraceScreen />,
   // İK & Bordro (hr): Personel · İzinler · Puantaj · Bordro
   'hr.home': () => <ModuleHome moduleKey="hr" />,
   'hr.employees': () => <EmployeesListScreen />,

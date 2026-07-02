@@ -16,6 +16,12 @@ import { nullableDecimalTransformer } from '../../../common/decimal.transformer'
 // rows for idempotent re-import (partial index, added in the migration).
 @Entity('hr_attendance_records')
 @Index(['employeeId', 'eventTime'])
+// Card-access idempotency: partial-unique declared here so generate stops
+// flagging it as drift.
+@Index('UQ_hr_attendance_source_external', ['source', 'externalId'], {
+  unique: true,
+  where: '"external_id" IS NOT NULL',
+})
 export class AttendanceRecord extends BaseEntity {
   @Index()
   @Column({ type: 'uuid', nullable: true })
@@ -43,6 +49,7 @@ export class AttendanceRecord extends BaseEntity {
   @Column('numeric', { precision: 9, scale: 2, nullable: true, transformer: nullableDecimalTransformer })
   accuracyMeters!: number | null
 
+  @Index('IDX_hr_attendance_geom', { spatial: true })
   @Column('geometry', { spatialFeatureType: 'Point', srid: 4326, nullable: true })
   geom!: GeoJsonPoint | null
 

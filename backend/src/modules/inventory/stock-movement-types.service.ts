@@ -28,6 +28,11 @@ const DEFAULTS: { name: string; direction: MovementDirection; isSystem: boolean 
   { name: 'Fire / Zayi', direction: 'out', isSystem: false },
   { name: 'Manuel Giriş', direction: 'in', isSystem: false },
   { name: 'Manuel Çıkış', direction: 'out', isSystem: false },
+  // Üretim (manufacturing) — consumed/produced via StockMovementsService.
+  { name: 'Üretime Sarf', direction: 'out', isSystem: true },
+  { name: 'Üretimden Giriş', direction: 'in', isSystem: true },
+  { name: 'Fason Sevk', direction: 'out', isSystem: true },
+  { name: 'Fason Giriş', direction: 'in', isSystem: true },
 ]
 
 @Injectable()

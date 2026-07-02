@@ -21,6 +21,7 @@ import { Route as AuthedSplatRouteImport } from './routes/_authed/$'
 import { Route as PosPosIndexRouteImport } from './routes/_pos/pos.index'
 import { Route as AuthedStocktakeIndexRouteImport } from './routes/_authed/stocktake/index'
 import { Route as AuthedSalesIndexRouteImport } from './routes/_authed/sales/index'
+import { Route as AuthedProductionIndexRouteImport } from './routes/_authed/production/index'
 import { Route as AuthedOrgIndexRouteImport } from './routes/_authed/org/index'
 import { Route as AuthedOrdersIndexRouteImport } from './routes/_authed/orders/index'
 import { Route as AuthedLookupsIndexRouteImport } from './routes/_authed/lookups/index'
@@ -33,6 +34,11 @@ import { Route as AuthedFeedbackIndexRouteImport } from './routes/_authed/feedba
 import { Route as AuthedContactsIndexRouteImport } from './routes/_authed/contacts/index'
 import { Route as AuthedStocktakeCountsRouteImport } from './routes/_authed/stocktake/counts'
 import { Route as AuthedStocktakeIdRouteImport } from './routes/_authed/stocktake/$id'
+import { Route as AuthedProductionWorkOrdersRouteImport } from './routes/_authed/production/work-orders'
+import { Route as AuthedProductionWorkCentersRouteImport } from './routes/_authed/production/work-centers'
+import { Route as AuthedProductionQualityRouteImport } from './routes/_authed/production/quality'
+import { Route as AuthedProductionPlanningRouteImport } from './routes/_authed/production/planning'
+import { Route as AuthedProductionLotsRouteImport } from './routes/_authed/production/lots'
 import { Route as AuthedOrdersSalesRouteImport } from './routes/_authed/orders/sales'
 import { Route as AuthedOrdersQuotesRouteImport } from './routes/_authed/orders/quotes'
 import { Route as AuthedOrdersNewRouteImport } from './routes/_authed/orders/new'
@@ -54,6 +60,9 @@ import { Route as AuthedContactsCrmFieldsRouteImport } from './routes/_authed/co
 import { Route as AuthedContactsCrmDashboardRouteImport } from './routes/_authed/contacts/crm-dashboard'
 import { Route as AuthedContactsContactsImportRouteImport } from './routes/_authed/contacts/contacts-import'
 import { Route as AuthedSalesChannelsIndexRouteImport } from './routes/_authed/sales/channels.index'
+import { Route as AuthedProductionSubcontractIndexRouteImport } from './routes/_authed/production/subcontract.index'
+import { Route as AuthedProductionOrdersIndexRouteImport } from './routes/_authed/production/orders.index'
+import { Route as AuthedProductionBomsIndexRouteImport } from './routes/_authed/production/boms.index'
 import { Route as AuthedPosRegistersIndexRouteImport } from './routes/_authed/pos/registers.index'
 import { Route as AuthedPosModifiersIndexRouteImport } from './routes/_authed/pos/modifiers.index'
 import { Route as AuthedPosFloorsIndexRouteImport } from './routes/_authed/pos/floors.index'
@@ -87,6 +96,10 @@ import { Route as AuthedContactsGroupsIndexRouteImport } from './routes/_authed/
 import { Route as AuthedContactsContactsIndexRouteImport } from './routes/_authed/contacts/contacts.index'
 import { Route as PosPosSellRegisterIdRouteImport } from './routes/_pos/pos.sell.$registerId'
 import { Route as AuthedSalesChannelsIdRouteImport } from './routes/_authed/sales/channels.$id'
+import { Route as AuthedProductionSubcontractIdRouteImport } from './routes/_authed/production/subcontract.$id'
+import { Route as AuthedProductionOrdersIdRouteImport } from './routes/_authed/production/orders.$id'
+import { Route as AuthedProductionBomsNewRouteImport } from './routes/_authed/production/boms.new'
+import { Route as AuthedProductionBomsIdRouteImport } from './routes/_authed/production/boms.$id'
 import { Route as AuthedOrgBranchesIdRouteImport } from './routes/_authed/org/branches.$id'
 import { Route as AuthedOrdersIdEditRouteImport } from './routes/_authed/orders/$id.edit'
 import { Route as AuthedInvoicesInvoicesNewRouteImport } from './routes/_authed/invoices/invoices.new'
@@ -172,6 +185,11 @@ const AuthedSalesIndexRoute = AuthedSalesIndexRouteImport.update({
   path: '/sales/',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedProductionIndexRoute = AuthedProductionIndexRouteImport.update({
+  id: '/production/',
+  path: '/production/',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const AuthedOrgIndexRoute = AuthedOrgIndexRouteImport.update({
   id: '/org/',
   path: '/org/',
@@ -230,6 +248,34 @@ const AuthedStocktakeCountsRoute = AuthedStocktakeCountsRouteImport.update({
 const AuthedStocktakeIdRoute = AuthedStocktakeIdRouteImport.update({
   id: '/stocktake/$id',
   path: '/stocktake/$id',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedProductionWorkOrdersRoute =
+  AuthedProductionWorkOrdersRouteImport.update({
+    id: '/production/work-orders',
+    path: '/production/work-orders',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedProductionWorkCentersRoute =
+  AuthedProductionWorkCentersRouteImport.update({
+    id: '/production/work-centers',
+    path: '/production/work-centers',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedProductionQualityRoute = AuthedProductionQualityRouteImport.update({
+  id: '/production/quality',
+  path: '/production/quality',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedProductionPlanningRoute =
+  AuthedProductionPlanningRouteImport.update({
+    id: '/production/planning',
+    path: '/production/planning',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedProductionLotsRoute = AuthedProductionLotsRouteImport.update({
+  id: '/production/lots',
+  path: '/production/lots',
   getParentRoute: () => AuthedRoute,
 } as any)
 const AuthedOrdersSalesRoute = AuthedOrdersSalesRouteImport.update({
@@ -340,6 +386,24 @@ const AuthedSalesChannelsIndexRoute =
   AuthedSalesChannelsIndexRouteImport.update({
     id: '/sales/channels/',
     path: '/sales/channels/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedProductionSubcontractIndexRoute =
+  AuthedProductionSubcontractIndexRouteImport.update({
+    id: '/production/subcontract/',
+    path: '/production/subcontract/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedProductionOrdersIndexRoute =
+  AuthedProductionOrdersIndexRouteImport.update({
+    id: '/production/orders/',
+    path: '/production/orders/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedProductionBomsIndexRoute =
+  AuthedProductionBomsIndexRouteImport.update({
+    id: '/production/boms/',
+    path: '/production/boms/',
     getParentRoute: () => AuthedRoute,
   } as any)
 const AuthedPosRegistersIndexRoute = AuthedPosRegistersIndexRouteImport.update({
@@ -525,6 +589,28 @@ const AuthedSalesChannelsIdRoute = AuthedSalesChannelsIdRouteImport.update({
   path: '/sales/channels/$id',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedProductionSubcontractIdRoute =
+  AuthedProductionSubcontractIdRouteImport.update({
+    id: '/production/subcontract/$id',
+    path: '/production/subcontract/$id',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedProductionOrdersIdRoute =
+  AuthedProductionOrdersIdRouteImport.update({
+    id: '/production/orders/$id',
+    path: '/production/orders/$id',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedProductionBomsNewRoute = AuthedProductionBomsNewRouteImport.update({
+  id: '/production/boms/new',
+  path: '/production/boms/new',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedProductionBomsIdRoute = AuthedProductionBomsIdRouteImport.update({
+  id: '/production/boms/$id',
+  path: '/production/boms/$id',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const AuthedOrgBranchesIdRoute = AuthedOrgBranchesIdRouteImport.update({
   id: '/org/branches/$id',
   path: '/org/branches/$id',
@@ -700,6 +786,11 @@ export interface FileRoutesByFullPath {
   '/orders/new': typeof AuthedOrdersNewRoute
   '/orders/quotes': typeof AuthedOrdersQuotesRoute
   '/orders/sales': typeof AuthedOrdersSalesRoute
+  '/production/lots': typeof AuthedProductionLotsRoute
+  '/production/planning': typeof AuthedProductionPlanningRoute
+  '/production/quality': typeof AuthedProductionQualityRoute
+  '/production/work-centers': typeof AuthedProductionWorkCentersRoute
+  '/production/work-orders': typeof AuthedProductionWorkOrdersRoute
   '/stocktake/$id': typeof AuthedStocktakeIdRoute
   '/stocktake/counts': typeof AuthedStocktakeCountsRoute
   '/contacts/': typeof AuthedContactsIndexRoute
@@ -712,6 +803,7 @@ export interface FileRoutesByFullPath {
   '/lookups/': typeof AuthedLookupsIndexRoute
   '/orders/': typeof AuthedOrdersIndexRoute
   '/org/': typeof AuthedOrgIndexRoute
+  '/production/': typeof AuthedProductionIndexRoute
   '/sales/': typeof AuthedSalesIndexRoute
   '/stocktake/': typeof AuthedStocktakeIndexRoute
   '/pos/': typeof PosPosIndexRoute
@@ -739,6 +831,10 @@ export interface FileRoutesByFullPath {
   '/invoices/invoices/new': typeof AuthedInvoicesInvoicesNewRoute
   '/orders/$id/edit': typeof AuthedOrdersIdEditRoute
   '/org/branches/$id': typeof AuthedOrgBranchesIdRoute
+  '/production/boms/$id': typeof AuthedProductionBomsIdRoute
+  '/production/boms/new': typeof AuthedProductionBomsNewRoute
+  '/production/orders/$id': typeof AuthedProductionOrdersIdRoute
+  '/production/subcontract/$id': typeof AuthedProductionSubcontractIdRoute
   '/sales/channels/$id': typeof AuthedSalesChannelsIdRoute
   '/pos/sell/$registerId': typeof PosPosSellRegisterIdRoute
   '/contacts/contacts/': typeof AuthedContactsContactsIndexRoute
@@ -772,6 +868,9 @@ export interface FileRoutesByFullPath {
   '/pos/floors/': typeof AuthedPosFloorsIndexRoute
   '/pos/modifiers/': typeof AuthedPosModifiersIndexRoute
   '/pos/registers/': typeof AuthedPosRegistersIndexRoute
+  '/production/boms/': typeof AuthedProductionBomsIndexRoute
+  '/production/orders/': typeof AuthedProductionOrdersIndexRoute
+  '/production/subcontract/': typeof AuthedProductionSubcontractIndexRoute
   '/sales/channels/': typeof AuthedSalesChannelsIndexRoute
   '/hr/payroll/payslips/$id': typeof AuthedHrPayrollPayslipsIdRoute
   '/invoices/invoices/$id/edit': typeof AuthedInvoicesInvoicesIdEditRoute
@@ -803,6 +902,11 @@ export interface FileRoutesByTo {
   '/orders/new': typeof AuthedOrdersNewRoute
   '/orders/quotes': typeof AuthedOrdersQuotesRoute
   '/orders/sales': typeof AuthedOrdersSalesRoute
+  '/production/lots': typeof AuthedProductionLotsRoute
+  '/production/planning': typeof AuthedProductionPlanningRoute
+  '/production/quality': typeof AuthedProductionQualityRoute
+  '/production/work-centers': typeof AuthedProductionWorkCentersRoute
+  '/production/work-orders': typeof AuthedProductionWorkOrdersRoute
   '/stocktake/$id': typeof AuthedStocktakeIdRoute
   '/stocktake/counts': typeof AuthedStocktakeCountsRoute
   '/contacts': typeof AuthedContactsIndexRoute
@@ -815,6 +919,7 @@ export interface FileRoutesByTo {
   '/lookups': typeof AuthedLookupsIndexRoute
   '/orders': typeof AuthedOrdersIndexRoute
   '/org': typeof AuthedOrgIndexRoute
+  '/production': typeof AuthedProductionIndexRoute
   '/sales': typeof AuthedSalesIndexRoute
   '/stocktake': typeof AuthedStocktakeIndexRoute
   '/pos': typeof PosPosIndexRoute
@@ -842,6 +947,10 @@ export interface FileRoutesByTo {
   '/invoices/invoices/new': typeof AuthedInvoicesInvoicesNewRoute
   '/orders/$id/edit': typeof AuthedOrdersIdEditRoute
   '/org/branches/$id': typeof AuthedOrgBranchesIdRoute
+  '/production/boms/$id': typeof AuthedProductionBomsIdRoute
+  '/production/boms/new': typeof AuthedProductionBomsNewRoute
+  '/production/orders/$id': typeof AuthedProductionOrdersIdRoute
+  '/production/subcontract/$id': typeof AuthedProductionSubcontractIdRoute
   '/sales/channels/$id': typeof AuthedSalesChannelsIdRoute
   '/pos/sell/$registerId': typeof PosPosSellRegisterIdRoute
   '/contacts/contacts': typeof AuthedContactsContactsIndexRoute
@@ -875,6 +984,9 @@ export interface FileRoutesByTo {
   '/pos/floors': typeof AuthedPosFloorsIndexRoute
   '/pos/modifiers': typeof AuthedPosModifiersIndexRoute
   '/pos/registers': typeof AuthedPosRegistersIndexRoute
+  '/production/boms': typeof AuthedProductionBomsIndexRoute
+  '/production/orders': typeof AuthedProductionOrdersIndexRoute
+  '/production/subcontract': typeof AuthedProductionSubcontractIndexRoute
   '/sales/channels': typeof AuthedSalesChannelsIndexRoute
   '/hr/payroll/payslips/$id': typeof AuthedHrPayrollPayslipsIdRoute
   '/invoices/invoices/$id/edit': typeof AuthedInvoicesInvoicesIdEditRoute
@@ -910,6 +1022,11 @@ export interface FileRoutesById {
   '/_authed/orders/new': typeof AuthedOrdersNewRoute
   '/_authed/orders/quotes': typeof AuthedOrdersQuotesRoute
   '/_authed/orders/sales': typeof AuthedOrdersSalesRoute
+  '/_authed/production/lots': typeof AuthedProductionLotsRoute
+  '/_authed/production/planning': typeof AuthedProductionPlanningRoute
+  '/_authed/production/quality': typeof AuthedProductionQualityRoute
+  '/_authed/production/work-centers': typeof AuthedProductionWorkCentersRoute
+  '/_authed/production/work-orders': typeof AuthedProductionWorkOrdersRoute
   '/_authed/stocktake/$id': typeof AuthedStocktakeIdRoute
   '/_authed/stocktake/counts': typeof AuthedStocktakeCountsRoute
   '/_authed/contacts/': typeof AuthedContactsIndexRoute
@@ -922,6 +1039,7 @@ export interface FileRoutesById {
   '/_authed/lookups/': typeof AuthedLookupsIndexRoute
   '/_authed/orders/': typeof AuthedOrdersIndexRoute
   '/_authed/org/': typeof AuthedOrgIndexRoute
+  '/_authed/production/': typeof AuthedProductionIndexRoute
   '/_authed/sales/': typeof AuthedSalesIndexRoute
   '/_authed/stocktake/': typeof AuthedStocktakeIndexRoute
   '/_pos/pos/': typeof PosPosIndexRoute
@@ -949,6 +1067,10 @@ export interface FileRoutesById {
   '/_authed/invoices/invoices/new': typeof AuthedInvoicesInvoicesNewRoute
   '/_authed/orders/$id/edit': typeof AuthedOrdersIdEditRoute
   '/_authed/org/branches/$id': typeof AuthedOrgBranchesIdRoute
+  '/_authed/production/boms/$id': typeof AuthedProductionBomsIdRoute
+  '/_authed/production/boms/new': typeof AuthedProductionBomsNewRoute
+  '/_authed/production/orders/$id': typeof AuthedProductionOrdersIdRoute
+  '/_authed/production/subcontract/$id': typeof AuthedProductionSubcontractIdRoute
   '/_authed/sales/channels/$id': typeof AuthedSalesChannelsIdRoute
   '/_pos/pos/sell/$registerId': typeof PosPosSellRegisterIdRoute
   '/_authed/contacts/contacts/': typeof AuthedContactsContactsIndexRoute
@@ -982,6 +1104,9 @@ export interface FileRoutesById {
   '/_authed/pos/floors/': typeof AuthedPosFloorsIndexRoute
   '/_authed/pos/modifiers/': typeof AuthedPosModifiersIndexRoute
   '/_authed/pos/registers/': typeof AuthedPosRegistersIndexRoute
+  '/_authed/production/boms/': typeof AuthedProductionBomsIndexRoute
+  '/_authed/production/orders/': typeof AuthedProductionOrdersIndexRoute
+  '/_authed/production/subcontract/': typeof AuthedProductionSubcontractIndexRoute
   '/_authed/sales/channels/': typeof AuthedSalesChannelsIndexRoute
   '/_authed/hr/payroll/payslips/$id': typeof AuthedHrPayrollPayslipsIdRoute
   '/_authed/invoices/invoices/$id/edit': typeof AuthedInvoicesInvoicesIdEditRoute
@@ -1016,6 +1141,11 @@ export interface FileRouteTypes {
     | '/orders/new'
     | '/orders/quotes'
     | '/orders/sales'
+    | '/production/lots'
+    | '/production/planning'
+    | '/production/quality'
+    | '/production/work-centers'
+    | '/production/work-orders'
     | '/stocktake/$id'
     | '/stocktake/counts'
     | '/contacts/'
@@ -1028,6 +1158,7 @@ export interface FileRouteTypes {
     | '/lookups/'
     | '/orders/'
     | '/org/'
+    | '/production/'
     | '/sales/'
     | '/stocktake/'
     | '/pos/'
@@ -1055,6 +1186,10 @@ export interface FileRouteTypes {
     | '/invoices/invoices/new'
     | '/orders/$id/edit'
     | '/org/branches/$id'
+    | '/production/boms/$id'
+    | '/production/boms/new'
+    | '/production/orders/$id'
+    | '/production/subcontract/$id'
     | '/sales/channels/$id'
     | '/pos/sell/$registerId'
     | '/contacts/contacts/'
@@ -1088,6 +1223,9 @@ export interface FileRouteTypes {
     | '/pos/floors/'
     | '/pos/modifiers/'
     | '/pos/registers/'
+    | '/production/boms/'
+    | '/production/orders/'
+    | '/production/subcontract/'
     | '/sales/channels/'
     | '/hr/payroll/payslips/$id'
     | '/invoices/invoices/$id/edit'
@@ -1119,6 +1257,11 @@ export interface FileRouteTypes {
     | '/orders/new'
     | '/orders/quotes'
     | '/orders/sales'
+    | '/production/lots'
+    | '/production/planning'
+    | '/production/quality'
+    | '/production/work-centers'
+    | '/production/work-orders'
     | '/stocktake/$id'
     | '/stocktake/counts'
     | '/contacts'
@@ -1131,6 +1274,7 @@ export interface FileRouteTypes {
     | '/lookups'
     | '/orders'
     | '/org'
+    | '/production'
     | '/sales'
     | '/stocktake'
     | '/pos'
@@ -1158,6 +1302,10 @@ export interface FileRouteTypes {
     | '/invoices/invoices/new'
     | '/orders/$id/edit'
     | '/org/branches/$id'
+    | '/production/boms/$id'
+    | '/production/boms/new'
+    | '/production/orders/$id'
+    | '/production/subcontract/$id'
     | '/sales/channels/$id'
     | '/pos/sell/$registerId'
     | '/contacts/contacts'
@@ -1191,6 +1339,9 @@ export interface FileRouteTypes {
     | '/pos/floors'
     | '/pos/modifiers'
     | '/pos/registers'
+    | '/production/boms'
+    | '/production/orders'
+    | '/production/subcontract'
     | '/sales/channels'
     | '/hr/payroll/payslips/$id'
     | '/invoices/invoices/$id/edit'
@@ -1225,6 +1376,11 @@ export interface FileRouteTypes {
     | '/_authed/orders/new'
     | '/_authed/orders/quotes'
     | '/_authed/orders/sales'
+    | '/_authed/production/lots'
+    | '/_authed/production/planning'
+    | '/_authed/production/quality'
+    | '/_authed/production/work-centers'
+    | '/_authed/production/work-orders'
     | '/_authed/stocktake/$id'
     | '/_authed/stocktake/counts'
     | '/_authed/contacts/'
@@ -1237,6 +1393,7 @@ export interface FileRouteTypes {
     | '/_authed/lookups/'
     | '/_authed/orders/'
     | '/_authed/org/'
+    | '/_authed/production/'
     | '/_authed/sales/'
     | '/_authed/stocktake/'
     | '/_pos/pos/'
@@ -1264,6 +1421,10 @@ export interface FileRouteTypes {
     | '/_authed/invoices/invoices/new'
     | '/_authed/orders/$id/edit'
     | '/_authed/org/branches/$id'
+    | '/_authed/production/boms/$id'
+    | '/_authed/production/boms/new'
+    | '/_authed/production/orders/$id'
+    | '/_authed/production/subcontract/$id'
     | '/_authed/sales/channels/$id'
     | '/_pos/pos/sell/$registerId'
     | '/_authed/contacts/contacts/'
@@ -1297,6 +1458,9 @@ export interface FileRouteTypes {
     | '/_authed/pos/floors/'
     | '/_authed/pos/modifiers/'
     | '/_authed/pos/registers/'
+    | '/_authed/production/boms/'
+    | '/_authed/production/orders/'
+    | '/_authed/production/subcontract/'
     | '/_authed/sales/channels/'
     | '/_authed/hr/payroll/payslips/$id'
     | '/_authed/invoices/invoices/$id/edit'
@@ -1395,6 +1559,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedSalesIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/production/': {
+      id: '/_authed/production/'
+      path: '/production'
+      fullPath: '/production/'
+      preLoaderRoute: typeof AuthedProductionIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/org/': {
       id: '/_authed/org/'
       path: '/org'
@@ -1477,6 +1648,41 @@ declare module '@tanstack/react-router' {
       path: '/stocktake/$id'
       fullPath: '/stocktake/$id'
       preLoaderRoute: typeof AuthedStocktakeIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/production/work-orders': {
+      id: '/_authed/production/work-orders'
+      path: '/production/work-orders'
+      fullPath: '/production/work-orders'
+      preLoaderRoute: typeof AuthedProductionWorkOrdersRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/production/work-centers': {
+      id: '/_authed/production/work-centers'
+      path: '/production/work-centers'
+      fullPath: '/production/work-centers'
+      preLoaderRoute: typeof AuthedProductionWorkCentersRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/production/quality': {
+      id: '/_authed/production/quality'
+      path: '/production/quality'
+      fullPath: '/production/quality'
+      preLoaderRoute: typeof AuthedProductionQualityRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/production/planning': {
+      id: '/_authed/production/planning'
+      path: '/production/planning'
+      fullPath: '/production/planning'
+      preLoaderRoute: typeof AuthedProductionPlanningRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/production/lots': {
+      id: '/_authed/production/lots'
+      path: '/production/lots'
+      fullPath: '/production/lots'
+      preLoaderRoute: typeof AuthedProductionLotsRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/orders/sales': {
@@ -1624,6 +1830,27 @@ declare module '@tanstack/react-router' {
       path: '/sales/channels'
       fullPath: '/sales/channels/'
       preLoaderRoute: typeof AuthedSalesChannelsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/production/subcontract/': {
+      id: '/_authed/production/subcontract/'
+      path: '/production/subcontract'
+      fullPath: '/production/subcontract/'
+      preLoaderRoute: typeof AuthedProductionSubcontractIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/production/orders/': {
+      id: '/_authed/production/orders/'
+      path: '/production/orders'
+      fullPath: '/production/orders/'
+      preLoaderRoute: typeof AuthedProductionOrdersIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/production/boms/': {
+      id: '/_authed/production/boms/'
+      path: '/production/boms'
+      fullPath: '/production/boms/'
+      preLoaderRoute: typeof AuthedProductionBomsIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/pos/registers/': {
@@ -1855,6 +2082,34 @@ declare module '@tanstack/react-router' {
       path: '/sales/channels/$id'
       fullPath: '/sales/channels/$id'
       preLoaderRoute: typeof AuthedSalesChannelsIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/production/subcontract/$id': {
+      id: '/_authed/production/subcontract/$id'
+      path: '/production/subcontract/$id'
+      fullPath: '/production/subcontract/$id'
+      preLoaderRoute: typeof AuthedProductionSubcontractIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/production/orders/$id': {
+      id: '/_authed/production/orders/$id'
+      path: '/production/orders/$id'
+      fullPath: '/production/orders/$id'
+      preLoaderRoute: typeof AuthedProductionOrdersIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/production/boms/new': {
+      id: '/_authed/production/boms/new'
+      path: '/production/boms/new'
+      fullPath: '/production/boms/new'
+      preLoaderRoute: typeof AuthedProductionBomsNewRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/production/boms/$id': {
+      id: '/_authed/production/boms/$id'
+      path: '/production/boms/$id'
+      fullPath: '/production/boms/$id'
+      preLoaderRoute: typeof AuthedProductionBomsIdRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/org/branches/$id': {
@@ -2117,6 +2372,11 @@ interface AuthedRouteChildren {
   AuthedOrdersNewRoute: typeof AuthedOrdersNewRoute
   AuthedOrdersQuotesRoute: typeof AuthedOrdersQuotesRoute
   AuthedOrdersSalesRoute: typeof AuthedOrdersSalesRoute
+  AuthedProductionLotsRoute: typeof AuthedProductionLotsRoute
+  AuthedProductionPlanningRoute: typeof AuthedProductionPlanningRoute
+  AuthedProductionQualityRoute: typeof AuthedProductionQualityRoute
+  AuthedProductionWorkCentersRoute: typeof AuthedProductionWorkCentersRoute
+  AuthedProductionWorkOrdersRoute: typeof AuthedProductionWorkOrdersRoute
   AuthedStocktakeIdRoute: typeof AuthedStocktakeIdRoute
   AuthedStocktakeCountsRoute: typeof AuthedStocktakeCountsRoute
   AuthedContactsIndexRoute: typeof AuthedContactsIndexRoute
@@ -2129,6 +2389,7 @@ interface AuthedRouteChildren {
   AuthedLookupsIndexRoute: typeof AuthedLookupsIndexRoute
   AuthedOrdersIndexRoute: typeof AuthedOrdersIndexRoute
   AuthedOrgIndexRoute: typeof AuthedOrgIndexRoute
+  AuthedProductionIndexRoute: typeof AuthedProductionIndexRoute
   AuthedSalesIndexRoute: typeof AuthedSalesIndexRoute
   AuthedStocktakeIndexRoute: typeof AuthedStocktakeIndexRoute
   AuthedContactsContactsIdRoute: typeof AuthedContactsContactsIdRoute
@@ -2148,6 +2409,10 @@ interface AuthedRouteChildren {
   AuthedInvoicesInvoicesIdRoute: typeof AuthedInvoicesInvoicesIdRouteWithChildren
   AuthedInvoicesInvoicesNewRoute: typeof AuthedInvoicesInvoicesNewRoute
   AuthedOrgBranchesIdRoute: typeof AuthedOrgBranchesIdRoute
+  AuthedProductionBomsIdRoute: typeof AuthedProductionBomsIdRoute
+  AuthedProductionBomsNewRoute: typeof AuthedProductionBomsNewRoute
+  AuthedProductionOrdersIdRoute: typeof AuthedProductionOrdersIdRoute
+  AuthedProductionSubcontractIdRoute: typeof AuthedProductionSubcontractIdRoute
   AuthedSalesChannelsIdRoute: typeof AuthedSalesChannelsIdRoute
   AuthedContactsContactsIndexRoute: typeof AuthedContactsContactsIndexRoute
   AuthedContactsGroupsIndexRoute: typeof AuthedContactsGroupsIndexRoute
@@ -2179,6 +2444,9 @@ interface AuthedRouteChildren {
   AuthedPosFloorsIndexRoute: typeof AuthedPosFloorsIndexRoute
   AuthedPosModifiersIndexRoute: typeof AuthedPosModifiersIndexRoute
   AuthedPosRegistersIndexRoute: typeof AuthedPosRegistersIndexRoute
+  AuthedProductionBomsIndexRoute: typeof AuthedProductionBomsIndexRoute
+  AuthedProductionOrdersIndexRoute: typeof AuthedProductionOrdersIndexRoute
+  AuthedProductionSubcontractIndexRoute: typeof AuthedProductionSubcontractIndexRoute
   AuthedSalesChannelsIndexRoute: typeof AuthedSalesChannelsIndexRoute
   AuthedHrPayrollPayslipsIdRoute: typeof AuthedHrPayrollPayslipsIdRoute
 }
@@ -2209,6 +2477,11 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedOrdersNewRoute: AuthedOrdersNewRoute,
   AuthedOrdersQuotesRoute: AuthedOrdersQuotesRoute,
   AuthedOrdersSalesRoute: AuthedOrdersSalesRoute,
+  AuthedProductionLotsRoute: AuthedProductionLotsRoute,
+  AuthedProductionPlanningRoute: AuthedProductionPlanningRoute,
+  AuthedProductionQualityRoute: AuthedProductionQualityRoute,
+  AuthedProductionWorkCentersRoute: AuthedProductionWorkCentersRoute,
+  AuthedProductionWorkOrdersRoute: AuthedProductionWorkOrdersRoute,
   AuthedStocktakeIdRoute: AuthedStocktakeIdRoute,
   AuthedStocktakeCountsRoute: AuthedStocktakeCountsRoute,
   AuthedContactsIndexRoute: AuthedContactsIndexRoute,
@@ -2221,6 +2494,7 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedLookupsIndexRoute: AuthedLookupsIndexRoute,
   AuthedOrdersIndexRoute: AuthedOrdersIndexRoute,
   AuthedOrgIndexRoute: AuthedOrgIndexRoute,
+  AuthedProductionIndexRoute: AuthedProductionIndexRoute,
   AuthedSalesIndexRoute: AuthedSalesIndexRoute,
   AuthedStocktakeIndexRoute: AuthedStocktakeIndexRoute,
   AuthedContactsContactsIdRoute: AuthedContactsContactsIdRoute,
@@ -2240,6 +2514,10 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedInvoicesInvoicesIdRoute: AuthedInvoicesInvoicesIdRouteWithChildren,
   AuthedInvoicesInvoicesNewRoute: AuthedInvoicesInvoicesNewRoute,
   AuthedOrgBranchesIdRoute: AuthedOrgBranchesIdRoute,
+  AuthedProductionBomsIdRoute: AuthedProductionBomsIdRoute,
+  AuthedProductionBomsNewRoute: AuthedProductionBomsNewRoute,
+  AuthedProductionOrdersIdRoute: AuthedProductionOrdersIdRoute,
+  AuthedProductionSubcontractIdRoute: AuthedProductionSubcontractIdRoute,
   AuthedSalesChannelsIdRoute: AuthedSalesChannelsIdRoute,
   AuthedContactsContactsIndexRoute: AuthedContactsContactsIndexRoute,
   AuthedContactsGroupsIndexRoute: AuthedContactsGroupsIndexRoute,
@@ -2272,6 +2550,9 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedPosFloorsIndexRoute: AuthedPosFloorsIndexRoute,
   AuthedPosModifiersIndexRoute: AuthedPosModifiersIndexRoute,
   AuthedPosRegistersIndexRoute: AuthedPosRegistersIndexRoute,
+  AuthedProductionBomsIndexRoute: AuthedProductionBomsIndexRoute,
+  AuthedProductionOrdersIndexRoute: AuthedProductionOrdersIndexRoute,
+  AuthedProductionSubcontractIndexRoute: AuthedProductionSubcontractIndexRoute,
   AuthedSalesChannelsIndexRoute: AuthedSalesChannelsIndexRoute,
   AuthedHrPayrollPayslipsIdRoute: AuthedHrPayrollPayslipsIdRoute,
 }

@@ -3,7 +3,10 @@ import { Column, Entity, Index } from 'typeorm'
 import type { MovementDirection } from '@turbohesap/shared'
 
 import { BaseEntity } from '../../../common/entities/base.entity'
-import { decimalTransformer } from '../../../common/decimal.transformer'
+import {
+  decimalTransformer,
+  nullableDecimalTransformer,
+} from '../../../common/decimal.transformer'
 
 // Stok hareketi — a single in/out of stock for a (product, variant?, branch),
 // recorded against a movement type. Adjusts on-hand ProductStock when created.
@@ -31,6 +34,11 @@ export class StockMovement extends BaseEntity {
 
   @Column({ default: 'Adet' })
   unit!: string
+
+  // Unit cost at the time of the movement (for valuation / COGS). Optional —
+  // legacy postings leave it null. 'in' rows with a cost feed moving-average.
+  @Column('numeric', { precision: 18, scale: 4, nullable: true, transformer: nullableDecimalTransformer })
+  unitCost!: number | null
 
   @Column({ type: 'date' })
   date!: string

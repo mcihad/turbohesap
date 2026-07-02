@@ -35,6 +35,8 @@ export interface StockMovementDto {
   direction: MovementDirection
   quantity: number
   unit: string
+  /** Unit cost at the time of the movement (valuation / COGS); null if untracked. */
+  unitCost: number | null
   date: string
   description: string | null
   /** Origin when posted automatically (e.g. 'invoices'). */
@@ -50,6 +52,8 @@ export interface CreateStockMovementRequest {
   variantId?: string | null
   date?: string
   description?: string | null
+  /** Unit cost for valuation; on 'in' feeds the moving-average (AVCO) cost. */
+  unitCost?: number | null
 }
 export interface StockMovementListQuery {
   productId?: string

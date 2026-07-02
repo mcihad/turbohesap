@@ -934,6 +934,7 @@ export function toStockDto(
     branchId: s.branchId,
     branch,
     quantity: s.quantity,
+    reservedQty: s.reservedQty ?? 0,
     createdAt: s.createdAt.toISOString(),
     updatedAt: s.updatedAt.toISOString(),
   }

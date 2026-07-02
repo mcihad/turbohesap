@@ -14,6 +14,8 @@ export interface ProductStockDto {
   branchId: string | null
   branch: BranchSummary | null
   quantity: number
+  /** Reserved for confirmed manufacturing/sales (available = quantity - reservedQty). */
+  reservedQty: number
   createdAt: string
   updatedAt: string
 }

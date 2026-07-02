@@ -18,6 +18,7 @@ import { ProductStock } from './entities/product-stock.entity'
 import { Product } from './entities/product.entity'
 import { Branch } from '../org/entities/branch.entity'
 import type { CreateStockMovementDto } from './dto/stock-movement.dto'
+import { CostService } from './cost.service'
 
 export interface PostMovementParams {
   productId: string
@@ -31,6 +32,8 @@ export interface PostMovementParams {
   sourceModule?: string | null
   sourceId?: string | null
   unit?: string
+  /** Unit cost for valuation. On 'in' with a cost, feeds AVCO moving-average. */
+  unitCost?: number | null
 }
 
 @Injectable()
@@ -41,6 +44,7 @@ export class StockMovementsService {
     @InjectRepository(ProductStock) private readonly stocks: Repository<ProductStock>,
     @InjectRepository(Product) private readonly products: Repository<Product>,
     @InjectRepository(Branch) private readonly branches: Repository<Branch>,
+    private readonly cost: CostService,
   ) {}
 
   async list(query?: StockMovementListQuery): Promise<StockMovementDto[]> {
@@ -84,6 +88,7 @@ export class StockMovementsService {
         quantity: dto.quantity,
         date: dto.date ?? new Date().toISOString().slice(0, 10),
         description: dto.description ?? null,
+        unitCost: dto.unitCost ?? null,
       }),
     )
     const branch = saved.branchId ? await this.branches.findOne({ where: { id: saved.branchId } }) : null
@@ -100,7 +105,7 @@ export class StockMovementsService {
   }
 
   // ── helpers reused by other modules (invoices) within a transaction ─────────
-  /** Create a movement row and apply its on-hand effect. */
+  /** Create a movement row and apply its on-hand effect (+ AVCO on costed inbound). */
   async post(em: EntityManager, params: PostMovementParams): Promise<StockMovement> {
     const repo = em.getRepository(StockMovement)
     const movement = repo.create({
@@ -111,14 +116,39 @@ export class StockMovementsService {
       direction: params.direction,
       quantity: params.quantity,
       unit: params.unit ?? 'Adet',
+      unitCost: params.unitCost ?? null,
       date: params.date,
       description: params.description ?? null,
       sourceModule: params.sourceModule ?? null,
       sourceId: params.sourceId ?? null,
     })
     const saved = await repo.save(movement)
+    // Capture on-hand BEFORE the adjustment so the moving-average weights are right.
+    const priorQty = await this.currentOnHand(em, saved.productId, saved.variantId, saved.branchId)
     await this.adjustOnHand(em, saved, saved.direction === 'in' ? saved.quantity : -saved.quantity)
+    if (saved.direction === 'in' && params.unitCost != null) {
+      await this.cost.applyMovingAverage(em, {
+        productId: saved.productId,
+        variantId: saved.variantId,
+        branchId: saved.branchId,
+        priorQty,
+        inboundQty: saved.quantity,
+        inboundUnitCost: params.unitCost,
+      })
+    }
     return saved
+  }
+
+  private async currentOnHand(
+    em: EntityManager,
+    productId: string,
+    variantId: string | null,
+    branchId: string | null,
+  ): Promise<number> {
+    const row = await em.getRepository(ProductStock).findOne({
+      where: { productId, variantId: variantId ?? IsNull(), branchId: branchId ?? IsNull() },
+    })
+    return row?.quantity ?? 0
   }
 
   /** Reverse and delete all movements posted by a source document. */
@@ -161,6 +191,7 @@ export function toMovementDto(m: StockMovement, typeName: string, branchName: st
     direction: m.direction,
     quantity: m.quantity,
     unit: m.unit,
+    unitCost: m.unitCost,
     date: m.date,
     description: m.description,
     sourceModule: m.sourceModule,

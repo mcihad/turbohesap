@@ -23,6 +23,9 @@ export const InventoryPermissions = {
   assetsWrite: 'inventory.assets.write',
   assetsAssign: 'inventory.assets.assign',
   assetsMaintain: 'inventory.assets.maintain',
+  // Ölçü birimi (UoM) sistemi — kategoriler + birimler + dönüşüm.
+  uomRead: 'inventory.uom.read',
+  uomWrite: 'inventory.uom.write',
 } as const
 
 export type InventoryPermission =

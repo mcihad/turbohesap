@@ -62,6 +62,11 @@ export const MODULES: AppModuleInfo[] = [
     label: 'POS',
     description: 'Hızlı satış noktası, kasa/vardiya ve mutfak ekranı',
   },
+  {
+    key: 'production',
+    label: 'Üretim',
+    description: 'Reçete (BOM), iş merkezi, üretim/iş emri, fason, MRP',
+  },
 ]
 
 export const MODULE_KEYS: string[] = MODULES.map((m) => m.key)

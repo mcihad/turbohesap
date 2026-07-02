@@ -20,6 +20,9 @@ export class CheckinArea extends BaseEntity {
   @Column({ type: 'uuid', nullable: true })
   branchId!: string | null
 
+  // GIST index declared here (not just raw SQL) so migration:generate doesn't keep
+  // flagging it as drift and dropping it.
+  @Index('IDX_hr_checkin_areas_geom', { spatial: true })
   @Column('geometry', { srid: 4326, nullable: true })
   geom!: GeoJsonGeometry | null
 

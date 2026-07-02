@@ -32,6 +32,7 @@ import { FeedbackModule } from './modules/feedback/feedback.module'
 import { ReportsModule } from './modules/reports/reports.module'
 import { HrModule } from './modules/hr/hr.module'
 import { StocktakeModule } from './modules/stocktake/stocktake.module'
+import { ProductionModule } from './modules/production/production.module'
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { StocktakeModule } from './modules/stocktake/stocktake.module'
     ReportsModule,
     HrModule,
     StocktakeModule,
+    ProductionModule,
   ],
   controllers: [HealthController, DebugController],
   providers: [

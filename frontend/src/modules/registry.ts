@@ -9,6 +9,7 @@ import { contactsModule } from './contacts/module.config'
 import { invoicesModule } from './invoices/module.config'
 import { ordersModule } from './orders/module.config'
 import { stocktakeModule } from './stocktake/module.config'
+import { productionModule } from './production/module.config'
 import { hrModule } from './hr/module.config'
 import { lookupsModule } from './lookups/module.config'
 import { feedbackModule } from './feedback/module.config'
@@ -27,6 +28,7 @@ export const APP_MODULES: AppModule[] = [
   invoicesModule,
   ordersModule,
   stocktakeModule,
+  productionModule,
   hrModule,
   lookupsModule,
   feedbackModule,

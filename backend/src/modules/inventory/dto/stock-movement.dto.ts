@@ -29,4 +29,5 @@ export class CreateStockMovementDto implements CreateStockMovementRequest {
   @IsOptional() @IsString() variantId?: string | null
   @IsOptional() @IsString() date?: string
   @IsOptional() @IsString() description?: string | null
+  @IsOptional() @IsNumber() @Min(0) unitCost?: number | null
 }

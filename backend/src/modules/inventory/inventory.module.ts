@@ -49,6 +49,27 @@ import { AssetMaintenanceController } from './asset-maintenance.controller'
 import { AssetMaintenanceService } from './asset-maintenance.service'
 import { AssetVehicleLogsController } from './asset-vehicle-logs.controller'
 import { AssetVehicleLogsService } from './asset-vehicle-logs.service'
+// Ölçü birimi (UoM) sistemi.
+import { UomCategory } from './entities/uom-category.entity'
+import { Uom } from './entities/uom.entity'
+import { UomService } from './uom.service'
+import { UomCategoriesController, UomsController } from './uom.controller'
+// Stok operasyon altyapısı — maliyet (AVCO), rezervasyon, uygunluk (ATP).
+import { ProductCost } from './entities/product-cost.entity'
+import { StockReservation } from './entities/stock-reservation.entity'
+import { CostService } from './cost.service'
+import { ReservationsService } from './reservations.service'
+import { AvailabilityService } from './availability.service'
+import {
+  AvailabilityController,
+  ProductCostController,
+  ReservationsController,
+} from './stock-ops.controller'
+// Üretim emri (read-only) — ATP'nin 'gelen' bileşeni (açık üretim emirleri).
+import { ProductionOrder } from '../production/entities/production-order.entity'
+// Sipariş belgeleri (read-only) — ATP'nin 'gelen' bileşeni (açık satınalma siparişleri).
+import { OrderDocument } from '../orders/entities/order-document.entity'
+import { OrderDocumentLine } from '../orders/entities/order-document-line.entity'
 
 // Envanter — product categories (a tree, with per-category custom field schemas)
 // and products with variants, packagings, per-branch stock and per-channel
@@ -82,6 +103,13 @@ import { AssetVehicleLogsService } from './asset-vehicle-logs.service'
       AssetMaintenance,
       AssetVehicleLog,
       Employee,
+      UomCategory,
+      Uom,
+      ProductCost,
+      StockReservation,
+      ProductionOrder,
+      OrderDocument,
+      OrderDocumentLine,
     ]),
   ],
   controllers: [
@@ -96,6 +124,11 @@ import { AssetVehicleLogsService } from './asset-vehicle-logs.service'
     AssetTransfersController,
     AssetMaintenanceController,
     AssetVehicleLogsController,
+    UomCategoriesController,
+    UomsController,
+    ReservationsController,
+    ProductCostController,
+    AvailabilityController,
   ],
   providers: [
     CategoriesService,
@@ -109,8 +142,20 @@ import { AssetVehicleLogsService } from './asset-vehicle-logs.service'
     AssetCustodyService,
     AssetMaintenanceService,
     AssetVehicleLogsService,
+    UomService,
+    CostService,
+    ReservationsService,
+    AvailabilityService,
   ],
-  // Exported so InvoicesModule/PosModule can post/reverse stock movements.
-  exports: [StockMovementsService, StockMovementTypesService, ProductModifiersService],
+  // Exported so InvoicesModule/PosModule post/reverse stock movements and
+  // ProductionModule reserves stock + reads/updates AVCO cost.
+  exports: [
+    StockMovementsService,
+    StockMovementTypesService,
+    ProductModifiersService,
+    CostService,
+    ReservationsService,
+    AvailabilityService,
+  ],
 })
 export class InventoryModule {}

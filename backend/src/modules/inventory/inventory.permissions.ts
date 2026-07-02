@@ -65,4 +65,14 @@ export const INVENTORY_PERMISSION_DEFS: PermissionDef[] = [
     description: 'Bakım/onarım ve araç km/yakıt kayıtları',
     group: 'Demirbaş',
   },
+  {
+    key: InventoryPermissions.uomRead,
+    description: 'Ölçü birimlerini görüntüleme',
+    group: 'Ölçü Birimi',
+  },
+  {
+    key: InventoryPermissions.uomWrite,
+    description: 'Ölçü birimi kategorisi/birim ekleme, düzenleme',
+    group: 'Ölçü Birimi',
+  },
 ]

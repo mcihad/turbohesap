@@ -19,6 +19,7 @@ import { productionModule } from './production/module.config'
 import { hrModule } from './hr/module.config'
 import { feedbackModule } from './feedback/module.config'
 import { lookupsModule } from './lookups/module.config'
+import { documentsModule } from './documents/module.config'
 import type { MobileModule } from './types'
 
 // Genel — overview / dashboards. No permission gating: always visible. Uses its
@@ -143,6 +144,7 @@ export const APP_MODULES: MobileModule[] = [
   hrModule,
   feedbackModule,
   lookupsModule,
+  documentsModule,
   iamModule,
 ]
 

@@ -6,10 +6,16 @@ import * as React from 'react'
 import { Alert } from 'react-native'
 
 import {
+  CodePrefixContexts,
   InventoryPermissions,
   OrgPermissions,
-  PRODUCT_TYPES,
+  PRODUCT_ROLES,
+  PRODUCT_ROLE_LABELS,
+  PRODUCT_ROLE_PRESETS,
+  PRODUCT_ROLE_CUSTOM_LABEL,
+  inferProductRole,
   type CreateProductRequest,
+  type ProductRole,
   type ProductType,
   type VariantAttribute,
   effectiveFieldDefsWithSource,
@@ -18,6 +24,8 @@ import {
 
 import {
   Button,
+  CodePrefixInput,
+  type CodePrefixInputHandle,
   EmptyState,
   FormSelect,
   FormSwitchRow,
@@ -35,7 +43,6 @@ import { useNav } from '../../navigation/nav-context'
 import { CategoryPicker } from './CategoryPicker'
 import { DynamicAttributeFields } from './DynamicAttributeFields'
 import { VariantAxesEditor } from './VariantAxesEditor'
-import { PRODUCT_TYPE_LABELS } from './labels'
 
 interface FormState {
   code: string
@@ -43,6 +50,8 @@ interface FormState {
   description: string
   barcode: string
   brand: string
+  /** Form-only preset over the flags below — never sent; `type`+flags are. */
+  role: ProductRole | 'custom'
   type: ProductType
   trackStock: boolean
   canBeSold: boolean
@@ -66,6 +75,7 @@ interface FormState {
 
 const EMPTY: FormState = {
   code: '', name: '', description: '', barcode: '', brand: '',
+  role: 'mamul',
   type: 'stockable', trackStock: true,
   canBeSold: true, canBePurchased: true, canBeManufactured: false,
   categoryId: null, unit: null,
@@ -74,7 +84,8 @@ const EMPTY: FormState = {
   quantity: '0', minQuantity: '0', weight: '', imageUrl: '', isActive: true, attributes: {},
 }
 
-const TYPE_OPTIONS = PRODUCT_TYPES.map((t) => ({ value: t, label: PRODUCT_TYPE_LABELS[t] }))
+// Real, pickable roles + a display-only "Özel" shown when flags match no preset.
+const ROLE_OPTIONS = PRODUCT_ROLES.map((r) => ({ value: r as ProductRole | 'custom', label: PRODUCT_ROLE_LABELS[r] }))
 
 export function ProductFormScreen() {
   const nav = useNav()
@@ -90,9 +101,24 @@ export function ProductFormScreen() {
   const branches = useAsync(() => api.org.branches.list(), [], { enabled: !editing && canReadBranches })
 
   const [form, setForm] = React.useState<FormState>(EMPTY)
+  const codeRef = React.useRef<CodePrefixInputHandle>(null)
   // Opening stock quantities keyed by branchId (create-only, stock-tracked products).
   const [openingStock, setOpeningStock] = React.useState<Record<string, string>>({})
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((f) => ({ ...f, [k]: v }))
+
+  // Picking a role stamps its preset onto trackStock + the capability flags
+  // (+ derived `type`). 'custom' is display-only, never applied.
+  const applyRole = (r: ProductRole | 'custom') => {
+    if (r === 'custom') return
+    setForm((f) => ({ ...f, role: r, ...PRODUCT_ROLE_PRESETS[r] }))
+  }
+  // Toggling any advanced flag re-derives the role (matching preset or 'custom').
+  const setFlag = (k: 'trackStock' | 'canBeSold' | 'canBePurchased' | 'canBeManufactured', v: boolean) =>
+    setForm((f) => {
+      const next = { ...f, [k]: v }
+      return { ...next, role: inferProductRole(next) }
+    })
+
   const dynamicFields = React.useMemo(
     () => effectiveFieldDefsWithSource(form.categoryId, categories.data ?? []),
     [form.categoryId, categories.data],
@@ -104,7 +130,7 @@ export function ProductFormScreen() {
     const n = (v: number | null) => (v == null ? '' : String(v))
     setForm({
       code: p.code, name: p.name, description: p.description, barcode: p.barcode,
-      brand: p.brand, type: p.type, trackStock: p.trackStock,
+      brand: p.brand, role: inferProductRole(p), type: p.type, trackStock: p.trackStock,
       canBeSold: p.canBeSold, canBePurchased: p.canBePurchased, canBeManufactured: p.canBeManufactured,
       categoryId: p.categoryId, unit: p.unit || null,
       hasVariants: p.hasVariants, variantAttributes: p.variantAttributes ?? [],
@@ -131,22 +157,23 @@ export function ProductFormScreen() {
       return
     }
     const num = (s: string) => (s.trim() === '' ? null : Number(s))
-    const payload: CreateProductRequest = {
-      code: form.code.trim(), name: form.name.trim(), description: form.description,
-      barcode: form.barcode, brand: form.brand, type: form.type, trackStock: form.trackStock,
-      canBeSold: form.canBeSold, canBePurchased: form.canBePurchased, canBeManufactured: form.canBeManufactured,
-      categoryId: form.categoryId, unit: form.unit ?? '',
-      hasVariants: form.hasVariants,
-      variantAttributes: form.hasVariants
-        ? form.variantAttributes.filter((a) => a.name.trim() && a.values.length)
-        : [],
-      purchasePrice: num(form.purchasePrice), salePrice: num(form.salePrice),
-      taxRate: num(form.taxRate), currency: form.currency,
-      quantity: Number(form.quantity) || 0, minQuantity: Number(form.minQuantity) || 0,
-      weight: num(form.weight), imageUrl: form.imageUrl, isActive: form.isActive, attributes: form.attributes,
-    }
     void submit(
       async () => {
+        const code = editing ? form.code : await (codeRef.current?.finalize() ?? Promise.resolve(form.code))
+        const payload: CreateProductRequest = {
+          code: code.trim(), name: form.name.trim(), description: form.description,
+          barcode: form.barcode, brand: form.brand, type: form.type, trackStock: form.trackStock,
+          canBeSold: form.canBeSold, canBePurchased: form.canBePurchased, canBeManufactured: form.canBeManufactured,
+          categoryId: form.categoryId, unit: form.unit ?? '',
+          hasVariants: form.hasVariants,
+          variantAttributes: form.hasVariants
+            ? form.variantAttributes.filter((a) => a.name.trim() && a.values.length)
+            : [],
+          purchasePrice: num(form.purchasePrice), salePrice: num(form.salePrice),
+          taxRate: num(form.taxRate), currency: form.currency,
+          quantity: Number(form.quantity) || 0, minQuantity: Number(form.minQuantity) || 0,
+          weight: num(form.weight), imageUrl: form.imageUrl, isActive: form.isActive, attributes: form.attributes,
+        }
         if (editing) {
           await api.inventory.products.update(id as string, payload)
         } else {
@@ -170,9 +197,22 @@ export function ProductFormScreen() {
       footer={<Button title={editing ? 'Kaydet' : 'Oluştur'} fullWidth loading={busy} disabled={!canSave} onPress={save} />}
     >
       <Section title="Genel">
-        <Input label="Stok kodu" value={form.code} editable={!editing} autoCapitalize="characters" onChangeText={(v) => set('code', v)} placeholder="TS-001" />
+        <CodePrefixInput
+          ref={codeRef}
+          label="Stok kodu"
+          context={CodePrefixContexts.inventoryProducts}
+          value={form.code}
+          onChange={(v) => set('code', v)}
+          editable={!editing}
+          placeholder="001"
+        />
         <Input label="Ad" value={form.name} onChangeText={(v) => set('name', v)} />
-        <FormSelect label="Tür" value={form.type} options={TYPE_OPTIONS} onChange={(v) => set('type', v)} />
+        <FormSelect
+          label="Ürün rolü"
+          value={form.role}
+          options={form.role === 'custom' ? [...ROLE_OPTIONS, { value: 'custom', label: PRODUCT_ROLE_CUSTOM_LABEL }] : ROLE_OPTIONS}
+          onChange={applyRole}
+        />
         <CategoryPicker value={form.categoryId} onChange={(v) => set('categoryId', v)} />
         <LookupSelect list="birim" label="Birim" value={form.unit} onChange={(k) => set('unit', k)} placeholder="Birim seçin" />
         <Input label="Marka" value={form.brand} onChangeText={(v) => set('brand', v)} />
@@ -207,17 +247,17 @@ export function ProductFormScreen() {
       <Section title="Diğer">
         <Input label="Görsel adresi" value={form.imageUrl} onChangeText={(v) => set('imageUrl', v)} autoCapitalize="none" placeholder="https://…" />
         <FormTextArea label="Açıklama" value={form.description} onChangeText={(v) => set('description', v)} />
-        <FormSwitchRow label="Stok takibi" description="On-hand stok takip edilsin" value={form.trackStock} onValueChange={(v) => set('trackStock', v)} />
         <FormSwitchRow label="Varyantlı ürün" description="Renk/beden gibi eksenlerle varyantlar" value={form.hasVariants} onValueChange={(v) => set('hasVariants', v)} />
         <FormSwitchRow label="Aktif" value={form.isActive} onValueChange={(v) => set('isActive', v)} />
       </Section>
 
-      {/* Rol (hammadde/yarı mamul/mamul) sabit bir alan değil, bu üç bağımsız
-          yetenek bayrağından türer. */}
-      <Section title="Kullanım">
-        <FormSwitchRow label="Satılabilir" value={form.canBeSold} onValueChange={(v) => set('canBeSold', v)} />
-        <FormSwitchRow label="Satın alınabilir" value={form.canBePurchased} onValueChange={(v) => set('canBePurchased', v)} />
-        <FormSwitchRow label="Üretilebilir" description="BOM'lu üretim emrine konu olabilir" value={form.canBeManufactured} onValueChange={(v) => set('canBeManufactured', v)} />
+      {/* Gelişmiş: "Ürün rolü" ön-ayarının kurduğu bayraklar. Bir bayrağı elle
+          değiştirmek rolü yeniden türetir (eşleşen ön-ayar veya "Özel"). */}
+      <Section title="Gelişmiş (stok & kullanım)">
+        <FormSwitchRow label="Stok takibi" description="On-hand stok takip edilsin" value={form.trackStock} onValueChange={(v) => setFlag('trackStock', v)} />
+        <FormSwitchRow label="Satılabilir" value={form.canBeSold} onValueChange={(v) => setFlag('canBeSold', v)} />
+        <FormSwitchRow label="Satın alınabilir" value={form.canBePurchased} onValueChange={(v) => setFlag('canBePurchased', v)} />
+        <FormSwitchRow label="Üretilebilir" description="BOM'lu üretim emrine konu olabilir" value={form.canBeManufactured} onValueChange={(v) => setFlag('canBeManufactured', v)} />
       </Section>
 
       {form.hasVariants ? (

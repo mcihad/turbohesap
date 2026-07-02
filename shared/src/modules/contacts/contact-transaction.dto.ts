@@ -9,6 +9,8 @@ export type ContactDocumentType =
   | 'opening' // Açılış
   | 'adjustment' // Düzeltme
   | 'return' // İade
+  | 'check' // Çek tahsilat/ödemesi
+  | 'note' // Senet tahsilat/ödemesi
 
 export const CONTACT_DOCUMENT_TYPES: ContactDocumentType[] = [
   'invoice',
@@ -17,6 +19,8 @@ export const CONTACT_DOCUMENT_TYPES: ContactDocumentType[] = [
   'opening',
   'adjustment',
   'return',
+  'check',
+  'note',
 ]
 
 export interface ContactTransactionDto {

@@ -2,6 +2,7 @@ import * as React from 'react'
 import { ActivityIndicator, View } from 'react-native'
 import {
   CONTACT_ROLES,
+  CodePrefixContexts,
   ContactsPermissions,
   type BalanceSide,
   type ContactRole,
@@ -10,6 +11,8 @@ import {
 } from '@turbohesap/shared'
 import {
   Button,
+  CodePrefixInput,
+  type CodePrefixInputHandle,
   EmptyState,
   FormSelect,
   FormSwitchRow,
@@ -100,6 +103,7 @@ export function ContactFormScreen() {
   const isLead = !editing && roleParam === 'lead'
   const title = editing ? 'Cari düzenle' : isLead ? 'Yeni aday' : 'Yeni cari'
   const { submit, busy } = useSubmit()
+  const codeRef = React.useRef<CodePrefixInputHandle>(null)
 
   const existing = useAsync(() => api.contacts.contacts.get(id as string), [id], {
     enabled: editing,
@@ -152,11 +156,12 @@ export function ContactFormScreen() {
     }
 
     submit(async () => {
+      const code = await (codeRef.current?.finalize() ?? Promise.resolve(form.code))
       const payload: CreateContactRequest = {
         contactType: form.contactType,
         role: form.role,
         name: form.name.trim(),
-        code: form.code.trim() || undefined,
+        code: code.trim() || undefined,
         taxOffice: form.taxOffice.trim() || null,
         taxNumber: form.contactType === 'company' ? form.taxNumber.trim() || null : null,
         nationalId: form.contactType === 'individual' ? form.nationalId.trim() || null : null,
@@ -232,7 +237,15 @@ export function ContactFormScreen() {
               options={ROLE_OPTIONS}
             />
             <Input label="Cari Adı" placeholder="Ünvan veya ad soyad" value={form.name} onChangeText={(v) => set('name', v)} />
-            <Input label="Cari Kodu" placeholder="Örn: 120.01.0001" value={form.code} onChangeText={(v) => set('code', v)} />
+            <CodePrefixInput
+              ref={codeRef}
+              label="Cari Kodu"
+              context={CodePrefixContexts.contactsContacts}
+              value={form.code}
+              onChange={(v) => set('code', v)}
+              autoAssign={!editing}
+              placeholder="0001"
+            />
           </Section>
 
           <Section title="Vergi Bilgileri">

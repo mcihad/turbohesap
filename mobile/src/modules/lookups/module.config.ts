@@ -18,5 +18,12 @@ export const lookupsModule: MobileModule = {
       description: 'Birim, renk vb. key/value listeleri',
       permission: LookupsPermissions.read,
     },
+    {
+      key: 'lookups.code-prefixes',
+      title: 'Kod Önekleri',
+      icon: 'hash',
+      description: 'Kod öneki ve sayaç ayarları',
+      permission: LookupsPermissions.codePrefixesRead,
+    },
   ],
 }

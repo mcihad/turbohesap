@@ -36,6 +36,8 @@ import { BranchesScreen } from '../modules/org/BranchesScreen'
 import { LookupItemFormScreen } from '../modules/lookups/LookupItemFormScreen'
 import { LookupListScreen } from '../modules/lookups/LookupListScreen'
 import { LookupsScreen } from '../modules/lookups/LookupsScreen'
+import { CodePrefixesScreen } from '../modules/lookups/CodePrefixesScreen'
+import { CodePrefixFormScreen } from '../modules/lookups/CodePrefixFormScreen'
 import { CategoriesScreen } from '../modules/inventory/CategoriesScreen'
 import { CategoryDetailScreen } from '../modules/inventory/CategoryDetailScreen'
 import { CategoryFieldFormScreen } from '../modules/inventory/CategoryFieldFormScreen'
@@ -61,6 +63,9 @@ import { BankAccountsScreen } from '../modules/finance/BankAccountsScreen'
 import { BankAccountDetailScreen } from '../modules/finance/BankAccountDetailScreen'
 import { BankAccountFormScreen } from '../modules/finance/BankAccountFormScreen'
 import { FinanceTransactionFormScreen } from '../modules/finance/FinanceTransactionFormScreen'
+import { InstrumentsListScreen } from '../modules/finance/InstrumentsListScreen'
+import { InstrumentDetailScreen } from '../modules/finance/InstrumentDetailScreen'
+import { InstrumentFormScreen } from '../modules/finance/InstrumentFormScreen'
 import { ContactsScreen } from '../modules/contacts/ContactsScreen'
 import { ContactDetailScreen } from '../modules/contacts/ContactDetailScreen'
 import { ContactFormScreen } from '../modules/contacts/ContactFormScreen'
@@ -136,6 +141,10 @@ import { CardSourceEntryScreen } from '../modules/hr/CardSourceEntryScreen'
 import { EmployeeCardEntryScreen } from '../modules/hr/EmployeeCardEntryScreen'
 import { FeedbackListScreen } from '../modules/feedback/FeedbackListScreen'
 import { FeedbackDetailScreen } from '../modules/feedback/FeedbackDetailScreen'
+import { DocumentsListScreen } from '../modules/documents/DocumentsListScreen'
+import { DocumentDetailScreen } from '../modules/documents/DocumentDetailScreen'
+import { DocumentFormScreen } from '../modules/documents/DocumentFormScreen'
+import { DocumentCategoriesScreen } from '../modules/documents/DocumentCategoriesScreen'
 import { ProfileScreen } from '../screens/ProfileScreen'
 import { ModuleDashboardScreen } from './ModuleDashboardScreen'
 import { ModuleHome } from './ModuleHome'
@@ -166,6 +175,8 @@ export const SCREENS: Record<string, () => React.ReactElement> = {
   'lookups.lists': () => <LookupsScreen />,
   'lookups.list': () => <LookupListScreen />,
   'lookups.item.form': () => <LookupItemFormScreen />,
+  'lookups.code-prefixes': () => <CodePrefixesScreen />,
+  'lookups.code-prefix.form': () => <CodePrefixFormScreen />,
   // Envanter (inventory)
   'inventory.home': () => <ModuleHome moduleKey="inventory" />,
   'inventory.products': () => <ProductsScreen />,
@@ -213,6 +224,9 @@ export const SCREENS: Record<string, () => React.ReactElement> = {
   'finance.bank-accounts.detail': () => <BankAccountDetailScreen />,
   'finance.bank-accounts.form': () => <BankAccountFormScreen />,
   'finance.transactions.form': () => <FinanceTransactionFormScreen />,
+  'finance.instruments': () => <InstrumentsListScreen />,
+  'finance.instruments.detail': () => <InstrumentDetailScreen />,
+  'finance.instruments.form': () => <InstrumentFormScreen />,
   // Cari (contacts)
   'contacts.home': () => <ModuleHome moduleKey="contacts" />,
   'contacts.contacts': () => <ContactsScreen />,
@@ -304,6 +318,12 @@ export const SCREENS: Record<string, () => React.ReactElement> = {
   // Geri Bildirim (feedback)
   'feedback.list': () => <FeedbackListScreen />,
   'feedback.detail': () => <FeedbackDetailScreen />,
+  // Evrak (documents)
+  'documents.home': () => <ModuleHome moduleKey="documents" />,
+  'documents.documents': () => <DocumentsListScreen />,
+  'documents.detail': () => <DocumentDetailScreen />,
+  'documents.form': () => <DocumentFormScreen />,
+  'documents.categories': () => <DocumentCategoriesScreen />,
   // Profil (pseudo-module tab)
   profile: () => <ProfileScreen />,
 }

@@ -18,6 +18,8 @@ import { BranchesApiClient } from '../modules/org/branches.client'
 import type { IBranchesService } from '../modules/org/branches.service'
 import { LookupsApiClient } from '../modules/lookups/lookups.client'
 import type { ILookupsService } from '../modules/lookups/lookups.service'
+import { CodePrefixesApiClient } from '../modules/lookups/code-prefixes.client'
+import type { ICodePrefixesService } from '../modules/lookups/code-prefixes.service'
 import { FilesApiClient } from '../modules/files/files.client'
 import type { IFilesService } from '../modules/files/files.service'
 import { SettingsApiClient } from '../modules/settings/settings.client'
@@ -64,6 +66,8 @@ import { BankAccountsApiClient } from '../modules/finance/bank-accounts.client'
 import type { IBankAccountsService } from '../modules/finance/bank-accounts.service'
 import { FinanceTransactionsApiClient } from '../modules/finance/finance-transactions.client'
 import type { IFinanceTransactionsService } from '../modules/finance/finance-transactions.service'
+import { FinancialInstrumentsApiClient } from '../modules/finance/financial-instrument.client'
+import type { IFinancialInstrumentsService } from '../modules/finance/financial-instrument.service'
 import { ContactsApiClient } from '../modules/contacts/contacts.client'
 import type { IContactsService } from '../modules/contacts/contacts.service'
 import { ContactGroupsApiClient } from '../modules/contacts/contact-groups.client'
@@ -150,6 +154,10 @@ import { QualityChecksApiClient } from '../modules/production/quality.client'
 import type { IQualityChecksService } from '../modules/production/quality.service'
 import { LotsApiClient } from '../modules/production/lot.client'
 import type { ILotsService } from '../modules/production/lot.service'
+import { DocumentCategoriesApiClient } from '../modules/documents/document-category.client'
+import type { IDocumentCategoriesService } from '../modules/documents/document-category.service'
+import { DocumentsApiClient, DocumentTagsApiClient } from '../modules/documents/document.client'
+import type { IDocumentsService, IDocumentTagsService } from '../modules/documents/document.service'
 import { createHttpClient, type HttpClientConfig } from './http'
 
 // Resources are grouped by module — `api.<module>.<resource>` — mirroring the
@@ -210,6 +218,8 @@ export interface FinanceApi {
   cashAccounts: ICashAccountsService
   bankAccounts: IBankAccountsService
   transactions: IFinanceTransactionsService
+  /** Çek/Senet portföyü. */
+  instruments: IFinancialInstrumentsService
 }
 
 export interface ContactsApi {
@@ -246,6 +256,15 @@ export interface ProductionApi {
   qualityChecks: IQualityChecksService
   /** Parti/Seri (lot/serial) izlenebilirlik. */
   lots: ILotsService
+}
+
+export interface DocumentsApi {
+  /** Evrak kategorileri (ağaç yapısı, öznitelik şeması, gizlilik). */
+  categories: IDocumentCategoriesService
+  /** Evrak kayıtları — süreli takip, etiket, gizlilik, dosya ekleri. */
+  documents: IDocumentsService
+  /** Tüm evraklardaki etiketlerin yönetimi (rename/delete). */
+  tags: IDocumentTagsService
 }
 
 export interface HrApi {
@@ -297,8 +316,12 @@ export interface TurbohesapApi {
   stocktake: IStocktakeService
   /** Üretim (manufacturing/MRP): reçete, iş merkezi, üretim/iş emri, fason. */
   production: ProductionApi
+  /** Evrak Yönetim Sistemi: kategoriler, evraklar, süreli takip, gizlilik. */
+  documents: DocumentsApi
   /** Generic key/value reference-data lists. */
   lookups: ILookupsService
+  /** Auto-numbering counters for prefixed codes (stok kodu, vb.) — see docs/lookups.md. */
+  codePrefixes: ICodePrefixesService
   /** Generic file uploads/attachments (images + files for any entity). */
   files: IFilesService
   /** Per-user settings store (UI prefs, data-grid state, …). */
@@ -354,6 +377,7 @@ export function createTurbohesapApi(
       cashAccounts: new CashAccountsApiClient(http),
       bankAccounts: new BankAccountsApiClient(http),
       transactions: new FinanceTransactionsApiClient(http),
+      instruments: new FinancialInstrumentsApiClient(http),
     },
     contacts: {
       contacts: new ContactsApiClient(http),
@@ -405,7 +429,13 @@ export function createTurbohesapApi(
       qualityChecks: new QualityChecksApiClient(http),
       lots: new LotsApiClient(http),
     },
+    documents: {
+      categories: new DocumentCategoriesApiClient(http),
+      documents: new DocumentsApiClient(http),
+      tags: new DocumentTagsApiClient(http),
+    },
     lookups: new LookupsApiClient(http),
+    codePrefixes: new CodePrefixesApiClient(http),
     files: new FilesApiClient(http),
     settings: new SettingsApiClient(http),
     health: new HealthApiClient(http),

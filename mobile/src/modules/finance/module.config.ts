@@ -22,5 +22,12 @@ export const financeModule: MobileModule = {
       description: 'Banka cari hesapları',
       permission: FinancePermissions.bankAccountsRead,
     },
+    {
+      key: 'finance.instruments',
+      title: 'Çek/Senet',
+      icon: 'file-text',
+      description: 'Çek ve senet portföyü',
+      permission: FinancePermissions.instrumentsRead,
+    },
   ],
 }

@@ -34,8 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ContactDialog } from '@/modules/contacts/components/contact-dialog'
-import { EntityCombobox } from '../components/entity-combobox'
+import { ContactPickerField } from '@/components/contact-picker/contact-picker-field'
 import { ProductPickerField } from '@/components/product-picker/product-picker-field'
 import { QuickProductDialog } from '../components/quick-product-dialog'
 import { formatMoney } from '../format'
@@ -94,7 +93,6 @@ export function InvoiceEntryPage() {
   const [currencyCode, setCurrencyCode] = React.useState('TRY')
   const [notes, setNotes] = React.useState('')
   const [lines, setLines] = React.useState<LineRow[]>([emptyRow()])
-  const [contactDialog, setContactDialog] = React.useState(false)
   const [productDialog, setProductDialog] = React.useState<{ row: number; name: string } | null>(null)
 
   // Collapsible / resizable summary sidebar (splitter, like the products page).
@@ -285,18 +283,11 @@ export function InvoiceEntryPage() {
                 <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-12">
                   <div className="sm:col-span-6">
                     <Label className="mb-1.5 block text-xs text-muted-foreground">Cari</Label>
-                    <EntityCombobox
-                      items={contacts}
+                    <ContactPickerField
                       value={contactId}
-                      onChange={(id) => setContactId(id)}
-                      getId={(c) => c.id}
-                      getLabel={(c) => c.name}
-                      getSub={(c) => c.code}
+                      onChange={(contact) => setContactId(contact?.id ?? null)}
                       placeholder="Cari seçin"
-                      searchPlaceholder="Cari ara (ünvan/kod)…"
-                      emptyText="Cari bulunamadı"
-                      onCreate={() => setContactDialog(true)}
-                      createLabel="Yeni cari ekle"
+                      title="Fatura için cari seç"
                     />
                     {selectedContact ? (
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -480,12 +471,6 @@ export function InvoiceEntryPage() {
           </div>
         </div>
 
-        <ContactDialog
-          open={contactDialog}
-          onOpenChange={setContactDialog}
-          editing={null}
-          onSaved={(saved) => { void contactsQuery.refetch(); setContactId(saved.id) }}
-        />
         <QuickProductDialog
           open={!!productDialog}
           onOpenChange={(o) => { if (!o) setProductDialog(null) }}

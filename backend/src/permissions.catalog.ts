@@ -15,6 +15,7 @@ import { REPORTS_PERMISSION_DEFS } from './modules/reports/reports.permissions'
 import { HR_PERMISSION_DEFS } from './modules/hr/hr.permissions'
 import { STOCKTAKE_PERMISSION_DEFS } from './modules/stocktake/stocktake.permissions'
 import { PRODUCTION_PERMISSION_DEFS } from './modules/production/production.permissions'
+import { DOCUMENTS_PERMISSION_DEFS } from './modules/documents/documents.permissions'
 
 // The aggregated permission catalog: the union of every module's declared
 // permissions. On startup `SeedService` upserts these into the `permissions`
@@ -43,6 +44,7 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   ...HR_PERMISSION_DEFS,
   ...STOCKTAKE_PERMISSION_DEFS,
   ...PRODUCTION_PERMISSION_DEFS,
+  ...DOCUMENTS_PERMISSION_DEFS,
 
   // Smoke-test entry: proves that a newly-declared permission is auto-created on
   // boot. Safe to remove — it is not used to guard any route.

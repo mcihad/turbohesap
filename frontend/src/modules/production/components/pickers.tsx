@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { EntityCombobox } from '@/modules/invoices/components/entity-combobox'
+import { ContactPickerField } from '@/components/contact-picker/contact-picker-field'
 
 const NO_BRANCH = '__none__'
 
@@ -105,25 +106,14 @@ export function SupplierSelect({
   placeholder?: string
   disabled?: boolean
 }) {
-  const query = useQuery({
-    queryKey: ['contacts', 'contacts'],
-    queryFn: () => api.contacts.contacts.list(),
-  })
-  const suppliers = (query.data ?? []).filter(
-    (c) => c.role === 'supplier' || c.role === 'both',
-  )
   return (
-    <EntityCombobox
-      items={suppliers}
+    <ContactPickerField
       value={value}
-      onChange={(id) => onChange(id)}
-      getId={(c) => c.id}
-      getLabel={(c) => c.name}
-      getSub={(c) => c.code}
+      onChange={(contact) => onChange(contact?.id ?? null)}
       placeholder={placeholder}
-      searchPlaceholder="Cari ara (ünvan/kod)…"
-      emptyText="Cari bulunamadı"
       disabled={disabled}
+      title="Fasoncu / cari seç"
+      roleFilter="supplier"
     />
   )
 }

@@ -57,6 +57,8 @@ const DOC_TYPE_LABELS: Record<ContactDocumentType, string> = {
   opening: 'Açılış',
   adjustment: 'Düzeltme',
   return: 'İade',
+  check: 'Çek',
+  note: 'Senet',
 }
 
 const ADDRESS_TYPE_LABELS: Record<AddressType, string> = {

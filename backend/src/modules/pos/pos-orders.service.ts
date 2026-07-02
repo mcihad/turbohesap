@@ -402,6 +402,10 @@ export class PosOrdersService {
       if (!product && (li.name == null || li.unitPrice == null)) {
         throw new BadRequestException('Ad ve fiyat olmadan serbest satır eklenemez')
       }
+      // POS is always a sale — the product being rung up must be sellable.
+      if (product && !product.canBeSold) {
+        throw new BadRequestException(`"${product.name}" satılamaz olarak işaretlenmiş; satışa eklenemez`)
+      }
       // Resolve modifier snapshots from the catalog (client values are overrides).
       const mods = (li.modifiers ?? []).map((m) => {
         const opt = m.optionId ? optionMap.get(m.optionId) ?? null : null

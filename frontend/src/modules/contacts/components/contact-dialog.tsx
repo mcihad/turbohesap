@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 
 import {
   CONTACT_ROLES,
+  CodePrefixContexts,
   ContactsPermissions,
   toApiError,
   type BalanceSide,
@@ -14,6 +15,7 @@ import {
 
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth/auth-context'
+import { CodePrefixInput, type CodePrefixInputHandle } from '@/components/code-prefix/code-prefix-input'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -85,6 +87,7 @@ export function ContactDialog({
   editing,
   onSaved,
   defaultRole = 'customer',
+  modal = true,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -92,10 +95,20 @@ export function ContactDialog({
   onSaved: (saved: ContactDto) => void
   /** Role pre-selected when creating (ignored when editing). */
   defaultRole?: ContactRole
+  /**
+   * Set to `false` when opening this dialog from inside another already-open
+   * Dialog (e.g. a picker's inline "yeni ekle") — two stacked Radix `modal`
+   * dialogs both portal to `document.body`, so a click inside this one can be
+   * misread as "outside" the parent dialog and close it too. Non-modal avoids
+   * that; outside-click/Escape dismissal is disabled in that case so it only
+   * closes via its own Cancel/Save/X (mirrors `product-picker-dialog.tsx`).
+   */
+  modal?: boolean
 }) {
   const { hasPermission } = useAuth()
   const [form, setForm] = React.useState<FormState>(emptyForm)
   const [attributes, setAttributes] = React.useState<Record<string, unknown>>({})
+  const codeRef = React.useRef<CodePrefixInputHandle>(null)
 
   const groupsQuery = useQuery({
     queryKey: ['contacts', 'groups'],
@@ -141,12 +154,13 @@ export function ContactDialog({
     setForm((f) => ({ ...f, [k]: v }))
 
   const save = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
+      const code = await (codeRef.current?.finalize() ?? Promise.resolve(form.code))
       const payload = {
         contactType: form.contactType,
         role: form.role,
         name: form.name.trim(),
-        code: form.code.trim() || undefined,
+        code: code.trim() || undefined,
         taxOffice: form.taxOffice || null,
         taxNumber: form.taxNumber || null,
         nationalId: form.nationalId || null,
@@ -184,8 +198,13 @@ export function ContactDialog({
   const groups = groupsQuery.data ?? []
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto px-1 sm:max-w-2xl">
+    <Dialog open={open} onOpenChange={onOpenChange} modal={modal}>
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto px-1 sm:max-w-2xl"
+        forceOverlay={!modal}
+        onPointerDownOutside={(e) => { if (!modal) e.preventDefault() }}
+        onInteractOutside={(e) => { if (!modal) e.preventDefault() }}
+      >
         <div className="px-5">
           <DialogHeader>
             <DialogTitle>{editing ? 'Cariyi düzenle' : 'Yeni cari'}</DialogTitle>
@@ -221,7 +240,14 @@ export function ContactDialog({
                 <Input value={form.name} onChange={(e) => set('name', e.target.value)} autoFocus />
               </Field>
               <Field label="Cari Kodu">
-                <Input value={form.code} onChange={(e) => set('code', e.target.value)} placeholder="otomatik" className="w-36 font-mono" />
+                <CodePrefixInput
+                  ref={codeRef}
+                  context={CodePrefixContexts.contactsContacts}
+                  value={form.code}
+                  onChange={(v) => set('code', v)}
+                  autoAssign={!editing}
+                  className="w-40"
+                />
               </Field>
             </div>
 

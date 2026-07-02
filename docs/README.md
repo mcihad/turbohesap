@@ -24,6 +24,10 @@ top-level guides:
   work centers, Manufacturing/Work Orders, AVCO costing, stock reservation +
   ATP, subcontracting (fason), MRP planning + MTO, and quality + lot/serial
   traceability.
+- **[`documents.md`](./documents.md)** — the general-purpose document management
+  system (Evrak): tree categories with a custom attribute schema, tags, jsonb
+  metadata, server-enforced privacy, computed süreli-evrak expiry status, and
+  the Çek/Senet (checks/promissory notes) portfolio built on top of it.
 
 ## Planned documents
 

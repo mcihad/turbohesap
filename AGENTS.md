@@ -191,6 +191,21 @@ alongside). Examples today:
 > Product **modifiers** are part of `inventory` (`shared/src/modules/inventory/product-modifier.*`),
 > exposed as `api.inventory.modifiers`.
 
+> **Product role & capability flags.** A product's `trackStock` +
+> `canBeSold`/`canBePurchased`/`canBeManufactured` are independent columns; the
+> product form no longer exposes them raw — it offers a single **"Ürün rolü"**
+> preset (Mamul, Yarı mamul, Hammadde, Ticari mal, Stoksuz/anında hazırlanan,
+> Hizmet) that stamps the flags, with a "Gelişmiş" area to override (which
+> re-derives the role, → "Özel" if no preset matches). The role↔flag mapping and
+> `inferProductRole()` live in `shared/src/modules/inventory/product-role.ts` —
+> role is a **form-level preset, not a stored column** (the old cosmetic `type`
+> field is derived from it). The flags are now **enforced server-side**:
+> `canBeSold` on sales invoices/orders/POS, `canBePurchased` on purchases,
+> `canBeManufactured` on a manufacturing order's output (at create). Production
+> `complete()` also skips stock movements for non-stocked
+> (`trackStock=false`) components/by-products/output, so a BOM may legitimately
+> contain a service / made-to-order item.
+
 ### Rules that keep separation clean
 
 - **One entry point:** consumers import only from the barrel `@turbohesap/shared`
@@ -454,8 +469,8 @@ UI under **Yönetim → İzleme**: `/iam/audit-logs`, `/iam/error-logs`).
   shared `Page<T>` with a validated `PageQuery` (see audit/error logs); use this
   for any list that can grow (small bounded lists like roles may stay arrays).
 
-### 5.4 Platform subsystems (files, settings, lookups)
-Three cross-cutting subsystems are already built. **Reuse them — never reinvent.**
+### 5.4 Platform subsystems (files, settings, lookups, code prefixes)
+Four cross-cutting subsystems are already built. **Reuse them — never reinvent.**
 
 - **File management** (`backend/src/modules/files/` → `/api/files`). Polymorphic
   attachments for **any** entity: bytes are stored under a **random** `storedName`,
@@ -481,6 +496,23 @@ Three cross-cutting subsystems are already built. **Reuse them — never reinven
   `GET /lists`, `GET /items/:id`, `POST/PATCH/DELETE /items[/:id]`
   (`LookupsPermissions.read|write`). Web/mobile `LookupSelect` and category
   `lookup` fields consume them.
+- **Code prefixes** (`backend/src/modules/lookups/` → `/api/lookups/code-prefixes`,
+  same module as Lookups above). Auto-numbering counters for prefixed codes
+  (stok kodu, vb.): pick a prefix (e.g. `ST-`/`STK-`), get a zero-padded
+  sequential number, **atomically** (`UPDATE ... RETURNING`, race-free — unlike
+  the `count()+1`/MAX+1 patterns used elsewhere in this codebase). Each prefix
+  has its own `incrementOnSave` timing (consume-on-pick vs. consume-on-parent-
+  save) and the last-picked prefix per usage context is remembered via
+  **Settings** (`codePrefix:<context>`). `<CodePrefixInput>` renders the
+  prefix and its number as two separate segments — the prefix text is never
+  duplicated into the number box. Web: `useCodePrefix` + `<CodePrefixInput>`
+  (`frontend/src/components/code-prefix/`). Mobile: same contract, ported to
+  RN (`mobile/src/lib/use-code-prefix.ts` + `mobile/src/components/CodePrefixInput.tsx`).
+  Valid `context` values live in a central registry
+  (`CodePrefixContexts`/`CODE_PREFIX_CONTEXT_LABELS` in
+  `shared/src/modules/lookups/code-prefix-contexts.ts`) — register a context
+  there before wiring `<CodePrefixInput>` into a new form. See
+  `docs/lookups.md` §7.
 
 ---
 
@@ -756,6 +788,22 @@ recipes). Mobile is separate (`mobile/.env`, `EXPO_PUBLIC_*`).
   branches (per-branch user authz), generic reference lists.
 - `/api/finance/{cash-accounts,bank-accounts,transactions}` — kasa/banka + ledger
   (computed balances; `transactions.contactId` links a tahsilat/ödeme to a cari).
+- `/api/finance/instruments` — Çek/Senet portföyü: one entity discriminated by
+  `instrumentType`(check|note)/`direction`(received|issued), a branching status
+  machine (`open`→`in_collection`→`collected`|`bounced`|`endorsed`|`pledged` for
+  received; `open`→`paid`|`bounced`|`cancelled` for issued), atomic
+  `collect`/`pay`/`reverse` (finance+cari, mirrors `invoices.addPayment`/`cancel`)
+  and status-only `deposit-for-collection`/`bounce`/`endorse`/`pledge`/`cancel`.
+  Auto-links a `documents.Document` on create (never user-set). See `docs/documents.md`.
+- `/api/documents/{categories,documents,tags}` — Evrak Yönetim Sistemi: tree
+  categories with a per-category custom attribute schema (`fieldDefs`, mirrors
+  inventory categories), tags, jsonb metadata (reserved for OCR), computed
+  süreli-evrak `expiryStatus`, and **server-enforced privacy**
+  (`isPrivate`/`ownerId`, `documents.private.readAll|manage`) — a caller without
+  the override never sees another user's private rows (404, not 403, on direct
+  GET). A polymorphic `relatedEntityType`/`relatedEntityId` lets other modules
+  (Çek/Senet today) point at a document without `documents` depending on them.
+  See `docs/documents.md`.
 - `/api/contacts/{contacts,groups,persons,addresses,transactions,activities,opportunities}`
   — Cari/CRM: unified contacts (customer/supplier/both/lead), group tree, people,
   addresses, debit/credit ledger (Cari Ekstre → computed balance), CRM activities
@@ -793,6 +841,8 @@ recipes). Mobile is separate (`mobile/.env`, `EXPO_PUBLIC_*`).
   / `feedback.read` / `feedback.manage`.
 - `/api/files` — polymorphic uploads (`raw/:storedName` is `@Public()`);
   `/api/settings/:type` — per-user jsonb state (DataGrid layouts). See §5.4.
+- `/api/lookups/code-prefixes` — atomic sequential code generator (prefix +
+  counter, e.g. stok kodu `ST-0007`); `lookups.codePrefixes.{read,write}`. See §5.4.
 
 ---
 

@@ -13,6 +13,7 @@ import { FinanceDashboard } from '../modules/finance/FinanceDashboard'
 import { ContactsDashboard } from '../modules/contacts/ContactsDashboard'
 import { InvoicesDashboard } from '../modules/invoices/InvoicesDashboard'
 import { ProductionDashboard } from '../modules/production/ProductionDashboard'
+import { DocumentsStats } from '../modules/documents/DocumentsStats'
 
 export const MODULE_DASHBOARDS: Record<string, () => React.ReactElement> = {
   sales: () => <SalesDashboard />,
@@ -24,4 +25,5 @@ export const MODULE_DASHBOARDS: Record<string, () => React.ReactElement> = {
   production: () => <ProductionDashboard />,
   lookups: () => <LookupsDashboard />,
   iam: () => <IamDashboard />,
+  documents: () => <DocumentsStats />,
 }

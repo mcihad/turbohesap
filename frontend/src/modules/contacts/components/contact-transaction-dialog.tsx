@@ -38,6 +38,8 @@ const DOCUMENT_TYPE_LABELS: Record<ContactDocumentType, string> = {
   opening: 'Açılış',
   adjustment: 'Düzeltme',
   return: 'İade',
+  check: 'Çek',
+  note: 'Senet',
 }
 
 type EntrySide = 'debit' | 'credit'

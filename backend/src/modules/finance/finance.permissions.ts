@@ -32,4 +32,29 @@ export const FINANCE_PERMISSION_DEFS: PermissionDef[] = [
     description: 'Kasa/Banka hareketlerini düzenle',
     group: 'Finans',
   },
+  {
+    key: FinancePermissions.instrumentsRead,
+    description: 'Çek/Senet portföyünü görüntüle',
+    group: 'Çek/Senet',
+  },
+  {
+    key: FinancePermissions.instrumentsWrite,
+    description: 'Çek/Senet ekle ve düzenle (açık durumdayken)',
+    group: 'Çek/Senet',
+  },
+  {
+    key: FinancePermissions.instrumentsSettle,
+    description: 'Çek/Senet tahsil et / öde / geri al',
+    group: 'Çek/Senet',
+  },
+  {
+    key: FinancePermissions.instrumentsStatus,
+    description: 'Çek/Senet durumunu değiştir (tahsile ver, karşılıksız, ciro, teminat, iptal)',
+    group: 'Çek/Senet',
+  },
+  {
+    key: FinancePermissions.instrumentsDelete,
+    description: 'Çek/Senet sil (açık durumdayken)',
+    group: 'Çek/Senet',
+  },
 ]

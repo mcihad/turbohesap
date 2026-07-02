@@ -45,13 +45,28 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  forceOverlay = false,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
+  /**
+   * Show the dark backdrop even when the `Dialog`'s `modal` is `false`.
+   * Radix's own `Dialog.Overlay` silently renders nothing at all when the
+   * root is non-modal — but a dialog can still need to *look* modal (a
+   * visible backdrop) while being non-modal for *behavior* (e.g. nested
+   * inside another Dialog, so it must not steal that ancestor's
+   * outside-click dismissal — see `contact-picker-dialog.tsx`). Renders a
+   * plain backdrop div instead of `DialogOverlay` in that case.
+   */
+  forceOverlay?: boolean
 }) {
   return (
     <DialogPortal>
-      <DialogOverlay />
+      {forceOverlay ? (
+        <div data-slot="dialog-overlay" className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px]" />
+      ) : (
+        <DialogOverlay />
+      )}
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(

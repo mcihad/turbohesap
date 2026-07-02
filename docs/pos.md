@@ -55,6 +55,10 @@ pos_registers (branch, salesChannel?, settings jsonb)
 - Her işlem varlığında `branchId` taşınır (kasanın şubesinden türetilir).
 - `pos_order_line_modifiers` ve `pos_order_lines` **snapshot** tutar: katalog
   sonradan değişse de geçmiş fiş aynı kalır.
+- **Satılamaz ürün reddi:** POS her zaman satış olduğundan, `writeLines` bir
+  satırın ürünü `canBeSold=false` ise 400 döner (client `pos-sell` listesi
+  zaten `canBeSold` ile filtreler; bu server-side güvence). Aynı bayrak
+  faturalarda/siparişlerde de zorlanır — bkz. AGENTS.md ürün rol/bayrak notu.
 
 ### Sipariş durumları
 

@@ -82,7 +82,7 @@ export class OrdersService {
     if (!(await this.contacts.findOne({ where: { id: dto.contactId } }))) {
       throw new NotFoundException('Cari bulunamadı')
     }
-    const resolved = await this.resolveLines(dto.lines)
+    const resolved = await this.resolveLines(dto.lines, dto.direction)
     const totals = computeInvoiceTotals(resolved.map((r) => r.input))
     const doc = this.docs.create({
       kind: dto.kind,
@@ -131,7 +131,7 @@ export class OrdersService {
     if (dto.notes !== undefined) doc.notes = dto.notes
 
     if (dto.lines) {
-      const resolved = await this.resolveLines(dto.lines)
+      const resolved = await this.resolveLines(dto.lines, doc.direction)
       Object.assign(doc, computeInvoiceTotals(resolved.map((r) => r.input)))
       await this.lines.delete({ documentId: id })
       await this.lines.save(this.buildLines(id, resolved))
@@ -340,7 +340,10 @@ export class OrdersService {
 
   // ── helpers ──────────────────────────────────────────────────────────────────
   /** Resolve each input line server-side (price/name/vat from catalog). */
-  private async resolveLines(inputs: CreateOrderDocumentLineInput[]): Promise<ResolvedLine[]> {
+  private async resolveLines(
+    inputs: CreateOrderDocumentLineInput[],
+    direction: OrderDirection,
+  ): Promise<ResolvedLine[]> {
     const productIds = [...new Set(inputs.map((l) => l.productId).filter((x): x is string => !!x))]
     const variantIds = [...new Set(inputs.map((l) => l.variantId).filter((x): x is string => !!x))]
     const products = productIds.length
@@ -355,6 +358,14 @@ export class OrdersService {
     return inputs.map((li, i) => {
       const product = li.productId ? productMap.get(li.productId) ?? null : null
       const variant = li.variantId ? variantMap.get(li.variantId) ?? null : null
+      // A sales document (teklif/sipariş/irsaliye) may only carry sellable
+      // products; a purchase one only purchasable — same guard as invoices.
+      if (product && direction === 'sales' && !product.canBeSold) {
+        throw new BadRequestException(`"${product.name}" satılamaz olarak işaretlenmiş; satış belgesine eklenemez`)
+      }
+      if (product && direction === 'purchase' && !product.canBePurchased) {
+        throw new BadRequestException(`"${product.name}" satın alınamaz olarak işaretlenmiş; alış belgesine eklenemez`)
+      }
       const unitPrice = li.unitPrice ?? variant?.salePrice ?? product?.salePrice ?? 0
       const description = li.description ?? product?.name ?? ''
       const vatRate = li.vatRate ?? product?.taxRate ?? 0

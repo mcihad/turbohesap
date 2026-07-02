@@ -92,6 +92,9 @@ production_lots (lotNo, kind lot|serial — (product,lotNo) unique)
 
 ### Üretim Emri (MO)
 - **create** → `draft`. `plannedQuantity`, kaynak/hedef şube, öncelik, tarihler.
+  Çıktı ürünü **`canBeManufactured=true` olmalı** (değilse 400). Zorlama yalnız
+  create'te; `confirm()`'te değil — eski (bayrağı `false` olan) ürünlerin mevcut
+  emirleri migration'sız geriye dönük kırılmasın diye.
 - **confirm** (`draft → confirmed`): aktif reçete çözülür (yoksa 400), **phantom
   özyinelemeli** patlatılır (yalnız yaprak bileşenler snapshot'lanır), yan ürün +
   operasyonlar snapshot'lanır, operasyonlardan **İş Emirleri** üretilir
@@ -104,7 +107,9 @@ production_lots (lotNo, kind lot|serial — (product,lotNo) unique)
   ücreti (+ fason ücreti). Yan ürünler girer (maliyet payı `costShareRate`).
   `producedUnitCost = (malzeme + operasyon + genel − yanÜrünKredisi) / üretilen`.
   Mamul **girer** (`Üretimden Giriş` @ producedUnitCost → mamul AVCO güncellenir).
-  Rezervasyonlar `consumed` kapatılır.
+  Rezervasyonlar `consumed` kapatılır. **Stok tutulmayan** (`trackStock=false`)
+  bileşen / yan ürün / mamul için stok hareketi YAZILMAZ (maliyet defteri yine
+  işler) — böylece bir reçete hizmet / anında hazırlanan bir kalem içerebilir.
 - **cancel** (`done` hariç): `reverseSource('production', moId)` tüm hareketleri
   geri alır + rezervasyonlar `released`, İş Emirleri `cancelled`.
 

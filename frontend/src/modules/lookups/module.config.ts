@@ -1,4 +1,4 @@
-import { LayoutDashboard, ListChecks } from 'lucide-react'
+import { Hash, LayoutDashboard, ListChecks } from 'lucide-react'
 
 import { LookupsPermissions } from '@turbohesap/shared'
 
@@ -21,6 +21,13 @@ export const lookupsModule: AppModule = {
           to: '/lookups/items',
           keywords: ['tanım', 'liste', 'birim', 'key', 'value', 'lookup'],
           permission: LookupsPermissions.read,
+        },
+        {
+          title: 'Kod Önekleri',
+          icon: Hash,
+          to: '/lookups/code-prefixes',
+          keywords: ['kod', 'önek', 'prefix', 'stok kodu', 'sayaç', 'numaralandırma'],
+          permission: LookupsPermissions.codePrefixesRead,
         },
       ],
     },

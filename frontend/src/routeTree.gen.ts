@@ -31,6 +31,7 @@ import { Route as AuthedIamIndexRouteImport } from './routes/_authed/iam/index'
 import { Route as AuthedHrIndexRouteImport } from './routes/_authed/hr/index'
 import { Route as AuthedFinanceIndexRouteImport } from './routes/_authed/finance/index'
 import { Route as AuthedFeedbackIndexRouteImport } from './routes/_authed/feedback/index'
+import { Route as AuthedDocumentsIndexRouteImport } from './routes/_authed/documents/index'
 import { Route as AuthedContactsIndexRouteImport } from './routes/_authed/contacts/index'
 import { Route as AuthedStocktakeCountsRouteImport } from './routes/_authed/stocktake/counts'
 import { Route as AuthedStocktakeIdRouteImport } from './routes/_authed/stocktake/$id'
@@ -69,6 +70,7 @@ import { Route as AuthedPosFloorsIndexRouteImport } from './routes/_authed/pos/f
 import { Route as AuthedPosDashboardIndexRouteImport } from './routes/_authed/pos/dashboard.index'
 import { Route as AuthedOrgBranchesIndexRouteImport } from './routes/_authed/org/branches.index'
 import { Route as AuthedLookupsItemsIndexRouteImport } from './routes/_authed/lookups/items.index'
+import { Route as AuthedLookupsCodePrefixesIndexRouteImport } from './routes/_authed/lookups/code-prefixes.index'
 import { Route as AuthedInvoicesInvoicesIndexRouteImport } from './routes/_authed/invoices/invoices.index'
 import { Route as AuthedInventoryProductsIndexRouteImport } from './routes/_authed/inventory/products.index'
 import { Route as AuthedInventoryMovementTypesIndexRouteImport } from './routes/_authed/inventory/movement-types.index'
@@ -87,9 +89,12 @@ import { Route as AuthedHrCheckinAreasIndexRouteImport } from './routes/_authed/
 import { Route as AuthedHrCardAccessIndexRouteImport } from './routes/_authed/hr/card-access.index'
 import { Route as AuthedHrAttendanceIndexRouteImport } from './routes/_authed/hr/attendance.index'
 import { Route as AuthedGenelAnalyticsIndexRouteImport } from './routes/_authed/genel/analytics/index'
+import { Route as AuthedFinanceInstrumentsIndexRouteImport } from './routes/_authed/finance/instruments.index'
 import { Route as AuthedFinanceCashAccountsIndexRouteImport } from './routes/_authed/finance/cash-accounts.index'
 import { Route as AuthedFinanceBankAccountsIndexRouteImport } from './routes/_authed/finance/bank-accounts.index'
 import { Route as AuthedFeedbackItemsIndexRouteImport } from './routes/_authed/feedback/items.index'
+import { Route as AuthedDocumentsDocumentsIndexRouteImport } from './routes/_authed/documents/documents.index'
+import { Route as AuthedDocumentsCategoriesIndexRouteImport } from './routes/_authed/documents/categories.index'
 import { Route as AuthedContactsPipelineIndexRouteImport } from './routes/_authed/contacts/pipeline.index'
 import { Route as AuthedContactsOpportunitiesIndexRouteImport } from './routes/_authed/contacts/opportunities.index'
 import { Route as AuthedContactsGroupsIndexRouteImport } from './routes/_authed/contacts/groups.index'
@@ -118,8 +123,11 @@ import { Route as AuthedGenelAnalyticsInvoicesRouteImport } from './routes/_auth
 import { Route as AuthedGenelAnalyticsInventoryRouteImport } from './routes/_authed/genel/analytics/inventory'
 import { Route as AuthedGenelAnalyticsFinanceRouteImport } from './routes/_authed/genel/analytics/finance'
 import { Route as AuthedGenelAnalyticsContactsRouteImport } from './routes/_authed/genel/analytics/contacts'
+import { Route as AuthedFinanceInstrumentsIdRouteImport } from './routes/_authed/finance/instruments.$id'
 import { Route as AuthedFinanceCashAccountsIdRouteImport } from './routes/_authed/finance/cash-accounts.$id'
 import { Route as AuthedFinanceBankAccountsIdRouteImport } from './routes/_authed/finance/bank-accounts.$id'
+import { Route as AuthedDocumentsDocumentsIdRouteImport } from './routes/_authed/documents/documents.$id'
+import { Route as AuthedDocumentsCategoriesIdRouteImport } from './routes/_authed/documents/categories.$id'
 import { Route as AuthedContactsPipelinesSettingsRouteImport } from './routes/_authed/contacts/pipelines.settings'
 import { Route as AuthedContactsOpportunitiesIdRouteImport } from './routes/_authed/contacts/opportunities.$id'
 import { Route as AuthedContactsGroupsIdRouteImport } from './routes/_authed/contacts/groups.$id'
@@ -233,6 +241,11 @@ const AuthedFinanceIndexRoute = AuthedFinanceIndexRouteImport.update({
 const AuthedFeedbackIndexRoute = AuthedFeedbackIndexRouteImport.update({
   id: '/feedback/',
   path: '/feedback/',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedDocumentsIndexRoute = AuthedDocumentsIndexRouteImport.update({
+  id: '/documents/',
+  path: '/documents/',
   getParentRoute: () => AuthedRoute,
 } as any)
 const AuthedContactsIndexRoute = AuthedContactsIndexRouteImport.update({
@@ -436,6 +449,12 @@ const AuthedLookupsItemsIndexRoute = AuthedLookupsItemsIndexRouteImport.update({
   path: '/lookups/items/',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedLookupsCodePrefixesIndexRoute =
+  AuthedLookupsCodePrefixesIndexRouteImport.update({
+    id: '/lookups/code-prefixes/',
+    path: '/lookups/code-prefixes/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
 const AuthedInvoicesInvoicesIndexRoute =
   AuthedInvoicesInvoicesIndexRouteImport.update({
     id: '/invoices/invoices/',
@@ -537,6 +556,12 @@ const AuthedGenelAnalyticsIndexRoute =
     path: '/',
     getParentRoute: () => AuthedGenelAnalyticsRoute,
   } as any)
+const AuthedFinanceInstrumentsIndexRoute =
+  AuthedFinanceInstrumentsIndexRouteImport.update({
+    id: '/finance/instruments/',
+    path: '/finance/instruments/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
 const AuthedFinanceCashAccountsIndexRoute =
   AuthedFinanceCashAccountsIndexRouteImport.update({
     id: '/finance/cash-accounts/',
@@ -553,6 +578,18 @@ const AuthedFeedbackItemsIndexRoute =
   AuthedFeedbackItemsIndexRouteImport.update({
     id: '/feedback/items/',
     path: '/feedback/items/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedDocumentsDocumentsIndexRoute =
+  AuthedDocumentsDocumentsIndexRouteImport.update({
+    id: '/documents/documents/',
+    path: '/documents/documents/',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedDocumentsCategoriesIndexRoute =
+  AuthedDocumentsCategoriesIndexRouteImport.update({
+    id: '/documents/categories/',
+    path: '/documents/categories/',
     getParentRoute: () => AuthedRoute,
   } as any)
 const AuthedContactsPipelineIndexRoute =
@@ -710,6 +747,12 @@ const AuthedGenelAnalyticsContactsRoute =
     path: '/contacts',
     getParentRoute: () => AuthedGenelAnalyticsRoute,
   } as any)
+const AuthedFinanceInstrumentsIdRoute =
+  AuthedFinanceInstrumentsIdRouteImport.update({
+    id: '/finance/instruments/$id',
+    path: '/finance/instruments/$id',
+    getParentRoute: () => AuthedRoute,
+  } as any)
 const AuthedFinanceCashAccountsIdRoute =
   AuthedFinanceCashAccountsIdRouteImport.update({
     id: '/finance/cash-accounts/$id',
@@ -720,6 +763,18 @@ const AuthedFinanceBankAccountsIdRoute =
   AuthedFinanceBankAccountsIdRouteImport.update({
     id: '/finance/bank-accounts/$id',
     path: '/finance/bank-accounts/$id',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedDocumentsDocumentsIdRoute =
+  AuthedDocumentsDocumentsIdRouteImport.update({
+    id: '/documents/documents/$id',
+    path: '/documents/documents/$id',
+    getParentRoute: () => AuthedRoute,
+  } as any)
+const AuthedDocumentsCategoriesIdRoute =
+  AuthedDocumentsCategoriesIdRouteImport.update({
+    id: '/documents/categories/$id',
+    path: '/documents/categories/$id',
     getParentRoute: () => AuthedRoute,
   } as any)
 const AuthedContactsPipelinesSettingsRoute =
@@ -794,6 +849,7 @@ export interface FileRoutesByFullPath {
   '/stocktake/$id': typeof AuthedStocktakeIdRoute
   '/stocktake/counts': typeof AuthedStocktakeCountsRoute
   '/contacts/': typeof AuthedContactsIndexRoute
+  '/documents/': typeof AuthedDocumentsIndexRoute
   '/feedback/': typeof AuthedFeedbackIndexRoute
   '/finance/': typeof AuthedFinanceIndexRoute
   '/hr/': typeof AuthedHrIndexRoute
@@ -811,8 +867,11 @@ export interface FileRoutesByFullPath {
   '/contacts/groups/$id': typeof AuthedContactsGroupsIdRoute
   '/contacts/opportunities/$id': typeof AuthedContactsOpportunitiesIdRoute
   '/contacts/pipelines/settings': typeof AuthedContactsPipelinesSettingsRoute
+  '/documents/categories/$id': typeof AuthedDocumentsCategoriesIdRoute
+  '/documents/documents/$id': typeof AuthedDocumentsDocumentsIdRoute
   '/finance/bank-accounts/$id': typeof AuthedFinanceBankAccountsIdRoute
   '/finance/cash-accounts/$id': typeof AuthedFinanceCashAccountsIdRoute
+  '/finance/instruments/$id': typeof AuthedFinanceInstrumentsIdRoute
   '/genel/analytics/contacts': typeof AuthedGenelAnalyticsContactsRoute
   '/genel/analytics/finance': typeof AuthedGenelAnalyticsFinanceRoute
   '/genel/analytics/inventory': typeof AuthedGenelAnalyticsInventoryRoute
@@ -841,9 +900,12 @@ export interface FileRoutesByFullPath {
   '/contacts/groups/': typeof AuthedContactsGroupsIndexRoute
   '/contacts/opportunities/': typeof AuthedContactsOpportunitiesIndexRoute
   '/contacts/pipeline/': typeof AuthedContactsPipelineIndexRoute
+  '/documents/categories/': typeof AuthedDocumentsCategoriesIndexRoute
+  '/documents/documents/': typeof AuthedDocumentsDocumentsIndexRoute
   '/feedback/items/': typeof AuthedFeedbackItemsIndexRoute
   '/finance/bank-accounts/': typeof AuthedFinanceBankAccountsIndexRoute
   '/finance/cash-accounts/': typeof AuthedFinanceCashAccountsIndexRoute
+  '/finance/instruments/': typeof AuthedFinanceInstrumentsIndexRoute
   '/genel/analytics/': typeof AuthedGenelAnalyticsIndexRoute
   '/hr/attendance/': typeof AuthedHrAttendanceIndexRoute
   '/hr/card-access/': typeof AuthedHrCardAccessIndexRoute
@@ -862,6 +924,7 @@ export interface FileRoutesByFullPath {
   '/inventory/movement-types/': typeof AuthedInventoryMovementTypesIndexRoute
   '/inventory/products/': typeof AuthedInventoryProductsIndexRoute
   '/invoices/invoices/': typeof AuthedInvoicesInvoicesIndexRoute
+  '/lookups/code-prefixes/': typeof AuthedLookupsCodePrefixesIndexRoute
   '/lookups/items/': typeof AuthedLookupsItemsIndexRoute
   '/org/branches/': typeof AuthedOrgBranchesIndexRoute
   '/pos/dashboard/': typeof AuthedPosDashboardIndexRoute
@@ -910,6 +973,7 @@ export interface FileRoutesByTo {
   '/stocktake/$id': typeof AuthedStocktakeIdRoute
   '/stocktake/counts': typeof AuthedStocktakeCountsRoute
   '/contacts': typeof AuthedContactsIndexRoute
+  '/documents': typeof AuthedDocumentsIndexRoute
   '/feedback': typeof AuthedFeedbackIndexRoute
   '/finance': typeof AuthedFinanceIndexRoute
   '/hr': typeof AuthedHrIndexRoute
@@ -927,8 +991,11 @@ export interface FileRoutesByTo {
   '/contacts/groups/$id': typeof AuthedContactsGroupsIdRoute
   '/contacts/opportunities/$id': typeof AuthedContactsOpportunitiesIdRoute
   '/contacts/pipelines/settings': typeof AuthedContactsPipelinesSettingsRoute
+  '/documents/categories/$id': typeof AuthedDocumentsCategoriesIdRoute
+  '/documents/documents/$id': typeof AuthedDocumentsDocumentsIdRoute
   '/finance/bank-accounts/$id': typeof AuthedFinanceBankAccountsIdRoute
   '/finance/cash-accounts/$id': typeof AuthedFinanceCashAccountsIdRoute
+  '/finance/instruments/$id': typeof AuthedFinanceInstrumentsIdRoute
   '/genel/analytics/contacts': typeof AuthedGenelAnalyticsContactsRoute
   '/genel/analytics/finance': typeof AuthedGenelAnalyticsFinanceRoute
   '/genel/analytics/inventory': typeof AuthedGenelAnalyticsInventoryRoute
@@ -957,9 +1024,12 @@ export interface FileRoutesByTo {
   '/contacts/groups': typeof AuthedContactsGroupsIndexRoute
   '/contacts/opportunities': typeof AuthedContactsOpportunitiesIndexRoute
   '/contacts/pipeline': typeof AuthedContactsPipelineIndexRoute
+  '/documents/categories': typeof AuthedDocumentsCategoriesIndexRoute
+  '/documents/documents': typeof AuthedDocumentsDocumentsIndexRoute
   '/feedback/items': typeof AuthedFeedbackItemsIndexRoute
   '/finance/bank-accounts': typeof AuthedFinanceBankAccountsIndexRoute
   '/finance/cash-accounts': typeof AuthedFinanceCashAccountsIndexRoute
+  '/finance/instruments': typeof AuthedFinanceInstrumentsIndexRoute
   '/genel/analytics': typeof AuthedGenelAnalyticsIndexRoute
   '/hr/attendance': typeof AuthedHrAttendanceIndexRoute
   '/hr/card-access': typeof AuthedHrCardAccessIndexRoute
@@ -978,6 +1048,7 @@ export interface FileRoutesByTo {
   '/inventory/movement-types': typeof AuthedInventoryMovementTypesIndexRoute
   '/inventory/products': typeof AuthedInventoryProductsIndexRoute
   '/invoices/invoices': typeof AuthedInvoicesInvoicesIndexRoute
+  '/lookups/code-prefixes': typeof AuthedLookupsCodePrefixesIndexRoute
   '/lookups/items': typeof AuthedLookupsItemsIndexRoute
   '/org/branches': typeof AuthedOrgBranchesIndexRoute
   '/pos/dashboard': typeof AuthedPosDashboardIndexRoute
@@ -1030,6 +1101,7 @@ export interface FileRoutesById {
   '/_authed/stocktake/$id': typeof AuthedStocktakeIdRoute
   '/_authed/stocktake/counts': typeof AuthedStocktakeCountsRoute
   '/_authed/contacts/': typeof AuthedContactsIndexRoute
+  '/_authed/documents/': typeof AuthedDocumentsIndexRoute
   '/_authed/feedback/': typeof AuthedFeedbackIndexRoute
   '/_authed/finance/': typeof AuthedFinanceIndexRoute
   '/_authed/hr/': typeof AuthedHrIndexRoute
@@ -1047,8 +1119,11 @@ export interface FileRoutesById {
   '/_authed/contacts/groups/$id': typeof AuthedContactsGroupsIdRoute
   '/_authed/contacts/opportunities/$id': typeof AuthedContactsOpportunitiesIdRoute
   '/_authed/contacts/pipelines/settings': typeof AuthedContactsPipelinesSettingsRoute
+  '/_authed/documents/categories/$id': typeof AuthedDocumentsCategoriesIdRoute
+  '/_authed/documents/documents/$id': typeof AuthedDocumentsDocumentsIdRoute
   '/_authed/finance/bank-accounts/$id': typeof AuthedFinanceBankAccountsIdRoute
   '/_authed/finance/cash-accounts/$id': typeof AuthedFinanceCashAccountsIdRoute
+  '/_authed/finance/instruments/$id': typeof AuthedFinanceInstrumentsIdRoute
   '/_authed/genel/analytics/contacts': typeof AuthedGenelAnalyticsContactsRoute
   '/_authed/genel/analytics/finance': typeof AuthedGenelAnalyticsFinanceRoute
   '/_authed/genel/analytics/inventory': typeof AuthedGenelAnalyticsInventoryRoute
@@ -1077,9 +1152,12 @@ export interface FileRoutesById {
   '/_authed/contacts/groups/': typeof AuthedContactsGroupsIndexRoute
   '/_authed/contacts/opportunities/': typeof AuthedContactsOpportunitiesIndexRoute
   '/_authed/contacts/pipeline/': typeof AuthedContactsPipelineIndexRoute
+  '/_authed/documents/categories/': typeof AuthedDocumentsCategoriesIndexRoute
+  '/_authed/documents/documents/': typeof AuthedDocumentsDocumentsIndexRoute
   '/_authed/feedback/items/': typeof AuthedFeedbackItemsIndexRoute
   '/_authed/finance/bank-accounts/': typeof AuthedFinanceBankAccountsIndexRoute
   '/_authed/finance/cash-accounts/': typeof AuthedFinanceCashAccountsIndexRoute
+  '/_authed/finance/instruments/': typeof AuthedFinanceInstrumentsIndexRoute
   '/_authed/genel/analytics/': typeof AuthedGenelAnalyticsIndexRoute
   '/_authed/hr/attendance/': typeof AuthedHrAttendanceIndexRoute
   '/_authed/hr/card-access/': typeof AuthedHrCardAccessIndexRoute
@@ -1098,6 +1176,7 @@ export interface FileRoutesById {
   '/_authed/inventory/movement-types/': typeof AuthedInventoryMovementTypesIndexRoute
   '/_authed/inventory/products/': typeof AuthedInventoryProductsIndexRoute
   '/_authed/invoices/invoices/': typeof AuthedInvoicesInvoicesIndexRoute
+  '/_authed/lookups/code-prefixes/': typeof AuthedLookupsCodePrefixesIndexRoute
   '/_authed/lookups/items/': typeof AuthedLookupsItemsIndexRoute
   '/_authed/org/branches/': typeof AuthedOrgBranchesIndexRoute
   '/_authed/pos/dashboard/': typeof AuthedPosDashboardIndexRoute
@@ -1149,6 +1228,7 @@ export interface FileRouteTypes {
     | '/stocktake/$id'
     | '/stocktake/counts'
     | '/contacts/'
+    | '/documents/'
     | '/feedback/'
     | '/finance/'
     | '/hr/'
@@ -1166,8 +1246,11 @@ export interface FileRouteTypes {
     | '/contacts/groups/$id'
     | '/contacts/opportunities/$id'
     | '/contacts/pipelines/settings'
+    | '/documents/categories/$id'
+    | '/documents/documents/$id'
     | '/finance/bank-accounts/$id'
     | '/finance/cash-accounts/$id'
+    | '/finance/instruments/$id'
     | '/genel/analytics/contacts'
     | '/genel/analytics/finance'
     | '/genel/analytics/inventory'
@@ -1196,9 +1279,12 @@ export interface FileRouteTypes {
     | '/contacts/groups/'
     | '/contacts/opportunities/'
     | '/contacts/pipeline/'
+    | '/documents/categories/'
+    | '/documents/documents/'
     | '/feedback/items/'
     | '/finance/bank-accounts/'
     | '/finance/cash-accounts/'
+    | '/finance/instruments/'
     | '/genel/analytics/'
     | '/hr/attendance/'
     | '/hr/card-access/'
@@ -1217,6 +1303,7 @@ export interface FileRouteTypes {
     | '/inventory/movement-types/'
     | '/inventory/products/'
     | '/invoices/invoices/'
+    | '/lookups/code-prefixes/'
     | '/lookups/items/'
     | '/org/branches/'
     | '/pos/dashboard/'
@@ -1265,6 +1352,7 @@ export interface FileRouteTypes {
     | '/stocktake/$id'
     | '/stocktake/counts'
     | '/contacts'
+    | '/documents'
     | '/feedback'
     | '/finance'
     | '/hr'
@@ -1282,8 +1370,11 @@ export interface FileRouteTypes {
     | '/contacts/groups/$id'
     | '/contacts/opportunities/$id'
     | '/contacts/pipelines/settings'
+    | '/documents/categories/$id'
+    | '/documents/documents/$id'
     | '/finance/bank-accounts/$id'
     | '/finance/cash-accounts/$id'
+    | '/finance/instruments/$id'
     | '/genel/analytics/contacts'
     | '/genel/analytics/finance'
     | '/genel/analytics/inventory'
@@ -1312,9 +1403,12 @@ export interface FileRouteTypes {
     | '/contacts/groups'
     | '/contacts/opportunities'
     | '/contacts/pipeline'
+    | '/documents/categories'
+    | '/documents/documents'
     | '/feedback/items'
     | '/finance/bank-accounts'
     | '/finance/cash-accounts'
+    | '/finance/instruments'
     | '/genel/analytics'
     | '/hr/attendance'
     | '/hr/card-access'
@@ -1333,6 +1427,7 @@ export interface FileRouteTypes {
     | '/inventory/movement-types'
     | '/inventory/products'
     | '/invoices/invoices'
+    | '/lookups/code-prefixes'
     | '/lookups/items'
     | '/org/branches'
     | '/pos/dashboard'
@@ -1384,6 +1479,7 @@ export interface FileRouteTypes {
     | '/_authed/stocktake/$id'
     | '/_authed/stocktake/counts'
     | '/_authed/contacts/'
+    | '/_authed/documents/'
     | '/_authed/feedback/'
     | '/_authed/finance/'
     | '/_authed/hr/'
@@ -1401,8 +1497,11 @@ export interface FileRouteTypes {
     | '/_authed/contacts/groups/$id'
     | '/_authed/contacts/opportunities/$id'
     | '/_authed/contacts/pipelines/settings'
+    | '/_authed/documents/categories/$id'
+    | '/_authed/documents/documents/$id'
     | '/_authed/finance/bank-accounts/$id'
     | '/_authed/finance/cash-accounts/$id'
+    | '/_authed/finance/instruments/$id'
     | '/_authed/genel/analytics/contacts'
     | '/_authed/genel/analytics/finance'
     | '/_authed/genel/analytics/inventory'
@@ -1431,9 +1530,12 @@ export interface FileRouteTypes {
     | '/_authed/contacts/groups/'
     | '/_authed/contacts/opportunities/'
     | '/_authed/contacts/pipeline/'
+    | '/_authed/documents/categories/'
+    | '/_authed/documents/documents/'
     | '/_authed/feedback/items/'
     | '/_authed/finance/bank-accounts/'
     | '/_authed/finance/cash-accounts/'
+    | '/_authed/finance/instruments/'
     | '/_authed/genel/analytics/'
     | '/_authed/hr/attendance/'
     | '/_authed/hr/card-access/'
@@ -1452,6 +1554,7 @@ export interface FileRouteTypes {
     | '/_authed/inventory/movement-types/'
     | '/_authed/inventory/products/'
     | '/_authed/invoices/invoices/'
+    | '/_authed/lookups/code-prefixes/'
     | '/_authed/lookups/items/'
     | '/_authed/org/branches/'
     | '/_authed/pos/dashboard/'
@@ -1627,6 +1730,13 @@ declare module '@tanstack/react-router' {
       path: '/feedback'
       fullPath: '/feedback/'
       preLoaderRoute: typeof AuthedFeedbackIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/documents/': {
+      id: '/_authed/documents/'
+      path: '/documents'
+      fullPath: '/documents/'
+      preLoaderRoute: typeof AuthedDocumentsIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/contacts/': {
@@ -1895,6 +2005,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedLookupsItemsIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/lookups/code-prefixes/': {
+      id: '/_authed/lookups/code-prefixes/'
+      path: '/lookups/code-prefixes'
+      fullPath: '/lookups/code-prefixes/'
+      preLoaderRoute: typeof AuthedLookupsCodePrefixesIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/invoices/invoices/': {
       id: '/_authed/invoices/invoices/'
       path: '/invoices/invoices'
@@ -2021,6 +2138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedGenelAnalyticsIndexRouteImport
       parentRoute: typeof AuthedGenelAnalyticsRoute
     }
+    '/_authed/finance/instruments/': {
+      id: '/_authed/finance/instruments/'
+      path: '/finance/instruments'
+      fullPath: '/finance/instruments/'
+      preLoaderRoute: typeof AuthedFinanceInstrumentsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/finance/cash-accounts/': {
       id: '/_authed/finance/cash-accounts/'
       path: '/finance/cash-accounts'
@@ -2040,6 +2164,20 @@ declare module '@tanstack/react-router' {
       path: '/feedback/items'
       fullPath: '/feedback/items/'
       preLoaderRoute: typeof AuthedFeedbackItemsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/documents/documents/': {
+      id: '/_authed/documents/documents/'
+      path: '/documents/documents'
+      fullPath: '/documents/documents/'
+      preLoaderRoute: typeof AuthedDocumentsDocumentsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/documents/categories/': {
+      id: '/_authed/documents/categories/'
+      path: '/documents/categories'
+      fullPath: '/documents/categories/'
+      preLoaderRoute: typeof AuthedDocumentsCategoriesIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/contacts/pipeline/': {
@@ -2238,6 +2376,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedGenelAnalyticsContactsRouteImport
       parentRoute: typeof AuthedGenelAnalyticsRoute
     }
+    '/_authed/finance/instruments/$id': {
+      id: '/_authed/finance/instruments/$id'
+      path: '/finance/instruments/$id'
+      fullPath: '/finance/instruments/$id'
+      preLoaderRoute: typeof AuthedFinanceInstrumentsIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/finance/cash-accounts/$id': {
       id: '/_authed/finance/cash-accounts/$id'
       path: '/finance/cash-accounts/$id'
@@ -2250,6 +2395,20 @@ declare module '@tanstack/react-router' {
       path: '/finance/bank-accounts/$id'
       fullPath: '/finance/bank-accounts/$id'
       preLoaderRoute: typeof AuthedFinanceBankAccountsIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/documents/documents/$id': {
+      id: '/_authed/documents/documents/$id'
+      path: '/documents/documents/$id'
+      fullPath: '/documents/documents/$id'
+      preLoaderRoute: typeof AuthedDocumentsDocumentsIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/documents/categories/$id': {
+      id: '/_authed/documents/categories/$id'
+      path: '/documents/categories/$id'
+      fullPath: '/documents/categories/$id'
+      preLoaderRoute: typeof AuthedDocumentsCategoriesIdRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/contacts/pipelines/settings': {
@@ -2380,6 +2539,7 @@ interface AuthedRouteChildren {
   AuthedStocktakeIdRoute: typeof AuthedStocktakeIdRoute
   AuthedStocktakeCountsRoute: typeof AuthedStocktakeCountsRoute
   AuthedContactsIndexRoute: typeof AuthedContactsIndexRoute
+  AuthedDocumentsIndexRoute: typeof AuthedDocumentsIndexRoute
   AuthedFeedbackIndexRoute: typeof AuthedFeedbackIndexRoute
   AuthedFinanceIndexRoute: typeof AuthedFinanceIndexRoute
   AuthedHrIndexRoute: typeof AuthedHrIndexRoute
@@ -2396,8 +2556,11 @@ interface AuthedRouteChildren {
   AuthedContactsGroupsIdRoute: typeof AuthedContactsGroupsIdRoute
   AuthedContactsOpportunitiesIdRoute: typeof AuthedContactsOpportunitiesIdRoute
   AuthedContactsPipelinesSettingsRoute: typeof AuthedContactsPipelinesSettingsRoute
+  AuthedDocumentsCategoriesIdRoute: typeof AuthedDocumentsCategoriesIdRoute
+  AuthedDocumentsDocumentsIdRoute: typeof AuthedDocumentsDocumentsIdRoute
   AuthedFinanceBankAccountsIdRoute: typeof AuthedFinanceBankAccountsIdRoute
   AuthedFinanceCashAccountsIdRoute: typeof AuthedFinanceCashAccountsIdRoute
+  AuthedFinanceInstrumentsIdRoute: typeof AuthedFinanceInstrumentsIdRoute
   AuthedHrEmployeesIdRoute: typeof AuthedHrEmployeesIdRoute
   AuthedHrPayrollIdRoute: typeof AuthedHrPayrollIdRoute
   AuthedIamPermissionsKeyRoute: typeof AuthedIamPermissionsKeyRoute
@@ -2418,9 +2581,12 @@ interface AuthedRouteChildren {
   AuthedContactsGroupsIndexRoute: typeof AuthedContactsGroupsIndexRoute
   AuthedContactsOpportunitiesIndexRoute: typeof AuthedContactsOpportunitiesIndexRoute
   AuthedContactsPipelineIndexRoute: typeof AuthedContactsPipelineIndexRoute
+  AuthedDocumentsCategoriesIndexRoute: typeof AuthedDocumentsCategoriesIndexRoute
+  AuthedDocumentsDocumentsIndexRoute: typeof AuthedDocumentsDocumentsIndexRoute
   AuthedFeedbackItemsIndexRoute: typeof AuthedFeedbackItemsIndexRoute
   AuthedFinanceBankAccountsIndexRoute: typeof AuthedFinanceBankAccountsIndexRoute
   AuthedFinanceCashAccountsIndexRoute: typeof AuthedFinanceCashAccountsIndexRoute
+  AuthedFinanceInstrumentsIndexRoute: typeof AuthedFinanceInstrumentsIndexRoute
   AuthedHrAttendanceIndexRoute: typeof AuthedHrAttendanceIndexRoute
   AuthedHrCardAccessIndexRoute: typeof AuthedHrCardAccessIndexRoute
   AuthedHrCheckinAreasIndexRoute: typeof AuthedHrCheckinAreasIndexRoute
@@ -2438,6 +2604,7 @@ interface AuthedRouteChildren {
   AuthedInventoryMovementTypesIndexRoute: typeof AuthedInventoryMovementTypesIndexRoute
   AuthedInventoryProductsIndexRoute: typeof AuthedInventoryProductsIndexRoute
   AuthedInvoicesInvoicesIndexRoute: typeof AuthedInvoicesInvoicesIndexRoute
+  AuthedLookupsCodePrefixesIndexRoute: typeof AuthedLookupsCodePrefixesIndexRoute
   AuthedLookupsItemsIndexRoute: typeof AuthedLookupsItemsIndexRoute
   AuthedOrgBranchesIndexRoute: typeof AuthedOrgBranchesIndexRoute
   AuthedPosDashboardIndexRoute: typeof AuthedPosDashboardIndexRoute
@@ -2485,6 +2652,7 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedStocktakeIdRoute: AuthedStocktakeIdRoute,
   AuthedStocktakeCountsRoute: AuthedStocktakeCountsRoute,
   AuthedContactsIndexRoute: AuthedContactsIndexRoute,
+  AuthedDocumentsIndexRoute: AuthedDocumentsIndexRoute,
   AuthedFeedbackIndexRoute: AuthedFeedbackIndexRoute,
   AuthedFinanceIndexRoute: AuthedFinanceIndexRoute,
   AuthedHrIndexRoute: AuthedHrIndexRoute,
@@ -2501,8 +2669,11 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedContactsGroupsIdRoute: AuthedContactsGroupsIdRoute,
   AuthedContactsOpportunitiesIdRoute: AuthedContactsOpportunitiesIdRoute,
   AuthedContactsPipelinesSettingsRoute: AuthedContactsPipelinesSettingsRoute,
+  AuthedDocumentsCategoriesIdRoute: AuthedDocumentsCategoriesIdRoute,
+  AuthedDocumentsDocumentsIdRoute: AuthedDocumentsDocumentsIdRoute,
   AuthedFinanceBankAccountsIdRoute: AuthedFinanceBankAccountsIdRoute,
   AuthedFinanceCashAccountsIdRoute: AuthedFinanceCashAccountsIdRoute,
+  AuthedFinanceInstrumentsIdRoute: AuthedFinanceInstrumentsIdRoute,
   AuthedHrEmployeesIdRoute: AuthedHrEmployeesIdRoute,
   AuthedHrPayrollIdRoute: AuthedHrPayrollIdRoute,
   AuthedIamPermissionsKeyRoute: AuthedIamPermissionsKeyRoute,
@@ -2523,9 +2694,12 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedContactsGroupsIndexRoute: AuthedContactsGroupsIndexRoute,
   AuthedContactsOpportunitiesIndexRoute: AuthedContactsOpportunitiesIndexRoute,
   AuthedContactsPipelineIndexRoute: AuthedContactsPipelineIndexRoute,
+  AuthedDocumentsCategoriesIndexRoute: AuthedDocumentsCategoriesIndexRoute,
+  AuthedDocumentsDocumentsIndexRoute: AuthedDocumentsDocumentsIndexRoute,
   AuthedFeedbackItemsIndexRoute: AuthedFeedbackItemsIndexRoute,
   AuthedFinanceBankAccountsIndexRoute: AuthedFinanceBankAccountsIndexRoute,
   AuthedFinanceCashAccountsIndexRoute: AuthedFinanceCashAccountsIndexRoute,
+  AuthedFinanceInstrumentsIndexRoute: AuthedFinanceInstrumentsIndexRoute,
   AuthedHrAttendanceIndexRoute: AuthedHrAttendanceIndexRoute,
   AuthedHrCardAccessIndexRoute: AuthedHrCardAccessIndexRoute,
   AuthedHrCheckinAreasIndexRoute: AuthedHrCheckinAreasIndexRoute,
@@ -2544,6 +2718,7 @@ const AuthedRouteChildren: AuthedRouteChildren = {
     AuthedInventoryMovementTypesIndexRoute,
   AuthedInventoryProductsIndexRoute: AuthedInventoryProductsIndexRoute,
   AuthedInvoicesInvoicesIndexRoute: AuthedInvoicesInvoicesIndexRoute,
+  AuthedLookupsCodePrefixesIndexRoute: AuthedLookupsCodePrefixesIndexRoute,
   AuthedLookupsItemsIndexRoute: AuthedLookupsItemsIndexRoute,
   AuthedOrgBranchesIndexRoute: AuthedOrgBranchesIndexRoute,
   AuthedPosDashboardIndexRoute: AuthedPosDashboardIndexRoute,

@@ -249,6 +249,7 @@ export class InvoicesService {
     if (!(await this.contacts.findOne({ where: { id: dto.contactId } }))) {
       throw new NotFoundException('Cari bulunamadı')
     }
+    await this.assertLineCapabilities(dto.type, dto.lines)
     if (dto.status === 'issued') await this.assertBranchAllowed(userId, dto.branchId ?? null)
     const totals = computeInvoiceTotals(dto.lines)
     const invoice = this.invoices.create({
@@ -301,6 +302,7 @@ export class InvoicesService {
     if (dto.notes !== undefined) invoice.notes = dto.notes
 
     if (dto.lines) {
+      await this.assertLineCapabilities(dto.type ?? invoice.type, dto.lines)
       const totals = computeInvoiceTotals(dto.lines)
       Object.assign(invoice, totals)
       await this.lines.delete({ invoiceId: id })
@@ -433,6 +435,28 @@ export class InvoicesService {
         sourceModule: 'invoices',
         sourceId: invoice.id,
       })
+    }
+  }
+
+  /**
+   * Reject lines whose product can't take part in this invoice's direction:
+   * a sales invoice may only carry `canBeSold` products, a purchase invoice
+   * only `canBePurchased`. Returns/credit notes are exempt (a return can
+   * involve either side). Enforced at create/update so a bad line never even
+   * reaches draft.
+   */
+  private async assertLineCapabilities(type: InvoiceType, lines: CreateInvoiceDto['lines']): Promise<void> {
+    if (type === 'return') return
+    const productIds = [...new Set(lines.map((l) => l.productId).filter((x): x is string => !!x))]
+    if (productIds.length === 0) return
+    const products = await this.products.find({ where: { id: In(productIds) } })
+    for (const p of products) {
+      if (type === 'sales' && !p.canBeSold) {
+        throw new BadRequestException(`"${p.name}" satılamaz olarak işaretlenmiş; satış faturasına eklenemez`)
+      }
+      if (type === 'purchase' && !p.canBePurchased) {
+        throw new BadRequestException(`"${p.name}" satın alınamaz olarak işaretlenmiş; alış faturasına eklenemez`)
+      }
     }
   }
 

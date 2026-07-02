@@ -15,4 +15,14 @@ export const LOOKUPS_PERMISSION_DEFS: PermissionDef[] = [
     description: 'Tanım listesi öğesi ekleme, düzenleme ve silme',
     group: 'lookups',
   },
+  {
+    key: LookupsPermissions.codePrefixesRead,
+    description: 'Kod öneklerini görüntüleme ve kod üretme',
+    group: 'lookups',
+  },
+  {
+    key: LookupsPermissions.codePrefixesWrite,
+    description: 'Kod öneki tanımı ekleme, düzenleme ve silme',
+    group: 'lookups',
+  },
 ]

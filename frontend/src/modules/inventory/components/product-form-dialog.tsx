@@ -1,15 +1,22 @@
 import * as React from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
-  PRODUCT_TYPES,
   OrgPermissions,
+  CodePrefixContexts,
+  PRODUCT_ROLES,
+  PRODUCT_ROLE_LABELS,
+  PRODUCT_ROLE_PRESETS,
+  PRODUCT_ROLE_CUSTOM_LABEL,
+  inferProductRole,
   effectiveFieldDefsWithSource,
   toApiError,
   type CreateProductRequest,
   type ProductDto,
   type ProductType,
+  type ProductRole,
   type VariantAttribute,
   type CategoryDto,
 } from '@turbohesap/shared'
@@ -17,6 +24,7 @@ import {
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth/auth-context'
 import { LookupSelect } from '@/components/lookup-select'
+import { CodePrefixInput, type CodePrefixInputHandle } from '@/components/code-prefix/code-prefix-input'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -37,10 +45,10 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { CategoryTreeSelect } from './category-tree-select'
 import { DynamicAttributeFields, missingRequired } from './dynamic-attribute-fields'
 import { VariantAttributesEditor } from './variant-attributes-editor'
-import { PRODUCT_TYPE_LABELS } from '../labels'
 
 interface FormState {
   code: string
@@ -48,6 +56,8 @@ interface FormState {
   description: string
   barcode: string
   brand: string
+  /** Form-only preset over the flags below — never sent; `type`+flags are. */
+  role: ProductRole | 'custom'
   type: ProductType
   trackStock: boolean
   canBeSold: boolean
@@ -71,6 +81,7 @@ interface FormState {
 
 const EMPTY: FormState = {
   code: '', name: '', description: '', barcode: '', brand: '',
+  role: 'mamul',
   type: 'stockable', trackStock: true,
   canBeSold: true, canBePurchased: true, canBeManufactured: false,
   categoryId: null, unit: null,
@@ -87,7 +98,7 @@ function fromDto(p: ProductDto): FormState {
   const n = (v: number | null) => (v == null ? '' : String(v))
   return {
     code: p.code, name: p.name, description: p.description, barcode: p.barcode,
-    brand: p.brand, type: p.type, trackStock: p.trackStock,
+    brand: p.brand, role: inferProductRole(p), type: p.type, trackStock: p.trackStock,
     canBeSold: p.canBeSold, canBePurchased: p.canBePurchased, canBeManufactured: p.canBeManufactured,
     categoryId: p.categoryId, unit: p.unit || null,
     hasVariants: p.hasVariants, variantAttributes: p.variantAttributes ?? [],
@@ -131,6 +142,21 @@ export function ProductFormDialog({
 }) {
   const [form, setForm] = React.useState<FormState>(EMPTY)
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((s) => ({ ...s, [k]: v }))
+  const codeRef = React.useRef<CodePrefixInputHandle>(null)
+
+  // Picking a role stamps its preset onto trackStock + the capability flags
+  // (+ derived `type`). 'custom' is only ever a display state, never applied.
+  const applyRole = (r: ProductRole | 'custom') => {
+    if (r === 'custom') return
+    setForm((s) => ({ ...s, role: r, ...PRODUCT_ROLE_PRESETS[r] }))
+  }
+  // Toggling any advanced flag re-derives the role — it snaps to a matching
+  // preset or falls back to 'custom'.
+  const setFlag = (k: 'trackStock' | 'canBeSold' | 'canBePurchased' | 'canBeManufactured', v: boolean) =>
+    setForm((s) => {
+      const next = { ...s, [k]: v }
+      return { ...next, role: inferProductRole(next) }
+    })
 
   // Per-branch opening stock (create only), keyed by branchId; GENERAL_KEY = null branch.
   const [openingStock, setOpeningStock] = React.useState<Record<string, string>>({})
@@ -165,7 +191,10 @@ export function ProductFormDialog({
         const labels = flat.filter((f) => missing.includes(f.key)).map((f) => f.label)
         throw new Error(`Zorunlu alanları doldurun: ${labels.join(', ')}`)
       }
-      const payload = toPayload(form)
+      // Only resolve the code-prefix generator on create — on edit the field
+      // is locked and no prefix was ever picked.
+      const code = editing ? form.code : await (codeRef.current?.finalize() ?? Promise.resolve(form.code))
+      const payload = toPayload({ ...form, code })
       if (editing) {
         // Editing stock is handled via the stock tab / movements — never send `stocks` here.
         await api.inventory.products.update(editing.id, payload)
@@ -205,16 +234,25 @@ export function ProductFormDialog({
         <div className="grid max-h-[65vh] gap-4 overflow-y-auto px-1 py-2">
           <div className="grid grid-cols-2 gap-3">
             <Field label="Stok kodu">
-              <Input value={form.code} disabled={!!editing} onChange={(e) => set('code', e.target.value)} className="font-mono" placeholder="TS-001" />
+              <CodePrefixInput
+                ref={codeRef}
+                context={CodePrefixContexts.inventoryProducts}
+                value={form.code}
+                onChange={(v) => set('code', v)}
+                disabled={!!editing}
+              />
             </Field>
             <Field label="Ad"><Input value={form.name} onChange={(e) => set('name', e.target.value)} /></Field>
-            <Field label="Tür">
-              <Select value={form.type} onValueChange={(v) => set('type', v as ProductType)}>
+            <Field label="Ürün rolü">
+              <Select value={form.role} onValueChange={(v) => applyRole(v as ProductRole | 'custom')}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {PRODUCT_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>{PRODUCT_TYPE_LABELS[t]}</SelectItem>
+                  {PRODUCT_ROLES.map((r) => (
+                    <SelectItem key={r} value={r}>{PRODUCT_ROLE_LABELS[r]}</SelectItem>
                   ))}
+                  {form.role === 'custom' ? (
+                    <SelectItem value="custom">{PRODUCT_ROLE_CUSTOM_LABEL}</SelectItem>
+                  ) : null}
                 </SelectContent>
               </Select>
             </Field>
@@ -239,10 +277,6 @@ export function ProductFormDialog({
 
           <div className="flex flex-wrap gap-x-6 gap-y-2">
             <label className="flex items-center gap-2 text-sm">
-              <Switch checked={form.trackStock} onCheckedChange={(v) => set('trackStock', v)} />
-              Stok takibi
-            </label>
-            <label className="flex items-center gap-2 text-sm">
               <Switch checked={form.hasVariants} onCheckedChange={(v) => set('hasVariants', v)} />
               Varyantlı ürün
             </label>
@@ -252,26 +286,39 @@ export function ProductFormDialog({
             </label>
           </div>
 
-          {/* Rol: hammadde/yarı mamul/mamul sabit bir tip değil, bu üç bağımsız
-              yetenek bayrağından türer (satılabilir + üretilebilir = mamul,
-              sadece üretilebilir = yarı mamul, sadece satın alınabilir = hammadde). */}
-          <div className="space-y-1.5">
-            <Label>Kullanım</Label>
-            <div className="flex flex-wrap gap-x-6 gap-y-2">
+          {/* Advanced overrides for what the "Ürün rolü" preset sets. Toggling
+              any of these re-derives the role (→ a matching preset, or "Özel").
+              Role = hammadde/yarı mamul/mamul is just a shortcut over these
+              independent flags — see product-role.ts. */}
+          <Collapsible className="rounded-md border">
+            <CollapsibleTrigger className="group flex w-full items-center justify-between px-3 py-2 text-sm font-medium">
+              Gelişmiş (stok &amp; kullanım)
+              <ChevronDown className="size-4 transition-transform group-data-[state=open]:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-3 border-t px-3 py-3">
               <label className="flex items-center gap-2 text-sm">
-                <Switch checked={form.canBeSold} onCheckedChange={(v) => set('canBeSold', v)} />
-                Satılabilir
+                <Switch checked={form.trackStock} onCheckedChange={(v) => setFlag('trackStock', v)} />
+                Stok takibi
               </label>
-              <label className="flex items-center gap-2 text-sm">
-                <Switch checked={form.canBePurchased} onCheckedChange={(v) => set('canBePurchased', v)} />
-                Satın alınabilir
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <Switch checked={form.canBeManufactured} onCheckedChange={(v) => set('canBeManufactured', v)} />
-                Üretilebilir (BOM'lu)
-              </label>
-            </div>
-          </div>
+              <div className="space-y-1.5">
+                <Label>Kullanım</Label>
+                <div className="flex flex-wrap gap-x-6 gap-y-2">
+                  <label className="flex items-center gap-2 text-sm">
+                    <Switch checked={form.canBeSold} onCheckedChange={(v) => setFlag('canBeSold', v)} />
+                    Satılabilir
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Switch checked={form.canBePurchased} onCheckedChange={(v) => setFlag('canBePurchased', v)} />
+                    Satın alınabilir
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Switch checked={form.canBeManufactured} onCheckedChange={(v) => setFlag('canBeManufactured', v)} />
+                    Üretilebilir (BOM'lu)
+                  </label>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
           {form.hasVariants ? (
             <VariantAttributesEditor

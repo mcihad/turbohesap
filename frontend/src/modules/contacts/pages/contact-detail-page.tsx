@@ -55,10 +55,12 @@ const ROLE_LABEL: Record<ContactRole, string> = {
 const DOC_TYPE_LABEL: Record<ContactDocumentType, string> = {
   invoice: 'Fatura', payment: 'Ödeme', receipt: 'Tahsilat',
   opening: 'Açılış', adjustment: 'Düzeltme', return: 'İade',
+  check: 'Çek', note: 'Senet',
 }
 const DOC_TYPE_TONE: Record<ContactDocumentType, 'default' | 'secondary' | 'success' | 'warning' | 'info' | 'destructive' | 'outline'> = {
   invoice: 'info', payment: 'warning', receipt: 'success',
   opening: 'secondary', adjustment: 'outline', return: 'destructive',
+  check: 'info', note: 'info',
 }
 
 const ACTIVITY_TYPE_LABEL: Record<ActivityType, string> = {

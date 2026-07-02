@@ -1,4 +1,4 @@
-import { CreditCard, Landmark, Wallet, LayoutDashboard } from 'lucide-react'
+import { CreditCard, Landmark, Receipt, Wallet, LayoutDashboard } from 'lucide-react'
 
 import { FinancePermissions } from '@turbohesap/shared'
 
@@ -26,6 +26,13 @@ export const financeModule: AppModule = {
           to: '/finance/bank-accounts',
           keywords: ['banka', 'hesap', 'bank', 'iban', 'account'],
           permission: FinancePermissions.bankAccountsRead,
+        },
+        {
+          title: 'Çek/Senet',
+          icon: Receipt,
+          to: '/finance/instruments',
+          keywords: ['çek', 'senet', 'check', 'note', 'portföy', 'tahsilat', 'ödeme'],
+          permission: FinancePermissions.instrumentsRead,
         },
       ],
     },

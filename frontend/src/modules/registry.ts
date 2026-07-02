@@ -13,6 +13,7 @@ import { productionModule } from './production/module.config'
 import { hrModule } from './hr/module.config'
 import { lookupsModule } from './lookups/module.config'
 import { feedbackModule } from './feedback/module.config'
+import { documentsModule } from './documents/module.config'
 import { iamModule } from './iam/module.config'
 
 // The ordered list of modules rendered in the left rail. Add a module's config
@@ -32,6 +33,7 @@ export const APP_MODULES: AppModule[] = [
   hrModule,
   lookupsModule,
   feedbackModule,
+  documentsModule,
   iamModule,
 ]
 

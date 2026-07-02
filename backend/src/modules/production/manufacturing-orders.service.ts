@@ -95,7 +95,14 @@ export class ManufacturingOrdersService {
   // ── lifecycle ──────────────────────────────────────────────────────────────
 
   async create(dto: CreateManufacturingOrderDto): Promise<ManufacturingOrderDto> {
-    await this.productOrFail(dto.productId)
+    const product = await this.productOrFail(dto.productId)
+    // Only a manufacturable product can be a MO output. Enforced at create()
+    // (not confirm()) so legacy orders on products that predate the flag —
+    // default canBeManufactured=false, no backfill migration — aren't broken
+    // retroactively; new orders adopt the product's role preset.
+    if (!product.canBeManufactured) {
+      throw new BadRequestException(`"${product.name}" üretilebilir olarak işaretlenmemiş; üretim emri çıktısı olamaz`)
+    }
     if ((dto.plannedQuantity ?? 0) <= 0) throw new BadRequestException('Planlanan miktar 0’dan büyük olmalı')
     const order = this.orders.create({
       orderNo: await this.nextOrderNo(),
@@ -344,26 +351,40 @@ export class ManufacturingOrdersService {
 
       // 1) Consume components.
       const comps = await em.getRepository(ProductionOrderComponent).find({ where: { orderId: id } })
+      // By-products loaded up front too, so a single `tracked` map can gate
+      // every stock.post below. A BOM may legitimately contain non-stocked
+      // items (a service/pizza-base) and the output may be non-stocked — those
+      // must NOT generate phantom movements, but their cost bookkeeping still
+      // runs so AVCO rollup stays correct.
+      const byps = await em.getRepository(ProductionOrderByproduct).find({ where: { orderId: id } })
+      const trackedIds = [
+        ...new Set([...comps.map((c) => c.componentProductId), ...byps.map((b) => b.productId), order.productId]),
+      ]
+      const trackedRows = await em.getRepository(Product).find({ where: { id: In(trackedIds) } })
+      const tracked = new Map(trackedRows.map((p) => [p.id, p.trackStock]))
+
       const overrides = new Map((dto.componentConsumptions ?? []).map((c) => [c.componentId, c.consumedQuantity]))
       let materialCost = 0
       for (const c of comps) {
         const consumeQty = overrides.has(c.id) ? overrides.get(c.id)! : c.requiredQuantity * attemptRatio
         if (consumeQty <= 0) continue
         const unitCost = await this.cost.getUnitCost(c.componentProductId, c.componentVariantId, c.sourceBranchId, em)
-        await this.stock.post(em, {
-          productId: c.componentProductId,
-          variantId: c.componentVariantId,
-          branchId: c.sourceBranchId,
-          movementTypeId: consumeTypeId,
-          direction: 'out',
-          quantity: consumeQty,
-          unit: c.unit,
-          date,
-          unitCost,
-          description: `Üretime sarf — ${order.orderNo}`,
-          sourceModule: 'production',
-          sourceId: order.id,
-        })
+        if (tracked.get(c.componentProductId) !== false) {
+          await this.stock.post(em, {
+            productId: c.componentProductId,
+            variantId: c.componentVariantId,
+            branchId: c.sourceBranchId,
+            movementTypeId: consumeTypeId,
+            direction: 'out',
+            quantity: consumeQty,
+            unit: c.unit,
+            date,
+            unitCost,
+            description: `Üretime sarf — ${order.orderNo}`,
+            sourceModule: 'production',
+            sourceId: order.id,
+          })
+        }
         materialCost += consumeQty * unitCost
         c.consumedQuantity = consumeQty
         c.unitCost = unitCost
@@ -386,7 +407,6 @@ export class ManufacturingOrdersService {
       const grossCost = materialCost + operationCost + overheadCost
 
       // 3) By-products: receive into stock, credit their cost share.
-      const byps = await em.getRepository(ProductionOrderByproduct).find({ where: { orderId: id } })
       const bypOverrides = new Map((dto.byproductOutputs ?? []).map((b) => [b.byproductId, b.quantity]))
       let byproductCredit = 0
       for (const b of byps) {
@@ -396,7 +416,7 @@ export class ManufacturingOrdersService {
         b.producedQuantity = outQty
         b.unitCost = outQty > 0 ? credit / outQty : 0
         await em.save(b)
-        if (outQty > 0) {
+        if (outQty > 0 && tracked.get(b.productId) !== false) {
           await this.stock.post(em, {
             productId: b.productId,
             variantId: b.variantId,
@@ -415,21 +435,24 @@ export class ManufacturingOrdersService {
       }
 
       // 4) Finished good receipt at rolled-up unit cost (updates its AVCO).
+      // A non-stocked output (e.g. a made-to-order item) posts no movement.
       const producedUnitCost = produced > 0 ? (grossCost - byproductCredit) / produced : 0
-      await this.stock.post(em, {
-        productId: order.productId,
-        variantId: order.variantId,
-        branchId: order.targetBranchId,
-        movementTypeId: produceTypeId,
-        direction: 'in',
-        quantity: produced,
-        unit: order.unit,
-        date,
-        unitCost: producedUnitCost,
-        description: `Üretimden giriş — ${order.orderNo}`,
-        sourceModule: 'production',
-        sourceId: order.id,
-      })
+      if (tracked.get(order.productId) !== false) {
+        await this.stock.post(em, {
+          productId: order.productId,
+          variantId: order.variantId,
+          branchId: order.targetBranchId,
+          movementTypeId: produceTypeId,
+          direction: 'in',
+          quantity: produced,
+          unit: order.unit,
+          date,
+          unitCost: producedUnitCost,
+          description: `Üretimden giriş — ${order.orderNo}`,
+          sourceModule: 'production',
+          sourceId: order.id,
+        })
+      }
 
       // 5) Release reservations (mark consumed) + close open work orders.
       await this.reservations.releaseSourceTxn(em, 'production', order.id, 'consumed')

@@ -9,6 +9,7 @@ import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { FileViewer } from './file-viewer'
 
 function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`
@@ -107,6 +108,7 @@ export function FileManager({
   }
 
   const busy = upload.isPending
+  const [viewing, setViewing] = React.useState<FileDto | null>(null)
 
   return (
     <div className="space-y-3">
@@ -143,8 +145,9 @@ export function FileManager({
               onDragEnd={() => setDragId(null)}
               onDragOver={(e) => { if (dragId) e.preventDefault() }}
               onDrop={(e) => { e.preventDefault(); e.stopPropagation(); moveBefore(f.id) }}
+              onClick={() => setViewing(f)}
               className={cn(
-                'group relative aspect-square overflow-hidden rounded-lg border bg-muted',
+                'group relative aspect-square cursor-pointer overflow-hidden rounded-lg border bg-muted',
                 dragId === f.id && 'opacity-50',
                 canWrite && 'cursor-move',
               )}
@@ -156,11 +159,11 @@ export function FileManager({
               {canWrite ? (
                 <div className="absolute inset-x-0 bottom-0 flex justify-end gap-1 bg-gradient-to-t from-black/55 to-transparent p-1 opacity-0 transition-opacity group-hover:opacity-100">
                   {i !== 0 ? (
-                    <button type="button" onClick={() => makeCover(f.id)} title="Kapak yap" className="grid size-6 place-items-center rounded-md bg-white/85 text-foreground hover:bg-white">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); makeCover(f.id) }} title="Kapak yap" className="grid size-6 place-items-center rounded-md bg-white/85 text-foreground hover:bg-white">
                       <Star className="size-3.5" />
                     </button>
                   ) : null}
-                  <button type="button" onClick={() => remove.mutate(f.id)} title="Sil" className="grid size-6 place-items-center rounded-md bg-white/85 text-destructive hover:bg-white">
+                  <button type="button" onClick={(e) => { e.stopPropagation(); remove.mutate(f.id) }} title="Sil" className="grid size-6 place-items-center rounded-md bg-white/85 text-destructive hover:bg-white">
                     <Trash2 className="size-3.5" />
                   </button>
                 </div>
@@ -171,17 +174,30 @@ export function FileManager({
       ) : (
         <div className="divide-y rounded-lg border">
           {items.map((f) => (
-            <div key={f.id} className="flex items-center gap-3 px-3 py-2">
+            <div key={f.id} onClick={() => setViewing(f)} className="flex cursor-pointer items-center gap-3 px-3 py-2 hover:bg-accent/50">
               <FileText className="size-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{f.originalName}</p>
                 <p className="text-2xs text-muted-foreground uppercase">{f.extension || f.mimeType} · {formatBytes(f.size)}</p>
               </div>
-              <a href={api.files.rawUrl(f.storedName)} download={f.originalName} target="_blank" rel="noreferrer" className="grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-accent" title="İndir">
+              <a
+                href={api.files.rawUrl(f.storedName)}
+                download={f.originalName}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="grid size-8 place-items-center rounded-md text-muted-foreground hover:bg-accent"
+                title="İndir"
+              >
                 <Download className="size-4" />
               </a>
               {canWrite ? (
-                <button type="button" onClick={() => remove.mutate(f.id)} className="grid size-8 place-items-center rounded-md text-destructive hover:bg-accent" title="Sil">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); remove.mutate(f.id) }}
+                  className="grid size-8 place-items-center rounded-md text-destructive hover:bg-accent"
+                  title="Sil"
+                >
                   <Trash2 className="size-4" />
                 </button>
               ) : null}
@@ -189,6 +205,16 @@ export function FileManager({
           ))}
         </div>
       )}
+
+      <FileViewer
+        open={!!viewing}
+        onOpenChange={(o) => { if (!o) setViewing(null) }}
+        file={viewing}
+        files={items}
+        onNavigate={setViewing}
+        canWrite={canWrite}
+        onDeleted={() => setViewing(null)}
+      />
     </div>
   )
 }

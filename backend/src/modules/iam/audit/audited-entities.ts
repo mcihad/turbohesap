@@ -28,8 +28,9 @@ export const REDACTED_AUDIT_FIELDS = new Set<string>([
 ])
 
 // Updates that touch ONLY these columns are skipped (bookkeeping, not a
-// meaningful business change) — e.g. the lastLoginAt bump on every login.
-export const NOISE_AUDIT_FIELDS = new Set<string>(['lastLoginAt'])
+// meaningful business change) — e.g. the lastLoginAt bump on every login, or
+// the counter advance on every CodePrefix consume() call.
+export const NOISE_AUDIT_FIELDS = new Set<string>(['lastLoginAt', 'nextNumber'])
 
 // Maps an entity class name to its owning app module key. Add new modules' audited
 // entities here so their audit/error rows are labelled with the right module.
@@ -40,6 +41,7 @@ export const ENTITY_MODULE_MAP: Record<string, string> = {
   SalesChannel: 'sales',
   Branch: 'org',
   LookupItem: 'lookups',
+  CodePrefix: 'lookups',
   Category: 'inventory',
   Product: 'inventory',
   ProductVariant: 'inventory',
@@ -82,6 +84,7 @@ export const ENTITY_MODULE_MAP: Record<string, string> = {
   CashAccount: 'finance',
   BankAccount: 'finance',
   FinanceTransaction: 'finance',
+  FinancialInstrument: 'finance',
   Contact: 'contacts',
   ContactGroup: 'contacts',
   ContactPerson: 'contacts',
@@ -110,6 +113,8 @@ export const ENTITY_MODULE_MAP: Record<string, string> = {
   CheckinArea: 'hr',
   CardSource: 'hr',
   EmployeeCard: 'hr',
+  DocumentCategory: 'documents',
+  Document: 'documents',
 }
 
 export function moduleForEntity(entityName: string): string | null {

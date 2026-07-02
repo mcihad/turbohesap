@@ -41,6 +41,17 @@ export interface ProductDto {
   /** Whether on-hand stock is tracked for this product. */
   trackStock: boolean
 
+  // Capability flags — a product's role (hammadde/yarı mamul/mamul) is
+  // derived from these, not a fixed hierarchy: raw material = purchasable
+  // only, semi-finished = manufacturable but not sold, finished good =
+  // manufacturable and sold. Set independently, like Odoo/ERPNext.
+  /** Can be sold to customers (sales orders, POS, e-commerce). */
+  canBeSold: boolean
+  /** Can be purchased from suppliers. */
+  canBePurchased: boolean
+  /** Can be produced via a Manufacturing Order (has/expects a BOM). */
+  canBeManufactured: boolean
+
   categoryId: string | null
   category: CategorySummary | null
 
@@ -98,6 +109,9 @@ export interface CreateProductRequest {
   brand?: string
   type?: ProductType
   trackStock?: boolean
+  canBeSold?: boolean
+  canBePurchased?: boolean
+  canBeManufactured?: boolean
   categoryId?: string | null
   unit?: string
   hasVariants?: boolean

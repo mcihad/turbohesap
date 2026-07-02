@@ -104,6 +104,9 @@ export function ProductFilterSheet({
   }
   const stockVal: 'all' | StockStatus = filters.stockStatus ?? 'all'
   const variantVal: 'all' | 'yes' | 'no' = filters.hasVariants === true ? 'yes' : filters.hasVariants === false ? 'no' : 'all'
+  const boolVal = (v: boolean | undefined): 'all' | 'yes' | 'no' => (v === true ? 'yes' : v === false ? 'no' : 'all')
+  const setBool = (key: 'canBeSold' | 'canBePurchased' | 'canBeManufactured', v: 'all' | 'yes' | 'no') =>
+    setFilters((f) => ({ ...f, [key]: v === 'all' ? undefined : v === 'yes' }))
 
   return (
     <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
@@ -215,6 +218,30 @@ export function ProductFilterSheet({
                   { value: 'yes', label: 'Varyantlı' },
                   { value: 'no', label: 'Tekil' },
                 ]}
+              />
+            </Group>
+
+            {/* Kullanım — rol (hammadde/yarı mamul/mamul) sabit bir alan değil,
+                bu üç bağımsız yetenek bayrağından türer. */}
+            <Group title="Satılabilir">
+              <SegmentedControl<'all' | 'yes' | 'no'>
+                value={boolVal(filters.canBeSold)}
+                onChange={(v) => setBool('canBeSold', v)}
+                options={[{ value: 'all', label: 'Hepsi' }, { value: 'yes', label: 'Evet' }, { value: 'no', label: 'Hayır' }]}
+              />
+            </Group>
+            <Group title="Satın alınabilir">
+              <SegmentedControl<'all' | 'yes' | 'no'>
+                value={boolVal(filters.canBePurchased)}
+                onChange={(v) => setBool('canBePurchased', v)}
+                options={[{ value: 'all', label: 'Hepsi' }, { value: 'yes', label: 'Evet' }, { value: 'no', label: 'Hayır' }]}
+              />
+            </Group>
+            <Group title="Üretilebilir">
+              <SegmentedControl<'all' | 'yes' | 'no'>
+                value={boolVal(filters.canBeManufactured)}
+                onChange={(v) => setBool('canBeManufactured', v)}
+                options={[{ value: 'all', label: 'Hepsi' }, { value: 'yes', label: 'Evet' }, { value: 'no', label: 'Hayır' }]}
               />
             </Group>
 

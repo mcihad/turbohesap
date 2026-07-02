@@ -242,6 +242,16 @@ function Overview({ product }: { product: ProductDto }) {
           <Field label="Barkod" value={product.barcode || '—'} mono />
           <Field label="Ağırlık" value={product.weight == null ? '—' : `${product.weight} kg`} />
           <Field label="Stok takibi" value={product.trackStock ? 'Açık' : 'Kapalı'} />
+          <Field
+            label="Kullanım"
+            value={[
+              product.canBeSold ? 'Satılabilir' : null,
+              product.canBePurchased ? 'Satın alınabilir' : null,
+              product.canBeManufactured ? 'Üretilebilir' : null,
+            ]
+              .filter(Boolean)
+              .join(' · ') || '—'}
+          />
           <Field label="Açıklama" value={product.description || '—'} full />
         </CardContent>
       </Card>

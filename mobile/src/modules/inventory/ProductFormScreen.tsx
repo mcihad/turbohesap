@@ -45,6 +45,9 @@ interface FormState {
   brand: string
   type: ProductType
   trackStock: boolean
+  canBeSold: boolean
+  canBePurchased: boolean
+  canBeManufactured: boolean
   categoryId: string | null
   unit: string | null
   hasVariants: boolean
@@ -63,7 +66,9 @@ interface FormState {
 
 const EMPTY: FormState = {
   code: '', name: '', description: '', barcode: '', brand: '',
-  type: 'stockable', trackStock: true, categoryId: null, unit: null,
+  type: 'stockable', trackStock: true,
+  canBeSold: true, canBePurchased: true, canBeManufactured: false,
+  categoryId: null, unit: null,
   hasVariants: false, variantAttributes: [],
   purchasePrice: '', salePrice: '', taxRate: '', currency: 'TRY',
   quantity: '0', minQuantity: '0', weight: '', imageUrl: '', isActive: true, attributes: {},
@@ -100,6 +105,7 @@ export function ProductFormScreen() {
     setForm({
       code: p.code, name: p.name, description: p.description, barcode: p.barcode,
       brand: p.brand, type: p.type, trackStock: p.trackStock,
+      canBeSold: p.canBeSold, canBePurchased: p.canBePurchased, canBeManufactured: p.canBeManufactured,
       categoryId: p.categoryId, unit: p.unit || null,
       hasVariants: p.hasVariants, variantAttributes: p.variantAttributes ?? [],
       purchasePrice: n(p.purchasePrice), salePrice: n(p.salePrice), taxRate: n(p.taxRate),
@@ -128,6 +134,7 @@ export function ProductFormScreen() {
     const payload: CreateProductRequest = {
       code: form.code.trim(), name: form.name.trim(), description: form.description,
       barcode: form.barcode, brand: form.brand, type: form.type, trackStock: form.trackStock,
+      canBeSold: form.canBeSold, canBePurchased: form.canBePurchased, canBeManufactured: form.canBeManufactured,
       categoryId: form.categoryId, unit: form.unit ?? '',
       hasVariants: form.hasVariants,
       variantAttributes: form.hasVariants
@@ -203,6 +210,14 @@ export function ProductFormScreen() {
         <FormSwitchRow label="Stok takibi" description="On-hand stok takip edilsin" value={form.trackStock} onValueChange={(v) => set('trackStock', v)} />
         <FormSwitchRow label="Varyantlı ürün" description="Renk/beden gibi eksenlerle varyantlar" value={form.hasVariants} onValueChange={(v) => set('hasVariants', v)} />
         <FormSwitchRow label="Aktif" value={form.isActive} onValueChange={(v) => set('isActive', v)} />
+      </Section>
+
+      {/* Rol (hammadde/yarı mamul/mamul) sabit bir alan değil, bu üç bağımsız
+          yetenek bayrağından türer. */}
+      <Section title="Kullanım">
+        <FormSwitchRow label="Satılabilir" value={form.canBeSold} onValueChange={(v) => set('canBeSold', v)} />
+        <FormSwitchRow label="Satın alınabilir" value={form.canBePurchased} onValueChange={(v) => set('canBePurchased', v)} />
+        <FormSwitchRow label="Üretilebilir" description="BOM'lu üretim emrine konu olabilir" value={form.canBeManufactured} onValueChange={(v) => set('canBeManufactured', v)} />
       </Section>
 
       {form.hasVariants ? (

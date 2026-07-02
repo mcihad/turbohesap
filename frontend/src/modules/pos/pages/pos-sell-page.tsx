@@ -72,7 +72,10 @@ export function PosSellPage() {
   })
   const heldCount = heldQuery.data?.length ?? 0
 
-  const products = React.useMemo(() => productsQuery.data ?? [], [productsQuery.data])
+  const products = React.useMemo(
+    () => (productsQuery.data ?? []).filter((p) => p.isActive && p.canBeSold),
+    [productsQuery.data],
+  )
   const categories = React.useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data])
   const modifierMap = modifierMapQuery.data ?? {}
   const bundleMap = bundleMapQuery.data ?? {}

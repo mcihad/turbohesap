@@ -1,12 +1,13 @@
 import { useTheme } from '@/lib/theme/use-theme'
 import { Toaster as Sonner, type ToasterProps } from 'sonner'
 
-function Toaster({ ...props }: ToasterProps) {
+function Toaster({ position = 'bottom-center', ...props }: ToasterProps) {
   const { mode } = useTheme()
 
   return (
     <Sonner
       theme={mode as ToasterProps['theme']}
+      position={position}
       className="toaster group"
       style={
         {

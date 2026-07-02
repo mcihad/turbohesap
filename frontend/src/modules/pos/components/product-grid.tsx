@@ -50,9 +50,6 @@ export function ProductGrid({
   const filtered = React.useMemo(
     () =>
       products.filter((p) => {
-        if (p.type === 'service') {
-          // services are sellable too; keep them
-        }
         if (subtree && !(p.categoryId && subtree.has(p.categoryId))) return false
         if (q) {
           const hay = `${p.name} ${p.code} ${p.barcodes?.join(' ') ?? ''}`.toLocaleLowerCase('tr')

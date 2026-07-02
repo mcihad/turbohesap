@@ -164,6 +164,9 @@ export function AdvancedFilterPanel({
             (filters.units?.length ? 1 : 0) +
             (filters.currencies?.length ? 1 : 0) +
             (filters.hasVariants != null ? 1 : 0) +
+            (filters.canBeSold != null ? 1 : 0) +
+            (filters.canBePurchased != null ? 1 : 0) +
+            (filters.canBeManufactured != null ? 1 : 0) +
             (filters.weightMin != null || filters.weightMax != null ? 1 : 0)
           }
         >
@@ -191,6 +194,32 @@ export function AdvancedFilterPanel({
               options={[['Hepsi', undefined], ['Varyantlı', true], ['Tekil', false]] as Array<[string, boolean | undefined]>}
               selected={filters.hasVariants}
               onSelect={(v) => setFilters((f) => ({ ...f, hasVariants: v }))}
+            />
+          </Field>
+
+          {/* Kullanım — rol (hammadde/yarı mamul/mamul) sabit bir alan değil,
+              bu üç bağımsız yetenek bayrağından türer. */}
+          <Field label="Satılabilir">
+            <Chips
+              options={[['Hepsi', undefined], ['Evet', true], ['Hayır', false]] as Array<[string, boolean | undefined]>}
+              selected={filters.canBeSold}
+              onSelect={(v) => setFilters((f) => ({ ...f, canBeSold: v }))}
+            />
+          </Field>
+
+          <Field label="Satın alınabilir">
+            <Chips
+              options={[['Hepsi', undefined], ['Evet', true], ['Hayır', false]] as Array<[string, boolean | undefined]>}
+              selected={filters.canBePurchased}
+              onSelect={(v) => setFilters((f) => ({ ...f, canBePurchased: v }))}
+            />
+          </Field>
+
+          <Field label="Üretilebilir">
+            <Chips
+              options={[['Hepsi', undefined], ['Evet', true], ['Hayır', false]] as Array<[string, boolean | undefined]>}
+              selected={filters.canBeManufactured}
+              onSelect={(v) => setFilters((f) => ({ ...f, canBeManufactured: v }))}
             />
           </Field>
 

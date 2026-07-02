@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Package, Plus, SlidersHorizontal, X } from 'lucide-react'
+import { Package, Pencil, Plus, SlidersHorizontal, Trash2, X } from 'lucide-react'
 
 import {
   EMPTY_PRODUCT_FILTERS,
@@ -154,6 +154,8 @@ export function ProductsPage() {
   const advCount = advancedFilterCount(filters)
   const anyFilter = !!filters.search.trim() || advCount > 0
 
+  const productsById = React.useMemo(() => new Map(products.map((p) => [p.id, p])), [products])
+
   // One row per sellable unit (variant or variant-less product). Users
   // hide/reorder/pin/persist; clicking a row opens the parent product detail.
   const columns: ColumnDef<SellableUnitDto>[] = [
@@ -186,6 +188,31 @@ export function ProductsPage() {
     },
     { id: 'minQuantity', accessorKey: 'minQuantity', header: 'Min', size: 80, cell: ({ row }) => <span className="tabular-nums">{row.original.minQuantity}</span> },
     { id: 'isActive', accessorKey: 'isActive', header: 'Durum', size: 100, enableGrouping: true, cell: ({ row }) => <Badge variant={row.original.isActive ? 'success' : 'outline'}>{row.original.isActive ? 'Aktif' : 'Pasif'}</Badge> },
+    ...(canWrite
+      ? [{
+          id: 'actions', header: '', size: 90, enableSorting: false, enableHiding: false, enableColumnFilter: false, enableGrouping: false,
+          cell: ({ row }) => (
+            <div className="flex justify-end gap-1">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  const p = productsById.get(row.original.productId)
+                  if (p) { setEditing(p); setOpen(true) }
+                }}
+                aria-label="Düzenle"
+              >
+                <Pencil className="size-4" />
+              </Button>
+              {/* Silme henüz aktif değil — kaldırmanın stok/hareket etkileri netleşene kadar buton kasıtlı olarak disabled. */}
+              <Button variant="ghost" size="icon-sm" disabled onClick={(e) => e.stopPropagation()} aria-label="Sil">
+                <Trash2 className="size-4 text-destructive" />
+              </Button>
+            </div>
+          ),
+        } as ColumnDef<SellableUnitDto>]
+      : []),
   ]
 
   return (

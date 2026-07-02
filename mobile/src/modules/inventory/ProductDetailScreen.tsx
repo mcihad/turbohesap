@@ -163,6 +163,19 @@ export function ProductDetailScreen() {
                         <Field label="Marka" value={p.brand || '—'} />
                         <Field label="Barkod" value={p.barcode || '—'} mono />
                         <Field label="Ağırlık" value={p.weight == null ? '—' : `${p.weight} kg`} />
+                        <Field
+                          label="Kullanım"
+                          value={
+                            [
+                              p.canBeSold ? 'Satılabilir' : null,
+                              p.canBePurchased ? 'Satın alınabilir' : null,
+                              p.canBeManufactured ? 'Üretilebilir' : null,
+                            ]
+                              .filter(Boolean)
+                              .join(' · ') || '—'
+                          }
+                          full
+                        />
                         {p.description ? <Field label="Açıklama" value={p.description} full /> : null}
                       </FieldGrid>
                     </Card>

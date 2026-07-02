@@ -67,6 +67,18 @@ export class CreateProductDto implements CreateProductRequest {
   trackStock?: boolean
 
   @IsOptional()
+  @IsBoolean()
+  canBeSold?: boolean
+
+  @IsOptional()
+  @IsBoolean()
+  canBePurchased?: boolean
+
+  @IsOptional()
+  @IsBoolean()
+  canBeManufactured?: boolean
+
+  @IsOptional()
   @IsUUID()
   categoryId?: string | null
 

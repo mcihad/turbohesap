@@ -1,0 +1,110 @@
+# `docker-compose up` — builds the app image (Dockerfile) and brings up
+# Postgres + the TurboHesap server (API + built SPA on one process, :5800).
+# Migrations run automatically on boot (DB_MIGRATIONS_RUN=true) and a seed
+# admin user is created on first boot (SEED_ADMIN_USERNAME/PASSWORD below).
+#
+# Values below read from a root .env if present (see .env.example — `make env`
+# creates one) and otherwise fall back to dev defaults. For a real deployment,
+# override at least APP_ENV=production, the JWT_*_SECRET values and
+# SEED_ADMIN_PASSWORD (the app refuses to boot in production with the defaults).
+
+services:
+  postgres:
+    # PostGIS build — required by the HR/PDKS geofence module (ST_DWithin etc).
+    image: postgis/postgis:16-3.4-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-turbohesap}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-turbohesap}
+      POSTGRES_DB: ${POSTGRES_DB:-turbohesap}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-turbohesap} -d ${POSTGRES_DB:-turbohesap}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      HOST: 0.0.0.0
+      PORT: 5800
+      APP_ENV: ${APP_ENV:-development}
+      DATABASE_URL: postgres://${POSTGRES_USER:-turbohesap}:${POSTGRES_PASSWORD:-turbohesap}@postgres:5432/${POSTGRES_DB:-turbohesap}
+      DB_MIGRATIONS_RUN: "true"
+
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-secret-change-me}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-me}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-15m}
+      JWT_REFRESH_TTL: ${JWT_REFRESH_TTL:-7d}
+
+      SEED_ADMIN_USERNAME: ${SEED_ADMIN_USERNAME:-admin}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-Admin123!}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@turbohesap.local}
+
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      THROTTLE_TTL: ${THROTTLE_TTL:-60000}
+      THROTTLE_LIMIT: ${THROTTLE_LIMIT:-300}
+      STATIC_CACHE_MAX_AGE: ${STATIC_CACHE_MAX_AGE:-3600}
+
+      FILE_STORAGE: ${FILE_STORAGE:-local}
+      FILE_LOCAL_DIR: storage/uploads
+      FILE_MAX_SIZE_MB: ${FILE_MAX_SIZE_MB:-25}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-false}
+
+      # CACHE_STORE=redis|memcached needs the matching service uncommented
+      # below and REDIS_URL / MEMCACHED_SERVERS pointed at it (service name,
+      # not localhost — containers reach each other by service name).
+      CACHE_STORE: ${CACHE_STORE:-memory}
+      CACHE_TTL: ${CACHE_TTL:-60}
+      CACHE_PREFIX: ${CACHE_PREFIX:-th:}
+      CACHE_MEMORY_MAX: ${CACHE_MEMORY_MAX:-1000}
+      REDIS_URL: ${REDIS_URL:-}
+      MEMCACHED_SERVERS: ${MEMCACHED_SERVERS:-}
+
+      COMPANY_NAME: ${COMPANY_NAME:-TurboHesap A.Ş.}
+      COMPANY_VKN: ${COMPANY_VKN:-1111111111}
+      COMPANY_TAX_OFFICE: ${COMPANY_TAX_OFFICE:-Merkez}
+      COMPANY_ADDRESS: ${COMPANY_ADDRESS:-}
+      COMPANY_CITY: ${COMPANY_CITY:-}
+    ports:
+      - "${PORT:-5800}:5800"
+    volumes:
+      - uploads:/app/backend/storage/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5800/api/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # Uncomment for CACHE_STORE=redis (multi-instance deploys).
+  # redis:
+  #   image: redis:7-alpine
+  #   restart: unless-stopped
+  #   volumes:
+  #     - redisdata:/data
+
+  # Uncomment for CACHE_STORE=memcached.
+  # memcached:
+  #   image: memcached:1.6-alpine
+  #   restart: unless-stopped
+
+volumes:
+  pgdata:
+  uploads:
+  # redisdata:

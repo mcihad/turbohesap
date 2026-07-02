@@ -50,6 +50,9 @@ interface FormState {
   brand: string
   type: ProductType
   trackStock: boolean
+  canBeSold: boolean
+  canBePurchased: boolean
+  canBeManufactured: boolean
   categoryId: string | null
   unit: string | null
   hasVariants: boolean
@@ -68,7 +71,9 @@ interface FormState {
 
 const EMPTY: FormState = {
   code: '', name: '', description: '', barcode: '', brand: '',
-  type: 'stockable', trackStock: true, categoryId: null, unit: null,
+  type: 'stockable', trackStock: true,
+  canBeSold: true, canBePurchased: true, canBeManufactured: false,
+  categoryId: null, unit: null,
   hasVariants: false, variantAttributes: [],
   purchasePrice: '', salePrice: '', taxRate: '', currency: 'TRY',
   quantity: '0', minQuantity: '0', weight: '', imageUrl: '', isActive: true,
@@ -83,6 +88,7 @@ function fromDto(p: ProductDto): FormState {
   return {
     code: p.code, name: p.name, description: p.description, barcode: p.barcode,
     brand: p.brand, type: p.type, trackStock: p.trackStock,
+    canBeSold: p.canBeSold, canBePurchased: p.canBePurchased, canBeManufactured: p.canBeManufactured,
     categoryId: p.categoryId, unit: p.unit || null,
     hasVariants: p.hasVariants, variantAttributes: p.variantAttributes ?? [],
     purchasePrice: n(p.purchasePrice), salePrice: n(p.salePrice), taxRate: n(p.taxRate),
@@ -96,6 +102,7 @@ function toPayload(f: FormState): CreateProductRequest {
   return {
     code: f.code.trim(), name: f.name.trim(), description: f.description,
     barcode: f.barcode, brand: f.brand, type: f.type, trackStock: f.trackStock,
+    canBeSold: f.canBeSold, canBePurchased: f.canBePurchased, canBeManufactured: f.canBeManufactured,
     categoryId: f.categoryId, unit: f.unit ?? '',
     hasVariants: f.hasVariants,
     variantAttributes: f.hasVariants
@@ -243,6 +250,27 @@ export function ProductFormDialog({
               <Switch checked={form.isActive} onCheckedChange={(v) => set('isActive', v)} />
               Aktif
             </label>
+          </div>
+
+          {/* Rol: hammadde/yarı mamul/mamul sabit bir tip değil, bu üç bağımsız
+              yetenek bayrağından türer (satılabilir + üretilebilir = mamul,
+              sadece üretilebilir = yarı mamul, sadece satın alınabilir = hammadde). */}
+          <div className="space-y-1.5">
+            <Label>Kullanım</Label>
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+              <label className="flex items-center gap-2 text-sm">
+                <Switch checked={form.canBeSold} onCheckedChange={(v) => set('canBeSold', v)} />
+                Satılabilir
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <Switch checked={form.canBePurchased} onCheckedChange={(v) => set('canBePurchased', v)} />
+                Satın alınabilir
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <Switch checked={form.canBeManufactured} onCheckedChange={(v) => set('canBeManufactured', v)} />
+                Üretilebilir (BOM'lu)
+              </label>
+            </div>
           </div>
 
           {form.hasVariants ? (

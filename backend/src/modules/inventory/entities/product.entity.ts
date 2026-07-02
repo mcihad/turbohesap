@@ -43,6 +43,17 @@ export class Product {
   @Column({ default: true })
   trackStock!: boolean
 
+  // Capability flags — role (hammadde/yarı mamul/mamul) is derived from
+  // these, not a fixed hierarchy (see ProductDto).
+  @Column({ default: true })
+  canBeSold!: boolean
+
+  @Column({ default: true })
+  canBePurchased!: boolean
+
+  @Column({ default: false })
+  canBeManufactured!: boolean
+
   @Index()
   @Column({ type: 'uuid', nullable: true })
   categoryId!: string | null

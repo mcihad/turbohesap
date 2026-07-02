@@ -45,6 +45,10 @@ export interface ProductFilters {
   currencies?: string[]
   /** Whether the product is a variant template (undefined = any). */
   hasVariants?: boolean
+  /** Capability flags (undefined = any). See `ProductDto` for the role model. */
+  canBeSold?: boolean
+  canBePurchased?: boolean
+  canBeManufactured?: boolean
   weightMin?: number
   weightMax?: number
   activeOnly: boolean
@@ -240,6 +244,9 @@ export function filterProducts(
     if (filters.units?.length && !(p.unit && filters.units.includes(p.unit))) return false
     if (filters.currencies?.length && !filters.currencies.includes(p.currency)) return false
     if (filters.hasVariants != null && p.hasVariants !== filters.hasVariants) return false
+    if (filters.canBeSold != null && p.canBeSold !== filters.canBeSold) return false
+    if (filters.canBePurchased != null && p.canBePurchased !== filters.canBePurchased) return false
+    if (filters.canBeManufactured != null && p.canBeManufactured !== filters.canBeManufactured) return false
     if (filters.priceMin != null || filters.priceMax != null) {
       if (p.salePrice == null) return false
       if (filters.priceMin != null && p.salePrice < filters.priceMin) return false
@@ -281,6 +288,9 @@ export function advancedFilterCount(filters: ProductFilters): number {
   if (filters.units?.length) n++
   if (filters.currencies?.length) n++
   if (filters.hasVariants != null) n++
+  if (filters.canBeSold != null) n++
+  if (filters.canBePurchased != null) n++
+  if (filters.canBeManufactured != null) n++
   if (filters.priceMin != null || filters.priceMax != null) n++
   if (filters.purchaseMin != null || filters.purchaseMax != null) n++
   if (filters.weightMin != null || filters.weightMax != null) n++

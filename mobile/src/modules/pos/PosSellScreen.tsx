@@ -202,7 +202,7 @@ export function PosSellScreen() {
   }, [selectedCat, catChildren])
 
   const filtered = React.useMemo(() => {
-    let list = (products.data ?? []).filter((p) => p.isActive)
+    let list = (products.data ?? []).filter((p) => p.isActive && p.canBeSold)
     if (selectedCatIds) list = list.filter((p) => p.categoryId && selectedCatIds.has(p.categoryId))
     const q = query.trim().toLocaleLowerCase('tr')
     if (q) {

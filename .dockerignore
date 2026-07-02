@@ -1,0 +1,28 @@
+# Installed inside the image; never ship the host's copy (platform-specific
+# native bindings, and it would break the workspace symlink layout).
+**/node_modules
+
+# Build outputs — regenerated fresh inside the image.
+backend/dist
+backend/static
+shared/dist
+
+# Mobile native projects / Expo caches — never needed for the server image.
+mobile/ios
+mobile/android
+mobile/web-build
+mobile/.expo
+mobile/.expo-shared
+
+# VCS, editor, local env, logs.
+.git
+.github
+.vscode
+.idea
+*.log
+.env
+.env.*
+!.env.example
+
+# Local upload storage (mounted as a volume, not baked into the image).
+backend/storage

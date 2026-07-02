@@ -1,6 +1,8 @@
+import type { Page } from '../../core/pagination'
 import type {
   CreateProductRequest,
   ProductDto,
+  ProductListQuery,
   UpdateProductRequest,
 } from './product.dto'
 import type {
@@ -31,6 +33,7 @@ import type {
 // nested sub-resources (variants, packagings, stock, channel prices).
 export interface IProductsService {
   list(categoryId?: string): Promise<ProductDto[]>
+  listPage(query?: ProductListQuery): Promise<Page<ProductDto>>
   get(id: string): Promise<ProductDto>
   create(input: CreateProductRequest): Promise<ProductDto>
   update(id: string, input: UpdateProductRequest): Promise<ProductDto>

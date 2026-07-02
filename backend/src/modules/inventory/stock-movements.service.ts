@@ -8,10 +8,12 @@ import { EntityManager, In, IsNull, Repository } from 'typeorm'
 
 import type {
   MovementDirection,
+  Page,
   StockMovementDto,
   StockMovementListQuery,
 } from '@turbohesap/shared'
 
+import { applyListQuery, type ListSpec } from '../../common/list/apply-list-query'
 import { StockMovement } from './entities/stock-movement.entity'
 import { StockMovementType } from './entities/stock-movement-type.entity'
 import { ProductStock } from './entities/product-stock.entity'
@@ -19,6 +21,23 @@ import { Product } from './entities/product.entity'
 import { Branch } from '../org/entities/branch.entity'
 import type { CreateStockMovementDto } from './dto/stock-movement.dto'
 import { CostService } from './cost.service'
+
+const MOVEMENT_LIST_SPEC: ListSpec = {
+  fields: {
+    date: { column: 'm.date', type: 'date', filterable: true, sortable: true },
+    direction: { column: 'm.direction', type: 'enum', filterable: true, sortable: true },
+    movementTypeId: { column: 'm.movementTypeId', type: 'uuid', filterable: true, sortable: false },
+    branchId: { column: 'm.branchId', type: 'uuid', filterable: true, sortable: false },
+    quantity: { column: 'm.quantity', type: 'number', filterable: true, sortable: true },
+    description: { column: 'm.description', type: 'text', filterable: true, sortable: false },
+    createdAt: { column: 'm.createdAt', type: 'date', filterable: true, sortable: true },
+  },
+  searchColumns: ['m.description'],
+  defaultSort: [
+    { field: 'date', dir: 'desc' },
+    { field: 'createdAt', dir: 'desc' },
+  ],
+}
 
 export interface PostMovementParams {
   productId: string
@@ -47,14 +66,16 @@ export class StockMovementsService {
     private readonly cost: CostService,
   ) {}
 
-  async list(query?: StockMovementListQuery): Promise<StockMovementDto[]> {
+  private listBaseQb(query?: StockMovementListQuery) {
     const qb = this.movements.createQueryBuilder('m')
     if (query?.productId) qb.andWhere('m.productId = :productId', { productId: query.productId })
     if (query?.branchId) qb.andWhere('m.branchId = :branchId', { branchId: query.branchId })
     if (query?.from) qb.andWhere('m.date >= :from', { from: query.from })
     if (query?.to) qb.andWhere('m.date <= :to', { to: query.to })
-    qb.orderBy('m.date', 'DESC').addOrderBy('m.createdAt', 'DESC')
-    const rows = await qb.getMany()
+    return qb
+  }
+
+  private async enrichMovements(rows: StockMovement[]): Promise<StockMovementDto[]> {
     if (rows.length === 0) return []
     const typeIds = [...new Set(rows.map((r) => r.movementTypeId))]
     const branchIds = [...new Set(rows.map((r) => r.branchId).filter((x): x is string => !!x))]
@@ -65,6 +86,19 @@ export class StockMovementsService {
     const typeMap = new Map(types.map((t) => [t.id, t.name]))
     const branchMap = new Map(branches.map((b) => [b.id, b.name]))
     return rows.map((m) => toMovementDto(m, typeMap.get(m.movementTypeId) ?? '', m.branchId ? branchMap.get(m.branchId) ?? null : null))
+  }
+
+  async list(query?: StockMovementListQuery): Promise<StockMovementDto[]> {
+    const qb = this.listBaseQb(query)
+    qb.orderBy('m.date', 'DESC').addOrderBy('m.createdAt', 'DESC')
+    return this.enrichMovements(await qb.getMany())
+  }
+
+  async listPage(query?: StockMovementListQuery): Promise<Page<StockMovementDto>> {
+    const qb = this.listBaseQb(query)
+    const { page, pageSize } = applyListQuery(qb, query ?? {}, MOVEMENT_LIST_SPEC)
+    const [rows, total] = await qb.getManyAndCount()
+    return { items: await this.enrichMovements(rows), total, page, pageSize }
   }
 
   async create(dto: CreateStockMovementDto): Promise<StockMovementDto> {
@@ -149,6 +183,17 @@ export class StockMovementsService {
       where: { productId, variantId: variantId ?? IsNull(), branchId: branchId ?? IsNull() },
     })
     return row?.quantity ?? 0
+  }
+
+  /** Public on-hand read for callers that need to warn before posting an OUT
+   *  (e.g. recipe consumption's warn-but-continue). Same source as `post`. */
+  async onHand(
+    em: EntityManager,
+    productId: string,
+    variantId: string | null,
+    branchId: string | null,
+  ): Promise<number> {
+    return this.currentOnHand(em, productId, variantId, branchId)
   }
 
   /** Reverse and delete all movements posted by a source document. */

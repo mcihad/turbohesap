@@ -191,6 +191,14 @@ alongside). Examples today:
 > Product **modifiers** are part of `inventory` (`shared/src/modules/inventory/product-modifier.*`),
 > exposed as `api.inventory.modifiers`.
 
+> Product **recipes** (`reçete`, `api.inventory.recipes`, `/api/inventory/products/:id/recipe`)
+> are a per-product ingredient list silently backflushed from stock when the
+> item is SOLD (POS settle + sales-invoice issue) — for made-to-order menu items
+> (pizza/köfte). `RecipesService.consume()` is reused by both POS and invoices;
+> posts `'Reçete Sarf'` OUT at AVCO, warn-but-continue via transient
+> `stockWarnings` on the response. Distinct from bundles (visible priced lines)
+> and production BOM (needs a manufacturing order). See `docs/pos.md`.
+
 > **Product role & capability flags.** A product's `trackStock` +
 > `canBeSold`/`canBePurchased`/`canBeManufactured` are independent columns; the
 > product form no longer exposes them raw — it offers a single **"Ürün rolü"**

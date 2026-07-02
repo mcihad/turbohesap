@@ -30,6 +30,7 @@ import { AnalysisTab } from '../components/product-detail/analysis-tab'
 import { ChannelPricesTab } from '../components/product-detail/channel-prices-tab'
 import { PackagingsTab } from '../components/product-detail/packagings-tab'
 import { PosModifiersTab } from '../components/product-detail/pos-modifiers-tab'
+import { RecipeTab } from '../components/product-detail/recipe-tab'
 import { FileManager } from '@/modules/files/components/file-manager'
 import { money, productTypeLabel } from '../labels'
 
@@ -154,6 +155,7 @@ function ProductTabs({
     { value: 'analiz', label: 'Analiz' },
     { value: 'fiyatlar', label: 'Kanal fiyatları' },
     { value: 'paketler', label: 'Paketler' },
+    { value: 'recete', label: 'Reçete' },
     { value: 'pos', label: 'POS' },
   ]
 
@@ -214,6 +216,10 @@ function ProductTabs({
 
       <TabsContent value="paketler">
         <PackagingsTab product={product} canWrite={canWrite} refetch={refetch} />
+      </TabsContent>
+
+      <TabsContent value="recete">
+        <RecipeTab product={product} />
       </TabsContent>
 
       <TabsContent value="pos">

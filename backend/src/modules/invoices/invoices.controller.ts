@@ -19,12 +19,14 @@ import {
   type InvoicePaymentDto,
   type InvoiceStatus,
   type InvoiceType,
+  type Page,
 } from '@turbohesap/shared'
 
 import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator'
 import { RequirePermissions } from '../../common/decorators/permissions.decorator'
 import { InvoicesService } from './invoices.service'
 import { CreateInvoiceDto, UpdateInvoiceDto } from './dto/invoice.dto'
+import { InvoiceListQueryDto } from './dto/invoice-list-query.dto'
 import { CreateInvoicePaymentDto } from './dto/invoice-payment.dto'
 
 @Controller('invoices/invoices')
@@ -43,6 +45,13 @@ export class InvoicesController {
   ): Promise<InvoiceDto[]> {
     const query: InvoiceListQuery = { type, status, contactId, from, to, search }
     return this.invoices.list(query)
+  }
+
+  // Server-paginated variant for the DataGrid. Declared before `:id`.
+  @Get('paged')
+  @RequirePermissions(InvoicesPermissions.read)
+  listPage(@Query() query: InvoiceListQueryDto): Promise<Page<InvoiceDto>> {
+    return this.invoices.listPage(query)
   }
 
   @Get(':id')

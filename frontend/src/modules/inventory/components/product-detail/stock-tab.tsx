@@ -1,10 +1,11 @@
 import * as React from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowDownLeft, ArrowUpRight, Activity } from 'lucide-react'
 
 import {
   InventoryPermissions,
   OrgPermissions,
+  type ListQuery,
   type MovementDirection,
   type ProductDto,
   type StockMovementDto,
@@ -66,12 +67,14 @@ export function StockTab({
   })
   const movementTypes = (movementTypesQuery.data ?? []).filter((t) => t.isActive)
 
+  const [mvQuery, setMvQuery] = React.useState<ListQuery>({ page: 1, pageSize: 25 })
   const movementsQuery = useQuery({
-    queryKey: ['inventory', 'stockMovements', product.id],
-    queryFn: () => api.inventory.stockMovements.list({ productId: product.id }),
+    queryKey: ['inventory', 'stockMovements', product.id, 'page', mvQuery],
+    queryFn: () => api.inventory.stockMovements.listPage({ productId: product.id, ...mvQuery }),
     enabled: hasPermission(InventoryPermissions.productsRead),
+    placeholderData: keepPreviousData,
   })
-  const movements = movementsQuery.data ?? []
+  const movements = movementsQuery.data?.items ?? []
 
   const [movementType, setMovementType] = React.useState<StockMovementTypeDto | null>(null)
 
@@ -92,6 +95,7 @@ export function StockTab({
       accessorKey: 'date',
       header: 'Tarih',
       size: 120,
+      meta: { filter: { type: 'date' } },
       cell: ({ row }) => <span className="tabular-nums">{formatDate(row.original.date)}</span>,
     },
     {
@@ -100,6 +104,7 @@ export function StockTab({
       header: 'Hareket tipi',
       size: 180,
       enableGrouping: true,
+      enableColumnFilter: false,
       cell: ({ row }) => <span className="font-medium">{row.original.movementTypeName}</span>,
     },
     {
@@ -108,6 +113,7 @@ export function StockTab({
       header: 'Yön',
       size: 100,
       enableGrouping: true,
+      meta: { filter: { type: 'select', options: [{ value: 'in', label: 'Giriş' }, { value: 'out', label: 'Çıkış' }] } },
       accessorFn: (m) => directionLabel(m.direction),
       cell: ({ row }) => <DirectionBadge direction={row.original.direction} />,
     },
@@ -221,6 +227,7 @@ export function StockTab({
           loading={movementsQuery.isLoading}
           emptyText="Henüz stok hareketi yok."
           pageSize={25}
+          server={{ total: movementsQuery.data?.total ?? 0, onQueryChange: setMvQuery }}
         />
       </div>
 

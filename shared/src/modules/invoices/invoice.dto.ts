@@ -4,6 +4,8 @@
 // COMPUTED — the single source of truth is `invoice.helpers.ts` (used by the
 // backend authoritatively and by the clients for live entry-form totals).
 
+import type { ListQuery } from '../../core/list-query'
+
 export type InvoiceType = 'sales' | 'purchase' | 'return' // Satış / Alış / İade
 export const INVOICE_TYPES: InvoiceType[] = ['sales', 'purchase', 'return']
 
@@ -113,6 +115,12 @@ export interface InvoiceDto {
   remainingTotal: number
   createdAt: string
   updatedAt: string
+  /**
+   * TRANSIENT (never persisted): non-blocking stock warnings produced on issue
+   * — e.g. a recipe ingredient driven below zero. Populated only on the issue
+   * response so the client can toast them.
+   */
+  stockWarnings?: string[]
 }
 
 export interface InvoiceSummary {
@@ -163,11 +171,10 @@ export interface CreateInvoiceRequest {
 
 export type UpdateInvoiceRequest = Partial<CreateInvoiceRequest>
 
-export interface InvoiceListQuery {
+export interface InvoiceListQuery extends ListQuery {
   type?: InvoiceType
   status?: InvoiceStatus
   contactId?: string
   from?: string
   to?: string
-  search?: string
 }

@@ -15,7 +15,7 @@
 // Kart (bank account), or Cari (contact). addPayment auto-settles when fully paid.
 
 import * as React from 'react'
-import { Modal, Pressable, ScrollView, View } from 'react-native'
+import { Alert, Modal, Pressable, ScrollView, View } from 'react-native'
 
 import {
   type PosOrderDto,
@@ -176,6 +176,10 @@ export function PosTenderScreen() {
         setTenderedStr('')
         setSelectedUnitIds([])
         orderQ.refetch()
+        // Non-blocking recipe/stock warnings (e.g. an ingredient driven negative).
+        if (updated.stockWarnings?.length) {
+          Alert.alert('Stok uyarısı', updated.stockWarnings.join('\n'))
+        }
         if (updated.status === 'paid' || updated.remainingTotal <= 0) {
           nav.goBack()
         }

@@ -2,6 +2,8 @@
 // user-definable movement types. Each movement is a GİRİŞ (in) or ÇIKIŞ (out)
 // of a quantity for a (product, variant?, branch) and adjusts on-hand stock.
 
+import type { ListQuery } from '../../core/list-query'
+
 export type MovementDirection = 'in' | 'out' // Giriş / Çıkış
 
 // ── Movement type (unlimited, user-defined) ───────────────────────────────────
@@ -55,7 +57,7 @@ export interface CreateStockMovementRequest {
   /** Unit cost for valuation; on 'in' feeds the moving-average (AVCO) cost. */
   unitCost?: number | null
 }
-export interface StockMovementListQuery {
+export interface StockMovementListQuery extends ListQuery {
   productId?: string
   branchId?: string
   from?: string

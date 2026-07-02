@@ -10,9 +10,11 @@ import type {
   BarcodeMatchDto,
   BranchSummary,
   CategorySummary,
+  Page,
   ProductBundleComponentDto,
   ProductChannelPriceDto,
   ProductDto,
+  ProductListQuery,
   ProductPackagingDto,
   ProductStockDto,
   ProductVariantDto,
@@ -21,6 +23,7 @@ import type {
   VariantAttribute,
 } from '@turbohesap/shared'
 
+import { applyListQuery, type ListSpec } from '../../common/list/apply-list-query'
 import { Branch } from '../org/entities/branch.entity'
 import { SalesChannel } from '../sales/entities/sales-channel.entity'
 import { Category } from './entities/category.entity'
@@ -45,6 +48,32 @@ import type {
 } from './dto/product-packaging.dto'
 import type { UpsertProductStockDto } from './dto/product-stock.dto'
 import type { UpsertProductChannelPriceDto } from './dto/product-channel-price.dto'
+
+// Standard filterable/sortable product columns for the server-side grid.
+// (Category-attribute jsonb facets are deferred — use QueryBuilder on columns.)
+const PRODUCT_LIST_SPEC: ListSpec = {
+  fields: {
+    code: { column: 'p.code', type: 'text', filterable: true, sortable: true },
+    name: { column: 'p.name', type: 'text', filterable: true, sortable: true },
+    brand: { column: 'p.brand', type: 'text', filterable: true, sortable: true },
+    type: { column: 'p.type', type: 'enum', filterable: true, sortable: true },
+    unit: { column: 'p.unit', type: 'text', filterable: true, sortable: true },
+    currency: { column: 'p.currency', type: 'text', filterable: true, sortable: true },
+    categoryId: { column: 'p.categoryId', type: 'uuid', filterable: true, sortable: false },
+    isActive: { column: 'p.isActive', type: 'boolean', filterable: true, sortable: true },
+    trackStock: { column: 'p.trackStock', type: 'boolean', filterable: true, sortable: true },
+    hasVariants: { column: 'p.hasVariants', type: 'boolean', filterable: true, sortable: true },
+    canBeSold: { column: 'p.canBeSold', type: 'boolean', filterable: true, sortable: false },
+    canBePurchased: { column: 'p.canBePurchased', type: 'boolean', filterable: true, sortable: false },
+    canBeManufactured: { column: 'p.canBeManufactured', type: 'boolean', filterable: true, sortable: false },
+    salePrice: { column: 'p.salePrice', type: 'number', filterable: true, sortable: true },
+    purchasePrice: { column: 'p.purchasePrice', type: 'number', filterable: true, sortable: true },
+    taxRate: { column: 'p.taxRate', type: 'number', filterable: true, sortable: true },
+    createdAt: { column: 'p.createdAt', type: 'date', filterable: true, sortable: true },
+  },
+  searchColumns: ['p.name', 'p.description', 'p.code', 'p.brand'],
+  defaultSort: [{ field: 'name', dir: 'asc' }],
+}
 
 @Injectable()
 export class ProductsService {
@@ -73,6 +102,20 @@ export class ProductsService {
       where: categoryId ? { categoryId } : {},
       order: { name: 'ASC' },
     })
+    return this.enrichProducts(rows)
+  }
+
+  /** Server-paginated + filtered + sorted product grid. Pages FIRST, then
+   *  enriches only the page's rows (no whole-table N+1). */
+  async listPage(query?: ProductListQuery): Promise<Page<ProductDto>> {
+    const qb = this.products.createQueryBuilder('p')
+    if (query?.categoryId) qb.andWhere('p.categoryId = :cid', { cid: query.categoryId })
+    const { page, pageSize } = applyListQuery(qb, query ?? {}, PRODUCT_LIST_SPEC)
+    const [rows, total] = await qb.getManyAndCount()
+    return { items: await this.enrichProducts(rows), total, page, pageSize }
+  }
+
+  private async enrichProducts(rows: Product[]): Promise<ProductDto[]> {
     if (rows.length === 0) return []
     const ids = rows.map((p) => p.id)
     const cats = await this.categoryMap(rows.map((p) => p.categoryId))

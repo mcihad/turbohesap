@@ -1,3 +1,4 @@
+import type { Page } from '../../core/pagination'
 import type {
   CreateInvoiceRequest,
   InvoiceDto,
@@ -8,6 +9,7 @@ import type { CreateInvoicePaymentRequest, InvoicePaymentDto } from './invoice-p
 
 export interface IInvoicesService {
   list(query?: InvoiceListQuery): Promise<InvoiceDto[]>
+  listPage(query?: InvoiceListQuery): Promise<Page<InvoiceDto>>
   get(id: string): Promise<InvoiceDto>
   create(input: CreateInvoiceRequest): Promise<InvoiceDto>
   update(id: string, input: UpdateInvoiceRequest): Promise<InvoiceDto>

@@ -9,11 +9,12 @@ import {
   Query,
 } from '@nestjs/common'
 
-import { InventoryPermissions, type StockMovementDto } from '@turbohesap/shared'
+import { InventoryPermissions, type Page, type StockMovementDto } from '@turbohesap/shared'
 
 import { RequirePermissions } from '../../common/decorators/permissions.decorator'
 import { StockMovementsService } from './stock-movements.service'
 import { CreateStockMovementDto } from './dto/stock-movement.dto'
+import { StockMovementListQueryDto } from './dto/stock-movement-list-query.dto'
 
 @Controller('inventory/stock-movements')
 export class StockMovementsController {
@@ -28,6 +29,12 @@ export class StockMovementsController {
     @Query('to') to?: string,
   ): Promise<StockMovementDto[]> {
     return this.movements.list({ productId, branchId, from, to })
+  }
+
+  @Get('paged')
+  @RequirePermissions(InventoryPermissions.productsRead)
+  listPage(@Query() query: StockMovementListQueryDto): Promise<Page<StockMovementDto>> {
+    return this.movements.listPage(query)
   }
 
   @Post()

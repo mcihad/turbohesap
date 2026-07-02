@@ -33,6 +33,8 @@ const DEFAULTS: { name: string; direction: MovementDirection; isSystem: boolean 
   { name: 'Üretimden Giriş', direction: 'in', isSystem: true },
   { name: 'Fason Sevk', direction: 'out', isSystem: true },
   { name: 'Fason Giriş', direction: 'in', isSystem: true },
+  // Reçete (recipe) — a sold menu item's ingredients backflushed at sale.
+  { name: 'Reçete Sarf', direction: 'out', isSystem: true },
 ]
 
 @Injectable()

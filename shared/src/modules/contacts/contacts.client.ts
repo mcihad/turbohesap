@@ -1,5 +1,7 @@
 import type { AxiosInstance } from 'axios'
 
+import type { Page } from '../../core/pagination'
+import { encodeListQuery } from '../../core/list-query'
 import type {
   ContactDto,
   ContactListQuery,
@@ -20,6 +22,18 @@ export class ContactsApiClient implements IContactsService {
 
   async list(query?: ContactListQuery): Promise<ContactDto[]> {
     return (await this.http.get<ContactDto[]>('/contacts/contacts', { params: query })).data
+  }
+  async listPage(query?: ContactListQuery): Promise<Page<ContactDto>> {
+    const params = {
+      ...(query?.role ? { role: query.role } : {}),
+      ...(query?.groupId ? { groupId: query.groupId } : {}),
+      ...(query?.ownerId ? { ownerId: query.ownerId } : {}),
+      ...(query?.mine ? { mine: 'true' } : {}),
+      ...(query?.tag ? { tag: query.tag } : {}),
+      ...(query?.activeOnly ? { activeOnly: 'true' } : {}),
+      ...encodeListQuery(query ?? {}),
+    }
+    return (await this.http.get<Page<ContactDto>>('/contacts/contacts/paged', { params })).data
   }
   async get(id: string): Promise<ContactDto> {
     return (await this.http.get<ContactDto>(`/contacts/contacts/${id}`)).data

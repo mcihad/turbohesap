@@ -1,8 +1,11 @@
 import type { AxiosInstance } from 'axios'
 
+import type { Page } from '../../core/pagination'
+import { encodeListQuery } from '../../core/list-query'
 import type {
   CreateProductRequest,
   ProductDto,
+  ProductListQuery,
   UpdateProductRequest,
 } from './product.dto'
 import type {
@@ -40,6 +43,14 @@ export class ProductsApiClient implements IProductsService {
         params: categoryId ? { categoryId } : undefined,
       })
     ).data
+  }
+
+  async listPage(query?: ProductListQuery): Promise<Page<ProductDto>> {
+    const params = {
+      ...(query?.categoryId ? { categoryId: query.categoryId } : {}),
+      ...encodeListQuery(query ?? {}),
+    }
+    return (await this.http.get<Page<ProductDto>>('/inventory/products/paged', { params })).data
   }
 
   async get(id: string): Promise<ProductDto> {

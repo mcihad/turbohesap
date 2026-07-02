@@ -32,6 +32,8 @@ import { ProductModifiersApiClient } from '../modules/inventory/product-modifier
 import type { IProductModifiersService } from '../modules/inventory/product-modifiers.service'
 import { ProductBundlesApiClient } from '../modules/inventory/product-bundles.client'
 import type { IProductBundlesService } from '../modules/inventory/product-bundles.service'
+import { ProductRecipesApiClient } from '../modules/inventory/product-recipes.client'
+import type { IProductRecipesService } from '../modules/inventory/product-recipes.service'
 import { StockMovementTypesApiClient } from '../modules/inventory/stock-movement-types.client'
 import type { IStockMovementTypesService } from '../modules/inventory/stock-movement-types.service'
 import { StockMovementsApiClient } from '../modules/inventory/stock-movements.client'
@@ -185,6 +187,7 @@ export interface InventoryApi {
   products: IProductsService
   modifiers: IProductModifiersService
   bundles: IProductBundlesService
+  recipes: IProductRecipesService
   movementTypes: IStockMovementTypesService
   stockMovements: IStockMovementsService
   /** Demirbaş (fixed assets) registry. */
@@ -361,6 +364,7 @@ export function createTurbohesapApi(
       products: new ProductsApiClient(http),
       modifiers: new ProductModifiersApiClient(http),
       bundles: new ProductBundlesApiClient(http),
+      recipes: new ProductRecipesApiClient(http),
       movementTypes: new StockMovementTypesApiClient(http),
       stockMovements: new StockMovementsApiClient(http),
       assets: new AssetsApiClient(http),

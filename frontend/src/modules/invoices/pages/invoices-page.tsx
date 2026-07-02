@@ -1,5 +1,6 @@
+import * as React from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Ban, Eye, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -9,6 +10,7 @@ import {
   type InvoiceStatus,
   type InvoiceType,
   type InvoiceDto,
+  type ListQuery,
 } from '@turbohesap/shared'
 
 import { api } from '@/lib/api'
@@ -26,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { DataGrid, type ColumnDef } from '@/components/data-grid'
+import type { QueryBuilderField } from '@/components/query-builder'
 import { formatMoney } from '../format'
 
 const TYPE_LABEL: Record<InvoiceType, string> = {
@@ -54,6 +57,18 @@ const EDOC_LABEL: Record<string, string> = {
   none: '—',
 }
 
+const TYPE_OPTIONS = (Object.keys(TYPE_LABEL) as InvoiceType[]).map((v) => ({ value: v, label: TYPE_LABEL[v] }))
+const STATUS_OPTIONS = (Object.keys(STATUS_LABEL) as InvoiceStatus[]).map((v) => ({ value: v, label: STATUS_LABEL[v] }))
+const INVOICE_QB_FIELDS: QueryBuilderField[] = [
+  { key: 'number', label: 'No', type: 'text' },
+  { key: 'series', label: 'Seri', type: 'text' },
+  { key: 'type', label: 'Tip', type: 'select', options: TYPE_OPTIONS },
+  { key: 'status', label: 'Durum', type: 'select', options: STATUS_OPTIONS },
+  { key: 'date', label: 'Tarih', type: 'date' },
+  { key: 'dueDate', label: 'Vade', type: 'date' },
+  { key: 'grandTotal', label: 'Genel Toplam', type: 'number' },
+]
+
 export function InvoicesPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
@@ -61,10 +76,12 @@ export function InvoicesPage() {
   const canRead = hasPermission(InvoicesPermissions.read)
   const canWrite = hasPermission(InvoicesPermissions.write)
 
+  const [serverQuery, setServerQuery] = React.useState<ListQuery>({ page: 1, pageSize: 25 })
   const query = useQuery({
-    queryKey: ['invoices', 'list'],
-    queryFn: () => api.invoices.list(),
+    queryKey: ['invoices', 'list', 'page', serverQuery],
+    queryFn: () => api.invoices.listPage(serverQuery),
     enabled: canRead,
+    placeholderData: keepPreviousData,
   })
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['invoices'] })
@@ -95,6 +112,7 @@ export function InvoicesPage() {
       accessorKey: 'number',
       header: 'No',
       size: 140,
+      meta: { filter: { type: 'text' } },
       cell: ({ row }) => {
         const inv = row.original
         return (
@@ -110,6 +128,7 @@ export function InvoicesPage() {
       header: 'Tip',
       size: 100,
       enableGrouping: true,
+      meta: { filter: { type: 'select', options: TYPE_OPTIONS } },
       cell: ({ row }) => <Badge variant="secondary">{TYPE_LABEL[row.original.type]}</Badge>,
     },
     {
@@ -117,6 +136,8 @@ export function InvoicesPage() {
       accessorFn: (i) => i.contact?.name ?? '',
       header: 'Cari',
       size: 220,
+      enableColumnFilter: false,
+      enableSorting: false,
       cell: ({ row }) => (
         <span className="font-medium">{row.original.contact?.name ?? '—'}</span>
       ),
@@ -126,6 +147,7 @@ export function InvoicesPage() {
       accessorKey: 'date',
       header: 'Tarih',
       size: 120,
+      meta: { filter: { type: 'date' } },
       cell: ({ row }) => <span className="text-sm">{formatDate(row.original.date)}</span>,
     },
     {
@@ -133,6 +155,7 @@ export function InvoicesPage() {
       accessorKey: 'dueDate',
       header: 'Vade',
       size: 120,
+      meta: { filter: { type: 'date' } },
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
           {row.original.dueDate ? formatDate(row.original.dueDate) : '—'}
@@ -145,6 +168,7 @@ export function InvoicesPage() {
       header: 'Durum',
       size: 110,
       enableGrouping: true,
+      meta: { filter: { type: 'select', options: STATUS_OPTIONS } },
       cell: ({ row }) => (
         <Badge variant={STATUS_TONE[row.original.status]}>
           {STATUS_LABEL[row.original.status]}
@@ -180,6 +204,7 @@ export function InvoicesPage() {
       accessorKey: 'grandTotal',
       header: 'Genel Toplam',
       size: 150,
+      meta: { filter: { type: 'number' } },
       cell: ({ row }) => (
         <div className="text-right font-mono font-semibold tabular-nums">
           {formatMoney(row.original.grandTotal, row.original.currencyCode)}
@@ -279,12 +304,14 @@ export function InvoicesPage() {
       <PageWrapper>
         <DataGrid
           gridId="invoices.list"
-          data={query.data ?? []}
+          data={query.data?.items ?? []}
           columns={columns}
           getRowId={(row) => row.id}
           loading={query.isLoading}
           onRowClick={(row) => navigate({ to: '/invoices/invoices/$id', params: { id: row.id } })}
           emptyText="Fatura yok."
+          server={{ total: query.data?.total ?? 0, onQueryChange: setServerQuery }}
+          queryBuilder={{ fields: INVOICE_QB_FIELDS }}
           toolbar={
             canWrite ? (
               <Button onClick={() => navigate({ to: '/invoices/invoices/new' })}>

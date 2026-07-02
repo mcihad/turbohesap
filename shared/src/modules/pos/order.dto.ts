@@ -105,6 +105,12 @@ export interface PosOrderDto {
   payments: PosPaymentDto[]
   createdAt: string
   updatedAt: string
+  /**
+   * TRANSIENT (never persisted): non-blocking stock warnings produced while
+   * settling — e.g. a recipe ingredient driven below zero. Populated only on
+   * the settle/pay response so the client can toast them.
+   */
+  stockWarnings?: string[]
 }
 
 // ── requests ──

@@ -5,6 +5,8 @@
 // (Σ debit − Σ credit), never stored here. Money fields are plain `number` in the
 // DTO; the backend stores them as `numeric` (see agy.md §7.1).
 
+import type { ListQuery } from '../../core/list-query'
+
 // ── enums ─────────────────────────────────────────────────────────────────────
 export type ContactType = 'company' | 'individual' // Kurumsal / Bireysel
 export const CONTACT_TYPES: ContactType[] = ['company', 'individual']
@@ -138,8 +140,9 @@ export interface CreateContactRequest {
 }
 export type UpdateContactRequest = Partial<CreateContactRequest>
 
-/** Optional filters for the contact list. */
-export interface ContactListQuery {
+/** Optional filters for the contact list. Server-scoped scalars + generic
+ *  pagination/sort/filter tree (`ListQuery`). */
+export interface ContactListQuery extends ListQuery {
   role?: ContactRole
   groupId?: string
   ownerId?: string
@@ -147,7 +150,6 @@ export interface ContactListQuery {
   mine?: boolean
   /** Filter contacts carrying this tag. */
   tag?: string
-  search?: string
   activeOnly?: boolean
 }
 

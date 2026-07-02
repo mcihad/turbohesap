@@ -3,6 +3,7 @@ import {
   type Column,
   type ColumnDef,
   type ExpandedState,
+  type RowData,
   type RowSelectionState,
   type Table as TanstackTable,
   flexRender,
@@ -14,6 +15,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import type { ListQuery } from '@turbohesap/shared'
 import {
   ArrowDown,
   ArrowUp,
@@ -55,8 +57,20 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { defaultGridState, useGridState } from './use-grid-state'
+import { ColumnFilterPopover, columnFilterFn, type ColumnFilterMeta } from './column-filter'
+import { buildListQuery, type FieldMap } from './build-list-query'
+import { QueryBuilder, type QueryBuilderField } from '@/components/query-builder'
+import { emptyGroup, isEmptyGroup, isFilterGroup, type FilterGroup } from '@turbohesap/shared'
 
 export type { ColumnDef } from '@tanstack/react-table'
+
+// Per-column filter metadata (typed filter editors + server field mapping).
+declare module '@tanstack/react-table' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface ColumnMeta<TData extends RowData, TValue> {
+    filter?: ColumnFilterMeta
+  }
+}
 
 const SELECT_COL = '__select__'
 
@@ -99,6 +113,23 @@ export interface DataGridProps<T> {
    * only the table body scrolls. Use inside a flex/height-constrained parent.
    */
   fillHeight?: boolean
+  /**
+   * Opt into SERVER-side pagination/sorting/filtering. When set, `data` is the
+   * CURRENT PAGE only, `total` is the server row count, and the grid emits a
+   * derived `ListQuery` (from sort + column filters + query builder + search +
+   * page) via `onQueryChange` so the page's query can refetch. When omitted,
+   * the grid stays fully client-side (backward compatible).
+   */
+  server?: {
+    total: number
+    onQueryChange: (query: ListQuery) => void
+  }
+  /**
+   * Enable the advanced Query Builder (nested AND/OR rules). When set, a
+   * "Gelişmiş filtre" toolbar button opens it; its tree persists in grid state
+   * and AND-combines with the quick column filters. Best paired with `server`.
+   */
+  queryBuilder?: { fields: QueryBuilderField[] }
 }
 
 export function DataGrid<T>({
@@ -121,8 +152,11 @@ export function DataGrid<T>({
   search,
   hideSearch = false,
   fillHeight = false,
+  server,
+  queryBuilder,
 }: DataGridProps<T>) {
   const tree = !!getSubRows
+  const serverMode = !!server
   const { state, setState, ready } = useGridState(gridId, defaultGridState(pageSize))
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
   const [expanded, setExpanded] = React.useState<ExpandedState>(defaultExpanded ? true : {})
@@ -183,6 +217,15 @@ export function DataGrid<T>({
     enableMultiRowSelection: selection === 'multi',
     enableRowSelection: selection !== 'none',
     globalFilterFn: 'includesString',
+    // Typed column filters store `{op,value}`; this filterFn honors that shape
+    // (and falls back to substring for legacy plain-string filters).
+    defaultColumn: { filterFn: columnFilterFn },
+    // Server mode: the row models become pass-through and the grid emits a
+    // ListQuery instead of slicing locally.
+    manualPagination: serverMode,
+    manualSorting: serverMode,
+    manualFiltering: serverMode,
+    ...(serverMode ? { rowCount: server!.total } : {}),
     onSortingChange: (u) => setState((s) => ({ ...s, sorting: typeof u === 'function' ? u(s.sorting) : u })),
     onColumnOrderChange: (u) => setState((s) => ({ ...s, columnOrder: typeof u === 'function' ? u(s.columnOrder) : u })),
     onColumnVisibilityChange: (u) => setState((s) => ({ ...s, columnVisibility: typeof u === 'function' ? u(s.columnVisibility) : u })),
@@ -207,6 +250,49 @@ export function DataGrid<T>({
     filterFromLeafRows: tree,
     paginateExpandedRows: false,
   })
+
+  // ── server mode: derive a ListQuery from grid state and emit it ─────────────
+  const fieldMap = React.useMemo<FieldMap>(() => {
+    const m: FieldMap = {}
+    for (const c of columns) {
+      const id = c.id ?? ('accessorKey' in c ? (c.accessorKey as string) : undefined)
+      if (!id) continue
+      m[id] = c.meta?.filter?.field ?? id
+    }
+    return m
+  }, [columns])
+
+  const serverSearch = search ? search.value : state.globalFilter
+  const serverQuery = React.useMemo(
+    () =>
+      buildListQuery({
+        sorting: state.sorting,
+        columnFilters: state.columnFilters,
+        queryBuilder: state.queryBuilder,
+        search: serverSearch,
+        pageIndex,
+        pageSize: state.pageSize,
+        fieldMap,
+      }),
+    [state.sorting, state.columnFilters, state.queryBuilder, serverSearch, pageIndex, state.pageSize, fieldMap],
+  )
+
+  // Reset to page 1 whenever the filter/sort/search signature changes.
+  const sigRef = React.useRef<string | null>(null)
+  React.useEffect(() => {
+    if (!serverMode) return
+    const sig = JSON.stringify({ sort: serverQuery.sort, filter: serverQuery.filter, search: serverQuery.search })
+    if (sigRef.current !== null && sigRef.current !== sig && pageIndex !== 0) setPageIndex(0)
+    sigRef.current = sig
+  }, [serverMode, serverQuery, pageIndex])
+
+  const onQueryChangeRef = React.useRef(server?.onQueryChange)
+  onQueryChangeRef.current = server?.onQueryChange
+  React.useEffect(() => {
+    if (!serverMode || !ready) return
+    const t = setTimeout(() => onQueryChangeRef.current?.(serverQuery), 300)
+    return () => clearTimeout(t)
+  }, [serverMode, ready, serverQuery])
 
   // Report selection changes upward.
   React.useEffect(() => {
@@ -234,7 +320,12 @@ export function DataGrid<T>({
   const leafCount = table.getVisibleLeafColumns().length
   const treeColId = treeColumnId ?? table.getVisibleLeafColumns().find((c) => c.id !== SELECT_COL)?.id
   const selectedCount = table.getSelectedRowModel().rows.length
-  const total = table.getFilteredRowModel().rows.length
+  const total = serverMode ? server!.total : table.getFilteredRowModel().rows.length
+  const qbRuleCount = React.useMemo(() => {
+    const count = (g?: FilterGroup): number =>
+      g ? g.rules.reduce((n, r) => n + (isFilterGroup(r) ? count(r) : 1), 0) : 0
+    return count(state.queryBuilder)
+  }, [state.queryBuilder])
   const anyState =
     state.sorting.length > 0 ||
     state.columnFilters.length > 0 ||
@@ -275,6 +366,39 @@ export function DataGrid<T>({
           <span className="hidden sm:inline">Filtreler</span>
           {state.columnFilters.length ? <Badge variant="secondary" className="px-1.5">{state.columnFilters.length}</Badge> : null}
         </Button>
+
+        {queryBuilder ? (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={state.queryBuilder && !isEmptyGroup(state.queryBuilder) ? 'default' : 'outline'}
+                size="sm"
+                className="gap-1.5"
+              >
+                <SlidersHorizontal className="size-4" />
+                <span className="hidden sm:inline">Gelişmiş filtre</span>
+                {qbRuleCount ? <Badge variant="secondary" className="px-1.5">{qbRuleCount}</Badge> : null}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-[min(90vw,32rem)] p-2">
+              <QueryBuilder
+                fields={queryBuilder.fields}
+                value={state.queryBuilder ?? emptyGroup()}
+                onChange={(g) => setState((s) => ({ ...s, queryBuilder: g }))}
+              />
+              {state.queryBuilder && !isEmptyGroup(state.queryBuilder) ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mt-2 w-full text-xs"
+                  onClick={() => setState((s) => ({ ...s, queryBuilder: undefined }))}
+                >
+                  Gelişmiş filtreyi temizle
+                </Button>
+              ) : null}
+            </PopoverContent>
+          </Popover>
+        ) : null}
 
         <ColumnChooser table={table} />
 
@@ -337,19 +461,11 @@ export function DataGrid<T>({
                             {col.getIsSorted() === 'asc' ? <ArrowUp className="size-3.5" /> : col.getIsSorted() === 'desc' ? <ArrowDown className="size-3.5" /> : null}
                           </button>
                           {col.id !== SELECT_COL ? <ColumnMenu column={col} /> : null}
+                          {showFilters && col.getCanFilter() && (col.columnDef.meta?.filter || !serverMode) ? (
+                            <ColumnFilterPopover column={col} />
+                          ) : null}
                         </div>
                       )}
-                      {showFilters && col.getCanFilter() ? (
-                        <Input
-                          value={(col.getFilterValue() as string) ?? ''}
-                          onChange={(e) => col.setFilterValue(e.target.value)}
-                          placeholder="Filtre…"
-                          className="mt-1 h-7 text-xs font-normal"
-                          onClick={(e) => e.stopPropagation()}
-                          draggable={false}
-                          onDragStart={(e) => e.preventDefault()}
-                        />
-                      ) : null}
                     </th>
                   )
                 })}

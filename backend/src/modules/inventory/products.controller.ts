@@ -14,6 +14,7 @@ import {
 import {
   InventoryPermissions,
   type BarcodeMatchDto,
+  type Page,
   type ProductChannelPriceDto,
   type ProductDto,
   type ProductPackagingDto,
@@ -25,6 +26,7 @@ import {
 } from '@turbohesap/shared'
 
 import { RequirePermissions } from '../../common/decorators/permissions.decorator'
+import { ProductListQueryDto } from './dto/product-list-query.dto'
 import { CreateProductDto } from './dto/create-product.dto'
 import { UpdateProductDto } from './dto/update-product.dto'
 import {
@@ -55,11 +57,17 @@ export class ProductsController {
     return this.products.list(categoryId)
   }
 
-  // Declared BEFORE :id so "sellable" is not captured as a product id.
+  // Declared BEFORE :id so "sellable"/"paged" are not captured as a product id.
   @Get('sellable')
   @RequirePermissions(InventoryPermissions.productsRead)
   sellable(@Query('categoryId') categoryId?: string): Promise<SellableUnitDto[]> {
     return this.products.sellable(categoryId)
+  }
+
+  @Get('paged')
+  @RequirePermissions(InventoryPermissions.productsRead)
+  listPage(@Query() query: ProductListQueryDto): Promise<Page<ProductDto>> {
+    return this.products.listPage(query)
   }
 
   // BEFORE :id — resolve a scanned barcode to a product/variant/packaging.

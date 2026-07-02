@@ -110,6 +110,31 @@ seçeneği olan ürünler). POS satış ekranı bununla, ürüne tıklandığın
 diyaloğu gerekip gerekmediğine** tek istekte karar verir: seçenek yoksa doğrudan
 sepete ekler (aynı ürüne tekrar tıklanırsa adet artar), varsa diyalog açar.
 
+## Reçete (sessiz malzeme sarfı) — `inventory`
+
+Bir menü kalemi (pizza, köfte, hamburger) satılınca içindeki malzemeler
+(un, domates, peynir) **sessizce stoktan düşer** — pakette olduğu gibi ayrı
+fiyatlı satır göstermeden, üretim emri olmadan. Menü kalemi genelde **Stoksuz /
+anında hazırlanan** (`trackStock=false`) bir üründür; kendisine stok hareketi
+yazılmaz, yalnız malzemeleri düşülür.
+
+- **Veri:** `inventory_product_recipe_components` (üst `productId` → malzeme
+  satırları: `componentProductId`, `quantity`, `unit?`). Ürün başına reçete.
+  `PUT/GET /api/inventory/products/:id/recipe` (`inventory.products.write/read`),
+  `GET /api/inventory/recipe-map`. Web: ürün detay **"Reçete"** sekmesi; mobil:
+  ürün POS bölümünde **Reçete** kartı.
+- **Tüketim:** `RecipesService.consume(...)` — POS `settleInTx` (ana satırdan
+  hemen sonra) **ve** satış faturası `postInvoiceStock` (yalnız `type==='sales'`)
+  çağırır. Her malzeme `quantity × satış-adedi` kadar, **AVCO** maliyetiyle,
+  `'Reçete Sarf'` (out) tipiyle düşülür (raporda `'Satış Çıkışı'`'ndan ayrı).
+- **Kurallar:** stok tutulmayan malzeme atlanır (hareket yok); reçeteler iç içe
+  geçmez; alış/iade faturası reçete düşmez; POS satırında `deductStock=false`
+  ise reçete de atlanır. Void/iptal, `reverseSource` ile reçete hareketlerini de
+  geri alır.
+- **Uyar ama devam et:** bir malzeme negatife düşerse satış yine geçer; yanıtta
+  geçici `stockWarnings: string[]` döner → POS tender / fatura kesim ekranı
+  bloke etmeyen bir uyarı gösterir.
+
 ## Katlar & Masalar (kat/masa) — dine-in
 
 | Method | Path | Yetki | Açıklama |

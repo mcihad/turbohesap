@@ -28,6 +28,7 @@ import { Contact } from '../contacts/entities/contact.entity'
 import { ContactTransaction } from '../contacts/entities/contact-transaction.entity'
 import { FinanceTransaction } from '../finance/entities/finance-transaction.entity'
 import { StockMovementsService } from '../inventory/stock-movements.service'
+import { RecipesService } from '../inventory/recipes.service'
 import { StockMovementTypesService } from '../inventory/stock-movement-types.service'
 import type {
   AddPosPaymentDto,
@@ -65,6 +66,7 @@ export class PosOrdersService {
     @InjectRepository(Contact) private readonly contacts: Repository<Contact>,
     private readonly stockMovements: StockMovementsService,
     private readonly movementTypes: StockMovementTypesService,
+    private readonly recipes: RecipesService,
   ) {}
 
   async list(query?: PosOrderListQuery): Promise<PosOrderDto[]> {
@@ -170,6 +172,7 @@ export class PosOrdersService {
       throw new BadRequestException('Tutar kalan tutardan fazla olamaz')
     }
 
+    let warnings: string[] = []
     await this.orders.manager.transaction(async (em) => {
       await em.getRepository(PosPayment).save(
         em.getRepository(PosPayment).create({
@@ -188,10 +191,12 @@ export class PosOrdersService {
       o.changeDue = await this.sumChange(em, id)
       await em.getRepository(PosOrder).save(o)
       if (paid >= o.grandTotal - 0.001) {
-        await this.settleInTx(em, o)
+        warnings = await this.settleInTx(em, o)
       }
     })
-    return this.get(id)
+    const result = await this.get(id)
+    if (warnings.length) result.stockWarnings = warnings
+    return result
   }
 
   async removePayment(id: string, paymentId: string): Promise<PosOrderDto> {
@@ -212,8 +217,13 @@ export class PosOrdersService {
     if (o.paidTotal < o.grandTotal - 0.001) {
       throw new BadRequestException('Sipariş tam ödenmeden kapatılamaz')
     }
-    await this.orders.manager.transaction((em) => this.settleInTx(em, o))
-    return this.get(id)
+    let warnings: string[] = []
+    await this.orders.manager.transaction(async (em) => {
+      warnings = await this.settleInTx(em, o)
+    })
+    const dto = await this.get(id)
+    if (warnings.length) dto.stockWarnings = warnings
+    return dto
   }
 
   async split(id: string, lineIds: string[]): Promise<PosOrderDto> {
@@ -536,7 +546,8 @@ export class PosOrdersService {
    * once when the session is closed (vezne). Modifier-driven stock (e.g. "ekstra
    * ketçap") and bundle children are deducted too, respecting their flags.
    */
-  private async settleInTx(em: EntityManager, o: PosOrder): Promise<void> {
+  private async settleInTx(em: EntityManager, o: PosOrder): Promise<string[]> {
+    const warnings: string[] = []
     const lines = await em.getRepository(PosOrderLine).find({ where: { orderId: o.id } })
     const productIds = [...new Set(lines.map((l) => l.productId).filter((x): x is string => !!x))]
     const products = productIds.length
@@ -559,6 +570,23 @@ export class PosOrdersService {
           sourceModule: 'pos',
           sourceId: o.id,
         })
+      }
+      // Recipe (reçete) ingredients — silent backflush for a sold menu item.
+      // Deliberately OUTSIDE the trackMap guard above: a "Stoksuz" pizza posts
+      // no movement for itself yet still consumes its ingredients. Honors an
+      // explicit line-level deductStock=false opt-out.
+      if (l.productId && l.deductStock !== false) {
+        warnings.push(
+          ...(await this.recipes.consume(em, {
+            productId: l.productId,
+            variantId: l.variantId,
+            branchId: o.branchId,
+            multiplier: l.qty,
+            date: today,
+            sourceModule: 'pos',
+            sourceId: o.id,
+          })),
+        )
       }
       // Modifier-driven stock consumption (e.g. "Ekstra ketçap" → deduct ketchup).
       const mods = await em.getRepository(PosOrderLineModifier).find({ where: { lineId: l.id } })
@@ -605,6 +633,7 @@ export class PosOrdersService {
     }
     o.status = 'paid'
     await em.getRepository(PosOrder).save(o)
+    return warnings
   }
 
   private async reverseSettle(em: EntityManager, o: PosOrder): Promise<void> {

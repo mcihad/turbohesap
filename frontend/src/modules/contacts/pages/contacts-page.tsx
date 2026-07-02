@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Building2, Download, Pencil, Plus, Trash2, Upload, User } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -9,6 +9,7 @@ import {
   toApiError,
   type ContactDto,
   type ContactRole,
+  type ListQuery,
 } from '@turbohesap/shared'
 
 import { api } from '@/lib/api'
@@ -17,8 +18,8 @@ import { PermissionRequired } from '@/lib/auth/permission-gate'
 import { PageWrapper } from '@/components/layout/page'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { DataGrid, type ColumnDef } from '@/components/data-grid'
+import type { QueryBuilderField } from '@/components/query-builder'
 import { ContactDialog } from '../components/contact-dialog'
 import { ContactsBulkBar } from '../components/bulk-actions-bar'
 import { balanceSideLabel, balanceTone, formatMoney } from '../format'
@@ -59,6 +60,16 @@ const ROLE_LABEL: Record<ContactRole, string> = {
 const ROLE_TONE: Record<ContactRole, 'success' | 'info' | 'secondary' | 'warning'> = {
   customer: 'success', supplier: 'info', both: 'secondary', lead: 'warning',
 }
+const ROLE_OPTIONS = (Object.keys(ROLE_LABEL) as ContactRole[]).map((r) => ({ value: r, label: ROLE_LABEL[r] }))
+const CONTACT_QB_FIELDS: QueryBuilderField[] = [
+  { key: 'code', label: 'Kod', type: 'text' },
+  { key: 'name', label: 'Ünvan', type: 'text' },
+  { key: 'role', label: 'Rol', type: 'select', options: ROLE_OPTIONS },
+  { key: 'taxNumber', label: 'Vergi/TCKN', type: 'text' },
+  { key: 'phone', label: 'Telefon', type: 'text' },
+  { key: 'isActive', label: 'Durum', type: 'boolean' },
+  { key: 'createdAt', label: 'Oluşturma', type: 'date' },
+]
 
 export function ContactsPage() {
   const qc = useQueryClient()
@@ -67,12 +78,14 @@ export function ContactsPage() {
   const canWrite = hasPermission(ContactsPermissions.contactsWrite)
 
   const [tag, setTag] = React.useState('')
-  const [tagInput, setTagInput] = React.useState('')
+  const [tagInput] = React.useState('')
+  const [serverQuery, setServerQuery] = React.useState<ListQuery>({ page: 1, pageSize: 25 })
 
   const query = useQuery({
-    queryKey: ['contacts', 'contacts', { tag }],
-    queryFn: () => api.contacts.contacts.list(tag ? { tag } : undefined),
+    queryKey: ['contacts', 'contacts', 'page', serverQuery, tag],
+    queryFn: () => api.contacts.contacts.listPage({ ...serverQuery, ...(tag ? { tag } : {}) }),
     enabled: hasPermission(ContactsPermissions.contactsRead),
+    placeholderData: keepPreviousData,
   })
 
   const [open, setOpen] = React.useState(false)
@@ -84,7 +97,7 @@ export function ContactsPage() {
     setSelected([])
     setGridKey((k) => k + 1)
   }, [])
-  const rows = query.data ?? []
+  const rows = query.data?.items ?? []
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['contacts', 'contacts'] })
 
@@ -95,9 +108,9 @@ export function ContactsPage() {
   })
 
   const columns: ColumnDef<ContactDto>[] = [
-    { id: 'code', accessorKey: 'code', header: 'Kod', size: 120, cell: ({ row }) => <span className="font-mono text-xs">{row.original.code}</span> },
+    { id: 'code', accessorKey: 'code', header: 'Kod', size: 120, meta: { filter: { type: 'text' } }, cell: ({ row }) => <span className="font-mono text-xs">{row.original.code}</span> },
     {
-      id: 'name', accessorKey: 'name', header: 'Ünvan', size: 240,
+      id: 'name', accessorKey: 'name', header: 'Ünvan', size: 240, meta: { filter: { type: 'text' } },
       cell: ({ row }) => (
         <span className="inline-flex items-center gap-1.5 font-medium">
           {row.original.contactType === 'company' ? <Building2 className="size-3.5 text-muted-foreground" /> : <User className="size-3.5 text-muted-foreground" />}
@@ -105,12 +118,12 @@ export function ContactsPage() {
         </span>
       ),
     },
-    { id: 'role', accessorKey: 'role', header: 'Rol', size: 140, enableGrouping: true, cell: ({ row }) => <Badge variant={ROLE_TONE[row.original.role]}>{ROLE_LABEL[row.original.role]}</Badge> },
-    { id: 'group', accessorFn: (c) => c.group?.name ?? '', header: 'Grup', size: 140, enableGrouping: true, cell: ({ row }) => row.original.group ? <Badge variant="outline">{row.original.group.name}</Badge> : <span className="text-muted-foreground">—</span> },
-    { id: 'taxNumber', accessorKey: 'taxNumber', header: 'Vergi/TCKN', size: 130, cell: ({ row }) => <span className="font-mono text-xs text-muted-foreground">{row.original.taxNumber || row.original.nationalId || '—'}</span> },
-    { id: 'phone', accessorFn: (c) => c.phone ?? c.mobile ?? '', header: 'Telefon', size: 130, cell: ({ row }) => <span className="text-muted-foreground">{row.original.phone || row.original.mobile || '—'}</span> },
+    { id: 'role', accessorKey: 'role', header: 'Rol', size: 140, enableGrouping: true, meta: { filter: { type: 'select', options: ROLE_OPTIONS } }, cell: ({ row }) => <Badge variant={ROLE_TONE[row.original.role]}>{ROLE_LABEL[row.original.role]}</Badge> },
+    { id: 'group', accessorFn: (c) => c.group?.name ?? '', header: 'Grup', size: 140, enableGrouping: true, enableColumnFilter: false, cell: ({ row }) => row.original.group ? <Badge variant="outline">{row.original.group.name}</Badge> : <span className="text-muted-foreground">—</span> },
+    { id: 'taxNumber', accessorKey: 'taxNumber', header: 'Vergi/TCKN', size: 130, meta: { filter: { type: 'text' } }, cell: ({ row }) => <span className="font-mono text-xs text-muted-foreground">{row.original.taxNumber || row.original.nationalId || '—'}</span> },
+    { id: 'phone', accessorFn: (c) => c.phone ?? c.mobile ?? '', header: 'Telefon', size: 130, meta: { filter: { type: 'text', field: 'phone' } }, cell: ({ row }) => <span className="text-muted-foreground">{row.original.phone || row.original.mobile || '—'}</span> },
     {
-      id: 'balance', accessorKey: 'balance', header: 'Bakiye', size: 150,
+      id: 'balance', accessorKey: 'balance', header: 'Bakiye', size: 150, enableColumnFilter: false, enableSorting: false,
       cell: ({ row }) => (
         <span className={`tabular-nums font-medium ${balanceTone(row.original.balanceSide)}`}>
           {formatMoney(row.original.balance, row.original.currencyCode)}
@@ -119,7 +132,7 @@ export function ContactsPage() {
       ),
     },
     {
-      id: 'tags', accessorFn: (c) => c.tags.join(', '), header: 'Etiketler', size: 180, enableSorting: false,
+      id: 'tags', accessorFn: (c) => c.tags.join(', '), header: 'Etiketler', size: 180, enableSorting: false, enableColumnFilter: false,
       cell: ({ row }) => row.original.tags.length
         ? (
           <div className="flex flex-wrap gap-1">
@@ -128,17 +141,17 @@ export function ContactsPage() {
         )
         : <span className="text-muted-foreground">—</span>,
     },
-    { id: 'isActive', accessorKey: 'isActive', header: 'Durum', size: 100, enableGrouping: true, cell: ({ row }) => <Badge variant={row.original.isActive ? 'success' : 'outline'}>{row.original.isActive ? 'Aktif' : 'Pasif'}</Badge> },
+    { id: 'isActive', accessorKey: 'isActive', header: 'Durum', size: 100, enableGrouping: true, meta: { filter: { type: 'boolean' } }, cell: ({ row }) => <Badge variant={row.original.isActive ? 'success' : 'outline'}>{row.original.isActive ? 'Aktif' : 'Pasif'}</Badge> },
     ...(canWrite
       ? [{
-          id: 'actions', header: '', size: 90, enableSorting: false, enableHiding: false, enableColumnFilter: false, enableGrouping: false,
-          cell: ({ row }) => (
-            <div className="flex justify-end gap-1">
-              <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); setEditing(row.original); setOpen(true) }} aria-label="Düzenle"><Pencil className="size-4" /></Button>
-              <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); if (confirm(`"${row.original.name}" silinsin mi?`)) deleteMutation.mutate(row.original.id) }} aria-label="Sil"><Trash2 className="size-4 text-destructive" /></Button>
-            </div>
-          ),
-        } as ColumnDef<ContactDto>]
+        id: 'actions', header: '', size: 90, enableSorting: false, enableHiding: false, enableColumnFilter: false, enableGrouping: false,
+        cell: ({ row }) => (
+          <div className="flex justify-end gap-1">
+            <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); setEditing(row.original); setOpen(true) }} aria-label="Düzenle"><Pencil className="size-4" /></Button>
+            <Button variant="ghost" size="icon-sm" onClick={(e) => { e.stopPropagation(); if (confirm(`"${row.original.name}" silinsin mi?`)) deleteMutation.mutate(row.original.id) }} aria-label="Sil"><Trash2 className="size-4 text-destructive" /></Button>
+          </div>
+        ),
+      } as ColumnDef<ContactDto>]
       : []),
   ]
 
@@ -156,30 +169,25 @@ export function ContactsPage() {
           onSelectionChange={setSelected}
           onRowClick={(c) => navigate({ to: '/contacts/contacts/$id', params: { id: c.id } })}
           emptyText="Cari yok."
+          server={{ total: query.data?.total ?? 0, onQueryChange: setServerQuery }}
+          queryBuilder={{ fields: CONTACT_QB_FIELDS }}
           toolbar={
             <div className="flex items-center gap-2">
               <form
                 className="flex items-center gap-1"
                 onSubmit={(e) => { e.preventDefault(); setTag(tagInput.trim()) }}
               >
-                <Input
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  placeholder="Etikete göre filtrele…"
-                  className="h-9 w-48"
-                />
-                {tag ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => { setTag(''); setTagInput('') }}
-                  >
-                    Temizle
-                  </Button>
-                ) : null}
+
               </form>
-              <Button variant="outline" onClick={() => exportContactsCsv(rows)} disabled={rows.length === 0}>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  // Export the full filtered set, not just the current page.
+                  const all = await api.contacts.contacts.list(tag ? { tag } : undefined)
+                  exportContactsCsv(all)
+                }}
+                disabled={rows.length === 0}
+              >
                 <Download />Dışa aktar (CSV)
               </Button>
               {canWrite ? (

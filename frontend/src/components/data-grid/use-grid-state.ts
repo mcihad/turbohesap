@@ -7,6 +7,7 @@ import type {
   SortingState,
   VisibilityState,
 } from '@tanstack/react-table'
+import type { FilterGroup } from '@turbohesap/shared'
 
 import { api } from '@/lib/api'
 
@@ -22,6 +23,8 @@ export interface PersistedGridState {
   grouping: GroupingState
   globalFilter: string
   pageSize: number
+  /** Advanced Query Builder filter tree (server mode). AND-combined with column filters. */
+  queryBuilder?: FilterGroup
 }
 
 export function defaultGridState(pageSize = 25): PersistedGridState {
@@ -34,6 +37,7 @@ export function defaultGridState(pageSize = 25): PersistedGridState {
     grouping: [],
     globalFilter: '',
     pageSize,
+    queryBuilder: undefined,
   }
 }
 

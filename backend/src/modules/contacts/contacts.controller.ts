@@ -13,14 +13,14 @@ import {
 import {
   ContactsPermissions,
   type ContactDto,
-  type ContactListQuery,
-  type ContactRole,
+  type Page,
 } from '@turbohesap/shared'
 
 import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator'
 import { RequirePermissions } from '../../common/decorators/permissions.decorator'
 import { ContactsService } from './contacts.service'
 import { ConvertLeadDto, CreateContactDto, UpdateContactDto } from './dto/contact.dto'
+import { ContactListQueryDto } from './dto/contact-list-query.dto'
 import { BulkContactDto, ImportContactsDto } from './dto/crm-fields.dto'
 import type { BulkResultDto, ImportResultDto } from '@turbohesap/shared'
 
@@ -32,24 +32,20 @@ export class ContactsController {
   @RequirePermissions(ContactsPermissions.contactsRead)
   list(
     @CurrentUser() user: AuthUser,
-    @Query('role') role?: ContactRole,
-    @Query('groupId') groupId?: string,
-    @Query('ownerId') ownerId?: string,
-    @Query('mine') mine?: string,
-    @Query('tag') tag?: string,
-    @Query('search') search?: string,
-    @Query('activeOnly') activeOnly?: string,
+    @Query() query: ContactListQueryDto,
   ): Promise<ContactDto[]> {
-    const query: ContactListQuery = {
-      role,
-      groupId,
-      ownerId,
-      mine: mine === 'true',
-      tag,
-      search,
-      activeOnly: activeOnly === 'true',
-    }
     return this.contacts.list(query, user.sub)
+  }
+
+  // Server-paginated variant for the DataGrid. Declared before `:id` so the
+  // static path is not captured as a contact id.
+  @Get('paged')
+  @RequirePermissions(ContactsPermissions.contactsRead)
+  listPage(
+    @CurrentUser() user: AuthUser,
+    @Query() query: ContactListQueryDto,
+  ): Promise<Page<ContactDto>> {
+    return this.contacts.listPage(query, user.sub)
   }
 
   @Get(':id')

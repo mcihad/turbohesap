@@ -152,6 +152,10 @@ export function TenderDialog({
           description: change > 0 ? `Para üstü: ${money(change, currency)}` : undefined,
         })
       }
+      // Non-blocking recipe/stock warnings (e.g. an ingredient driven negative).
+      if (updated.stockWarnings?.length) {
+        toast.warning('Stok uyarısı', { description: updated.stockWarnings.join('\n') })
+      }
     },
     onError: (e) => toast.error('Tahsilat başarısız', { description: toApiError(e).message }),
   })

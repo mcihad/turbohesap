@@ -18,8 +18,10 @@ import {
   type InvoiceListQuery,
   type InvoicePaymentDto,
   type InvoiceType,
+  type Page,
 } from '@turbohesap/shared'
 
+import { applyListQuery, type ListSpec } from '../../common/list/apply-list-query'
 import { Invoice } from './entities/invoice.entity'
 import { InvoiceLine } from './entities/invoice-line.entity'
 import { InvoicePayment } from './entities/invoice-payment.entity'
@@ -32,9 +34,29 @@ import { CashAccount } from '../finance/entities/cash-account.entity'
 import { BankAccount } from '../finance/entities/bank-account.entity'
 import { User } from '../iam/entities/user.entity'
 import { StockMovementsService } from '../inventory/stock-movements.service'
+import { RecipesService } from '../inventory/recipes.service'
 import { StockMovementTypesService } from '../inventory/stock-movement-types.service'
 import { buildInvoiceUbl, sellerFromEnv } from './invoice-ubl'
 import type { CreateInvoiceDto, UpdateInvoiceDto } from './dto/invoice.dto'
+
+const INVOICE_LIST_SPEC: ListSpec = {
+  fields: {
+    type: { column: 'i.type', type: 'enum', filterable: true, sortable: true },
+    status: { column: 'i.status', type: 'enum', filterable: true, sortable: true },
+    contactId: { column: 'i.contactId', type: 'uuid', filterable: true, sortable: false },
+    number: { column: 'i.number', type: 'text', filterable: true, sortable: true },
+    series: { column: 'i.series', type: 'text', filterable: true, sortable: true },
+    date: { column: 'i.date', type: 'date', filterable: true, sortable: true },
+    dueDate: { column: 'i.dueDate', type: 'date', filterable: true, sortable: true },
+    grandTotal: { column: 'i.grandTotal', type: 'number', filterable: true, sortable: true },
+    createdAt: { column: 'i.createdAt', type: 'date', filterable: true, sortable: true },
+  },
+  searchColumns: ['i.number', 'i.series'],
+  defaultSort: [
+    { field: 'date', dir: 'desc' },
+    { field: 'createdAt', dir: 'desc' },
+  ],
+}
 
 @Injectable()
 export class InvoicesService {
@@ -53,6 +75,7 @@ export class InvoicesService {
     @InjectRepository(User) private readonly users: Repository<User>,
     private readonly stockMovements: StockMovementsService,
     private readonly movementTypes: StockMovementTypesService,
+    private readonly recipes: RecipesService,
   ) {}
 
   /** A branch-restricted user may only invoice within their authorized branches. */
@@ -192,20 +215,19 @@ export class InvoicesService {
     )
   }
 
-  async list(query?: InvoiceListQuery): Promise<InvoiceDto[]> {
+  /** Base query with the legacy scalar filters applied. */
+  private listBaseQb(query?: InvoiceListQuery) {
     const qb = this.invoices.createQueryBuilder('i')
     if (query?.type) qb.andWhere('i.type = :type', { type: query.type })
     if (query?.status) qb.andWhere('i.status = :status', { status: query.status })
     if (query?.contactId) qb.andWhere('i.contactId = :contactId', { contactId: query.contactId })
     if (query?.from) qb.andWhere('i.date >= :from', { from: query.from })
     if (query?.to) qb.andWhere('i.date <= :to', { to: query.to })
-    if (query?.search) {
-      qb.andWhere('(i.number ILIKE :q OR i.series ILIKE :q)', { q: `%${query.search}%` })
-    }
-    qb.orderBy('i.date', 'DESC').addOrderBy('i.createdAt', 'DESC')
-    const rows = await qb.getMany()
-    if (rows.length === 0) return []
+    return qb
+  }
 
+  private async enrichInvoices(rows: Invoice[]): Promise<InvoiceDto[]> {
+    if (rows.length === 0) return []
     const ids = rows.map((r) => r.id)
     const allLines = await this.lines.find({ where: { invoiceId: In(ids) }, order: { sortOrder: 'ASC' } })
     const names = await this.contactNameMap(rows.map((r) => r.contactId))
@@ -219,6 +241,20 @@ export class InvoicesService {
     return rows.map((r) =>
       toInvoiceDto(r, linesByInvoice.get(r.id) ?? [], names.get(r.contactId) ?? null, paidMap.get(r.id) ?? 0),
     )
+  }
+
+  async list(query?: InvoiceListQuery): Promise<InvoiceDto[]> {
+    const qb = this.listBaseQb(query)
+    if (query?.search) qb.andWhere('(i.number ILIKE :q OR i.series ILIKE :q)', { q: `%${query.search}%` })
+    qb.orderBy('i.date', 'DESC').addOrderBy('i.createdAt', 'DESC')
+    return this.enrichInvoices(await qb.getMany())
+  }
+
+  async listPage(query?: InvoiceListQuery): Promise<Page<InvoiceDto>> {
+    const qb = this.listBaseQb(query)
+    const { page, pageSize } = applyListQuery(qb, query ?? {}, INVOICE_LIST_SPEC)
+    const [rows, total] = await qb.getManyAndCount()
+    return { items: await this.enrichInvoices(rows), total, page, pageSize }
   }
 
   private async paidMap(ids: string[]): Promise<Map<string, number>> {
@@ -325,6 +361,7 @@ export class InvoicesService {
   async issue(id: string, userId?: string): Promise<InvoiceDto> {
     const head = await this.findOrFail(id)
     await this.assertBranchAllowed(userId, head.branchId)
+    let warnings: string[] = []
     return this.invoices.manager.transaction(async (em) => {
       const invRepo = em.getRepository(Invoice)
       const invoice = await invRepo.findOne({ where: { id } })
@@ -375,9 +412,13 @@ export class InvoicesService {
       // Post stock movements for stock-tracked products — unless the stock was
       // already moved upstream by an İrsaliye (orders chain), in which case the
       // invoice is created with postsStock=false to avoid double-counting.
-      if (invoice.postsStock) await this.postInvoiceStock(em, invoice)
+      if (invoice.postsStock) warnings = await this.postInvoiceStock(em, invoice)
       return invoice.id
-    }).then((invId) => this.get(invId))
+    }).then(async (invId) => {
+      const dto = await this.get(invId)
+      if (warnings.length) dto.stockWarnings = warnings
+      return dto
+    })
   }
 
   /** Reverse a posted invoice (ledger + stock), keeps the number. */
@@ -410,10 +451,11 @@ export class InvoicesService {
    * type: sales → "Satış Çıkışı" (out), purchase/return → "Satın Alma Girişi" (in).
    * Movements are tagged with the invoice as source, so cancel reverses them.
    */
-  private async postInvoiceStock(em: import('typeorm').EntityManager, invoice: Invoice): Promise<void> {
+  private async postInvoiceStock(em: import('typeorm').EntityManager, invoice: Invoice): Promise<string[]> {
+    const warnings: string[] = []
     const lines = await em.getRepository(InvoiceLine).find({ where: { invoiceId: invoice.id } })
     const productIds = [...new Set(lines.map((l) => l.productId).filter((x): x is string => !!x))]
-    if (productIds.length === 0) return
+    if (productIds.length === 0) return warnings
     const products = await em.getRepository(Product).find({ where: { id: In(productIds) } })
     const tracked = new Map(products.map((p) => [p.id, p.trackStock]))
     const isSale = invoice.type === 'sales'
@@ -422,20 +464,40 @@ export class InvoicesService {
       : await this.movementTypes.systemTypeId('Satın Alma Girişi', 'in')
 
     for (const line of lines) {
-      if (!line.productId || !tracked.get(line.productId)) continue
-      await this.stockMovements.post(em, {
-        productId: line.productId,
-        branchId: invoice.branchId ?? null,
-        movementTypeId: typeId,
-        direction: isSale ? 'out' : 'in',
-        quantity: line.quantity,
-        unit: line.unit,
-        date: invoice.date,
-        description: `Fatura ${invoice.series}${invoice.number}`,
-        sourceModule: 'invoices',
-        sourceId: invoice.id,
-      })
+      if (!line.productId) continue
+      // The line product's own stock movement — only for stock-tracked products.
+      if (tracked.get(line.productId)) {
+        await this.stockMovements.post(em, {
+          productId: line.productId,
+          branchId: invoice.branchId ?? null,
+          movementTypeId: typeId,
+          direction: isSale ? 'out' : 'in',
+          quantity: line.quantity,
+          unit: line.unit,
+          date: invoice.date,
+          description: `Fatura ${invoice.series}${invoice.number}`,
+          sourceModule: 'invoices',
+          sourceId: invoice.id,
+        })
+      }
+      // Recipe (reçete) ingredients — silent backflush on SALES only, regardless
+      // of the line product's own trackStock (a "Stoksuz" pizza still consumes
+      // its ingredients). Purchases/returns never expand recipes.
+      if (isSale) {
+        warnings.push(
+          ...(await this.recipes.consume(em, {
+            productId: line.productId,
+            variantId: null,
+            branchId: invoice.branchId ?? null,
+            multiplier: line.quantity,
+            date: invoice.date,
+            sourceModule: 'invoices',
+            sourceId: invoice.id,
+          })),
+        )
+      }
     }
+    return warnings
   }
 
   /**

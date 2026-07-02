@@ -11,8 +11,10 @@ import {
   InventoryPermissions,
   type ProductBundleComponentDto,
   type ProductDto,
+  type RecipeComponentDto,
   type SellableUnitDto,
   type SetBundleComponentInput,
+  type SetRecipeComponentInput,
 } from '@turbohesap/shared'
 
 import {
@@ -36,6 +38,7 @@ export function PosSection({ product, onChanged }: { product: ProductDto; onChan
     <>
       <ModifierAttachSection product={product} />
       <BundleSection product={product} onChanged={onChanged} />
+      <RecipeSection product={product} onChanged={onChanged} />
     </>
   )
 }
@@ -298,6 +301,136 @@ function BundleSection({ product, onChanged }: { product: ProductDto; onChanged:
 
       {canWrite ? (
         <Button title="Bileşen ekle" icon="plus" variant="outline" size="sm" onPress={() => setPickerOpen(true)} />
+      ) : null}
+
+      <ProductPickerSheet
+        visible={pickerOpen}
+        units={sellableQ.data ?? []}
+        loading={sellableQ.loading}
+        onClose={() => setPickerOpen(false)}
+        onPick={(u) => {
+          addUnit(u)
+          setPickerOpen(false)
+        }}
+      />
+    </Section>
+  )
+}
+
+interface DraftIngredient {
+  id?: string
+  componentProductId: string
+  componentVariantId: string | null
+  componentName: string
+  quantity: number
+  unit: string | null
+}
+
+function toRecipeDraft(c: RecipeComponentDto): DraftIngredient {
+  return {
+    id: c.id,
+    componentProductId: c.componentProductId,
+    componentVariantId: c.componentVariantId,
+    componentName: c.componentName,
+    quantity: c.quantity,
+    unit: c.unit,
+  }
+}
+
+// Reçete — ingredients silently consumed from stock when THIS product is sold
+// (POS settle / sales-invoice issue). Not shown as separate cart lines. Suits
+// "Stoksuz / anında hazırlanan" menu items (pizza, köfte, hamburger).
+function RecipeSection({ product, onChanged }: { product: ProductDto; onChanged: () => void }) {
+  const t = useTheme()
+  const { hasPermission } = useAuth()
+  const canWrite = hasPermission(InventoryPermissions.productsWrite)
+  const { submit, busy } = useSubmit()
+
+  const recipeQ = useAsync(() => api.inventory.recipes.getForProduct(product.id), [product.id])
+  const sellableQ = useAsync(() => api.inventory.products.sellable(), [], { enabled: canWrite })
+
+  const [rows, setRows] = React.useState<DraftIngredient[] | null>(null)
+  const [pickerOpen, setPickerOpen] = React.useState(false)
+  React.useEffect(() => {
+    if (recipeQ.data && rows === null) setRows(recipeQ.data.map(toRecipeDraft))
+  }, [recipeQ.data, rows])
+  const list = rows ?? []
+
+  const update = (i: number, patch: Partial<DraftIngredient>) =>
+    setRows((cur) => (cur ?? []).map((r, idx) => (idx === i ? { ...r, ...patch } : r)))
+  const remove = (i: number) => setRows((cur) => (cur ?? []).filter((_, idx) => idx !== i))
+  const addUnit = (u: SellableUnitDto) => {
+    setRows((cur) => [
+      ...(cur ?? []),
+      { componentProductId: u.productId, componentVariantId: u.variantId, componentName: u.label, quantity: 1, unit: null },
+    ])
+  }
+
+  const dirty =
+    recipeQ.data != null && JSON.stringify(list) !== JSON.stringify(recipeQ.data.map(toRecipeDraft))
+
+  const save = () =>
+    submit(
+      async () => {
+        const components: SetRecipeComponentInput[] = list
+          .filter((r) => r.componentProductId)
+          .map((r, idx) => ({
+            componentProductId: r.componentProductId,
+            componentVariantId: r.componentVariantId,
+            quantity: r.quantity || 0,
+            unit: r.unit,
+            sortOrder: idx,
+          }))
+        await api.inventory.recipes.setForProduct(product.id, { components })
+      },
+      {
+        onSuccess: () => {
+          recipeQ.refetch()
+          onChanged()
+        },
+      },
+    )
+
+  return (
+    <Section
+      title="Reçete (satışta düşülen malzemeler)"
+      action={canWrite && dirty ? <Button title="Kaydet" icon="check" size="sm" loading={busy} onPress={save} /> : undefined}
+    >
+      <Card>
+        <Text variant="caption" tone="muted">
+          Bu ürün satılınca stoktan sessizce düşülecek malzemeler (POS + satış faturası).
+          {product.trackStock ? ' Uyarı: bu ürün stok takipli — reçete genelde Stoksuz ürünler içindir.' : ''}
+        </Text>
+      </Card>
+
+      {list.length === 0 ? (
+        <EmptyState icon="list" title="Reçete yok" description="Bu ürün için malzeme tanımlı değil." />
+      ) : (
+        list.map((r, i) => (
+          <Card key={r.id ?? i} style={{ gap: t.spacing[3] }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.spacing[2] }}>
+              <Text weight="semibold" numberOfLines={1} style={{ flex: 1 }}>
+                {r.componentName || 'Malzeme'}
+              </Text>
+              {canWrite ? (
+                <Pressable onPress={() => remove(i)} hitSlop={8} style={{ padding: t.spacing[1] }}>
+                  <Icon name="trash-2" size={18} color={t.colors.destructive} />
+                </Pressable>
+              ) : null}
+            </View>
+            <Input
+              label="Miktar"
+              value={String(r.quantity)}
+              onChangeText={(v) => update(i, { quantity: Number(v) || 0 })}
+              keyboardType="decimal-pad"
+              editable={canWrite}
+            />
+          </Card>
+        ))
+      )}
+
+      {canWrite ? (
+        <Button title="Malzeme ekle" icon="plus" variant="outline" size="sm" onPress={() => setPickerOpen(true)} />
       ) : null}
 
       <ProductPickerSheet

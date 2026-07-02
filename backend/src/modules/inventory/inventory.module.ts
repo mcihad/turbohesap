@@ -27,6 +27,9 @@ import { ProductModifiersService } from './product-modifiers.service'
 import { ProductBundleComponent } from './entities/product-bundle-component.entity'
 import { ProductBundlesController } from './product-bundles.controller'
 import { ProductBundlesService } from './product-bundles.service'
+import { ProductRecipeComponent } from './entities/product-recipe-component.entity'
+import { RecipesController } from './recipes.controller'
+import { RecipesService } from './recipes.service'
 import { ProductStatsService } from './product-stats.service'
 // Cross-module entity shapes (read-only) for per-product sales statistics.
 import { InvoiceLine } from '../invoices/entities/invoice-line.entity'
@@ -90,6 +93,7 @@ import { OrderDocumentLine } from '../orders/entities/order-document-line.entity
       ProductModifierOption,
       ProductModifierLink,
       ProductBundleComponent,
+      ProductRecipeComponent,
       InvoiceLine,
       Invoice,
       PosOrderLine,
@@ -119,6 +123,7 @@ import { OrderDocumentLine } from '../orders/entities/order-document-line.entity
     StockMovementsController,
     ProductModifiersController,
     ProductBundlesController,
+    RecipesController,
     AssetsController,
     AssetAssignmentsController,
     AssetTransfersController,
@@ -137,6 +142,7 @@ import { OrderDocumentLine } from '../orders/entities/order-document-line.entity
     StockMovementsService,
     ProductModifiersService,
     ProductBundlesService,
+    RecipesService,
     ProductStatsService,
     AssetsService,
     AssetCustodyService,
@@ -156,6 +162,7 @@ import { OrderDocumentLine } from '../orders/entities/order-document-line.entity
     CostService,
     ReservationsService,
     AvailabilityService,
+    RecipesService,
   ],
 })
 export class InventoryModule {}

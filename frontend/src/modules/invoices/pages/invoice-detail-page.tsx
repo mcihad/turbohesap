@@ -95,8 +95,12 @@ export function InvoiceDetailPage() {
 
   const issueMutation = useMutation({
     mutationFn: () => api.invoices.issue(id),
-    onSuccess: () => {
+    onSuccess: (issued) => {
       toast.success('Fatura kesildi')
+      // Non-blocking recipe/stock warnings (e.g. an ingredient driven negative).
+      if (issued.stockWarnings?.length) {
+        toast.warning('Stok uyarısı', { description: issued.stockWarnings.join('\n') })
+      }
       void invalidate()
     },
     onError: (e) => toast.error('Fatura kesilemedi', { description: toApiError(e).message }),

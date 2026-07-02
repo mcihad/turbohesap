@@ -4,6 +4,7 @@
 // ERPNext: template → variants (by attributes), packagings (unit multipliers),
 // per-location stock, and per-channel prices.
 
+import type { ListQuery } from '../../core/list-query'
 import type { CategorySummary } from './category.dto'
 import type { ProductVariantDto } from './product-variant.dto'
 import type { ProductPackagingDto } from './product-packaging.dto'
@@ -99,6 +100,12 @@ export interface ProductDto {
 
   createdAt: string
   updatedAt: string
+}
+
+/** Server-side product list query (grid). Category-attribute (jsonb) facet
+ *  filters are not yet mapped server-side — use standard columns / QueryBuilder. */
+export interface ProductListQuery extends ListQuery {
+  categoryId?: string
 }
 
 export interface CreateProductRequest {

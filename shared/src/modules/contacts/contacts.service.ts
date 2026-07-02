@@ -1,3 +1,4 @@
+import type { Page } from '../../core/pagination'
 import type {
   ContactDto,
   ContactListQuery,
@@ -13,7 +14,10 @@ import type {
 } from './crm-fields.dto'
 
 export interface IContactsService {
+  /** Full array — used by pickers/dropdowns/dialogs that need every contact. */
   list(query?: ContactListQuery): Promise<ContactDto[]>
+  /** Server-paginated + filtered + sorted — used by the DataGrid (server mode). */
+  listPage(query?: ContactListQuery): Promise<Page<ContactDto>>
   get(id: string): Promise<ContactDto>
   create(input: CreateContactRequest): Promise<ContactDto>
   update(id: string, input: UpdateContactRequest): Promise<ContactDto>

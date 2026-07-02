@@ -15,8 +15,10 @@ import type {
   ConvertLeadRequest,
   ImportContactsRequest,
   ImportResultDto,
+  Page,
 } from '@turbohesap/shared'
 
+import { applyListQuery, type ListSpec } from '../../common/list/apply-list-query'
 import { Contact } from './entities/contact.entity'
 import { ContactGroup } from './entities/contact-group.entity'
 import { ContactTransaction } from './entities/contact-transaction.entity'
@@ -37,6 +39,25 @@ interface ContactAggregates {
   openOpportunityCount: number
 }
 
+// Allowlist of filterable/sortable contact columns for the server-side list.
+// Column identifiers are developer-authored — the request never supplies them.
+const CONTACT_LIST_SPEC: ListSpec = {
+  fields: {
+    code: { column: 'c.code', type: 'text', filterable: true, sortable: true },
+    name: { column: 'c.name', type: 'text', filterable: true, sortable: true },
+    role: { column: 'c.role', type: 'enum', filterable: true, sortable: true },
+    contactType: { column: 'c.contactType', type: 'enum', filterable: true, sortable: true },
+    groupId: { column: 'c.groupId', type: 'uuid', filterable: true, sortable: false },
+    taxNumber: { column: 'c.taxNumber', type: 'text', filterable: true, sortable: true },
+    phone: { column: 'c.phone', type: 'text', filterable: true, sortable: false },
+    email: { column: 'c.email', type: 'text', filterable: true, sortable: false },
+    isActive: { column: 'c.isActive', type: 'boolean', filterable: true, sortable: true },
+    createdAt: { column: 'c.createdAt', type: 'date', filterable: true, sortable: true },
+  },
+  searchColumns: ['c.name', 'c.code', 'c.taxNumber'],
+  defaultSort: [{ field: 'name', dir: 'asc' }],
+}
+
 @Injectable()
 export class ContactsService {
   constructor(
@@ -50,7 +71,8 @@ export class ContactsService {
     private readonly opportunitiesService: OpportunitiesService,
   ) {}
 
-  async list(query?: ContactListQuery, currentUserId?: string): Promise<ContactDto[]> {
+  /** Base query with the server-scoped legacy filters applied. */
+  private listBaseQb(query?: ContactListQuery, currentUserId?: string) {
     const qb = this.contacts.createQueryBuilder('c')
     if (query?.role) qb.andWhere('c.role = :role', { role: query.role })
     if (query?.groupId) qb.andWhere('c.groupId = :groupId', { groupId: query.groupId })
@@ -59,15 +81,12 @@ export class ContactsService {
       qb.andWhere('c.ownerId = :ownerId', { ownerId: currentUserId })
     if (query?.tag) qb.andWhere('c.tags @> :tag::jsonb', { tag: JSON.stringify([query.tag]) })
     if (query?.activeOnly) qb.andWhere('c.isActive = true')
-    if (query?.search) {
-      qb.andWhere('(c.name ILIKE :q OR c.code ILIKE :q OR c.taxNumber ILIKE :q)', {
-        q: `%${query.search}%`,
-      })
-    }
-    qb.orderBy('c.name', 'ASC')
-    const rows = await qb.getMany()
-    if (rows.length === 0) return []
+    return qb
+  }
 
+  /** Enrich a page/list of contact rows with computed aggregates. */
+  private async enrichContacts(rows: Contact[]): Promise<ContactDto[]> {
+    if (rows.length === 0) return []
     const ids = rows.map((r) => r.id)
     const [ledgerMap, personMap, addressMap, oppMap, groupMap, ownerMap] = await Promise.all([
       this.ledgerMap(ids),
@@ -77,7 +96,6 @@ export class ContactsService {
       this.groupNameMap(rows),
       ownerNameMap(this.users, rows.map((r) => r.ownerId)),
     ])
-
     return rows.map((r) =>
       toContactDto(r, {
         groupName: r.groupId ? groupMap.get(r.groupId) ?? null : null,
@@ -88,6 +106,26 @@ export class ContactsService {
         openOpportunityCount: oppMap.get(r.id) ?? 0,
       }),
     )
+  }
+
+  /** Full array — for pickers/dropdowns (search still applied for typeaheads). */
+  async list(query?: ContactListQuery, currentUserId?: string): Promise<ContactDto[]> {
+    const qb = this.listBaseQb(query, currentUserId)
+    if (query?.search) {
+      qb.andWhere('(c.name ILIKE :q OR c.code ILIKE :q OR c.taxNumber ILIKE :q)', {
+        q: `%${query.search}%`,
+      })
+    }
+    qb.orderBy('c.name', 'ASC')
+    return this.enrichContacts(await qb.getMany())
+  }
+
+  /** Server-paginated + filtered + sorted — for the DataGrid (server mode). */
+  async listPage(query?: ContactListQuery, currentUserId?: string): Promise<Page<ContactDto>> {
+    const qb = this.listBaseQb(query, currentUserId)
+    const { page, pageSize } = applyListQuery(qb, query ?? {}, CONTACT_LIST_SPEC)
+    const [rows, total] = await qb.getManyAndCount()
+    return { items: await this.enrichContacts(rows), total, page, pageSize }
   }
 
   async get(id: string): Promise<ContactDto> {

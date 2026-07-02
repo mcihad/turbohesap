@@ -1,5 +1,7 @@
 import type { AxiosInstance } from 'axios'
 
+import type { Page } from '../../core/pagination'
+import { encodeListQuery } from '../../core/list-query'
 import type {
   CreateInvoiceRequest,
   InvoiceDto,
@@ -14,6 +16,17 @@ export class InvoicesApiClient implements IInvoicesService {
 
   async list(query?: InvoiceListQuery): Promise<InvoiceDto[]> {
     return (await this.http.get<InvoiceDto[]>('/invoices/invoices', { params: query })).data
+  }
+  async listPage(query?: InvoiceListQuery): Promise<Page<InvoiceDto>> {
+    const params = {
+      ...(query?.type ? { type: query.type } : {}),
+      ...(query?.status ? { status: query.status } : {}),
+      ...(query?.contactId ? { contactId: query.contactId } : {}),
+      ...(query?.from ? { from: query.from } : {}),
+      ...(query?.to ? { to: query.to } : {}),
+      ...encodeListQuery(query ?? {}),
+    }
+    return (await this.http.get<Page<InvoiceDto>>('/invoices/invoices/paged', { params })).data
   }
   async get(id: string): Promise<InvoiceDto> {
     return (await this.http.get<InvoiceDto>(`/invoices/invoices/${id}`)).data

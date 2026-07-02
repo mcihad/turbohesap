@@ -49,7 +49,7 @@ export const productionModule: AppModule = {
           permission: ProductionPermissions.read,
         },
         {
-          title: 'İş Merkezleri',
+          title: 'İş İstasyonları',
           icon: Cog,
           to: '/production/work-centers',
           keywords: ['iş merkezi', 'work center', 'istasyon', 'makine'],

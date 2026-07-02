@@ -36,7 +36,7 @@ export const productionModule: MobileModule = {
     },
     {
       key: 'production.workcenters',
-      title: 'İş Merkezleri',
+      title: 'İş İstasyonları',
       icon: 'cpu',
       description: 'İstasyon ve saat ücretleri',
       permission: ProductionPermissions.read,

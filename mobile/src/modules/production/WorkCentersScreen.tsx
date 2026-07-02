@@ -37,12 +37,12 @@ export function WorkCentersScreen() {
   return (
     <PermissionRequired
       permission={ProductionPermissions.read}
-      title="İş Merkezleri"
+      title="İş İstasyonları"
       onBack={nav.canGoBack ? nav.goBack : undefined}
     >
       <Screen
         header={{
-          title: 'İş Merkezleri',
+          title: 'İş İstasyonları',
           large: !nav.canGoBack,
           onBack: nav.canGoBack ? nav.goBack : undefined,
           right: canWrite ? <HeaderAction icon="plus" onPress={openForm} /> : undefined,

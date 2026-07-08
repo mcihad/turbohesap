@@ -117,7 +117,6 @@ export function AnnotationEditor({
     if (!ready || textDraft) return
     const at = toCanvas(e)
     if (tool === 'text') {
-      setTextDraft({ at, value: '' })
       return
     }
     e.currentTarget.setPointerCapture(e.pointerId)
@@ -141,7 +140,13 @@ export function AnnotationEditor({
     paint(d)
   }
 
-  const onPointerUp = () => {
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (tool === 'text') {
+      if (!textDraft) {
+        setTextDraft({ at: toCanvas(e), value: '' })
+      }
+      return
+    }
     if (!drawingRef.current) return
     drawingRef.current = false
     const d = draftRef.current
